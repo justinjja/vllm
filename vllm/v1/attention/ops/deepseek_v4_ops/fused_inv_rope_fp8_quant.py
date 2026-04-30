@@ -174,6 +174,19 @@ def fused_inv_rope_fp8_quant(
     assert cos_sin_cache.shape[-1] == rope_dim
     assert cos_sin_cache.dtype == torch.float32
 
+    if _use_torch_fp8_quant_fallback(o):
+        return _fused_inv_rope_fp8_quant_torch_fallback(
+            o,
+            positions,
+            cos_sin_cache,
+            n_groups,
+            heads_per_group,
+            nope_dim,
+            rope_dim,
+            quant_group_size,
+            tma_aligned_scales,
+        )
+
     d = heads_per_group * head_dim
     num_scale_blocks = d // quant_group_size
     chunks_per_head = head_dim // quant_group_size
@@ -303,6 +316,113 @@ def _fused_inv_rope_fp8_quant_kernel_fake(
         (scale_inner * tma_aligned_T, 1, tma_aligned_T),
     )
     return fp8_buf, scale_buf
+
+
+def _use_torch_fp8_quant_fallback(o: torch.Tensor) -> bool:
+    if not o.is_cuda:
+        return False
+    major, _ = torch.cuda.get_device_capability(o.device)
+    return major < 9
+
+
+def _ceil_to_pow2(x: torch.Tensor) -> torch.Tensor:
+    return torch.pow(2.0, torch.ceil(torch.log2(x)))
+
+
+def _fused_inv_rope_fp8_quant_torch_fallback(
+    o: torch.Tensor,
+    positions: torch.Tensor,
+    cos_sin_cache: torch.Tensor,
+    n_groups: int,
+    heads_per_group: int,
+    nope_dim: int,
+    rope_dim: int,
+    quant_group_size: int,
+    tma_aligned_scales: bool,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """SM86 fallback for inverse RoPE + block FP8 quantization.
+
+    Triton lowers tl.float8e4nv for the fused kernel, which Ampere rejects.
+    This path keeps the same output contract using regular Torch casts.
+    """
+    from vllm.utils.deep_gemm import get_tma_aligned_size
+
+    num_tokens, _, head_dim = o.shape
+    d = heads_per_group * head_dim
+    num_scale_blocks = d // quant_group_size
+    fp8_dtype = torch.float8_e4m3fn
+    fp8_max = torch.finfo(fp8_dtype).max
+
+    x = o.view(num_tokens, n_groups, heads_per_group, head_dim).float()
+    rope = x[..., nope_dim : nope_dim + rope_dim]
+    rope_pairs = rope.view(num_tokens, n_groups, heads_per_group, rope_dim // 2, 2)
+    cos = cos_sin_cache.index_select(0, positions.to(torch.long))[:, : rope_dim // 2]
+    sin = cos_sin_cache.index_select(0, positions.to(torch.long))[
+        :, rope_dim // 2 :
+    ]
+    cos = cos.view(num_tokens, 1, 1, rope_dim // 2)
+    sin = sin.view(num_tokens, 1, 1, rope_dim // 2)
+    even = rope_pairs[..., 0]
+    odd = rope_pairs[..., 1]
+    rotated = torch.empty_like(rope_pairs)
+    rotated[..., 0] = even * cos + odd * sin
+    rotated[..., 1] = odd * cos - even * sin
+    x[..., nope_dim : nope_dim + rope_dim] = rotated.view(
+        num_tokens,
+        n_groups,
+        heads_per_group,
+        rope_dim,
+    )
+
+    x_flat = x.view(num_tokens, n_groups, d)
+    chunks = x_flat.view(num_tokens, n_groups, num_scale_blocks, quant_group_size)
+    scales = chunks.abs().amax(dim=-1).clamp_min(1e-10) * (1.0 / fp8_max)
+    scales = _ceil_to_pow2(scales)
+    quant = torch.clamp(
+        chunks / scales.unsqueeze(-1),
+        -fp8_max,
+        fp8_max,
+    ).view(num_tokens, n_groups, d)
+
+    fp8_buf = quant.to(fp8_dtype).transpose(0, 1).contiguous()
+
+    tma_aligned_T = get_tma_aligned_size(num_tokens, 4)
+    if tma_aligned_scales:
+        packed_sf_k = (num_scale_blocks + 3) // 4
+        scale_buf = torch.empty(
+            n_groups * packed_sf_k * tma_aligned_T,
+            dtype=torch.int32,
+            device=o.device,
+        ).as_strided(
+            (n_groups, num_tokens, packed_sf_k),
+            (packed_sf_k * tma_aligned_T, 1, tma_aligned_T),
+        )
+        scale_buf.zero_()
+        scale_bits = scales.view(torch.int32)
+        ue8m0 = (scale_bits >> 23) & 0xFF
+        for i in range(packed_sf_k):
+            start = i * 4
+            end = min(start + 4, num_scale_blocks)
+            packed = torch.zeros(
+                (num_tokens, n_groups),
+                dtype=torch.int32,
+                device=o.device,
+            )
+            for j in range(start, end):
+                packed = packed | (ue8m0[:, :, j].to(torch.int32) << ((j - start) * 8))
+            scale_buf[:, :, i] = packed.transpose(0, 1)
+    else:
+        scale_buf = torch.empty(
+            n_groups * num_scale_blocks * tma_aligned_T,
+            dtype=torch.float32,
+            device=o.device,
+        ).as_strided(
+            (n_groups, num_tokens, num_scale_blocks),
+            (num_scale_blocks * tma_aligned_T, 1, tma_aligned_T),
+        )
+        scale_buf.copy_(scales.transpose(0, 1))
+
+    return fp8_buf.transpose(0, 1), scale_buf.transpose(0, 1)
 
 
 direct_register_custom_op(

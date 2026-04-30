@@ -32,6 +32,15 @@ from vllm.v1.worker.cp_utils import get_total_cp_world_size
 logger = init_logger(__name__)
 
 
+def _deep_gemm_decode_metadata_supported(device: torch.device | None = None) -> bool:
+    if not current_platform.is_cuda() or not has_deep_gemm():
+        return False
+    if not torch.cuda.is_available():
+        return False
+    major, _ = torch.cuda.get_device_capability(device)
+    return major >= 9
+
+
 @triton.jit
 def _prepare_uniform_decode_kernel(
     seq_lens_ptr,
@@ -610,8 +619,9 @@ class DeepseekV32IndexerMetadataBuilder(AttentionMetadataBuilder):
             if seq_lens.dim() == 1:
                 seq_lens = seq_lens.unsqueeze(-1)
 
-            # DeepGEMM is required for the paged MQA logits on CUDA devices
-            if current_platform.is_cuda() and has_deep_gemm():
+            # DeepGEMM's paged MQA metadata helper is Hopper+ only. SM86 uses
+            # the Torch logits fallback and does not consume this schedule.
+            if _deep_gemm_decode_metadata_supported(seq_lens.device):
                 self.scheduler_metadata_buffer[:] = get_paged_mqa_logits_metadata(
                     seq_lens,
                     self.kv_cache_spec.storage_block_size,

@@ -156,6 +156,12 @@ class DeepseekV4FlashMLASparseBackend(FlashMLASparseBackend):
     def get_name() -> str:
         return "V4_FLASHMLA_SPARSE"
 
+    @classmethod
+    def supports_compute_capability(cls, capability: DeviceCapability) -> bool:
+        # SM86 routes through the vLLM-owned Torch fallback in ops/flashmla.py.
+        # SM90/SM100 continue to use the third-party FlashMLA kernels.
+        return capability.major in [8, 9, 10]
+
     @staticmethod
     def get_kv_cache_shape(
         num_blocks: int,

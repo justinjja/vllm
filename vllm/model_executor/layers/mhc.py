@@ -234,6 +234,20 @@ def mhc_pre(
     num_tokens = residual_flat.shape[0]
     fn_flat = fn
 
+    if _use_torch_mhc_fallback(residual):
+        return _mhc_pre_torch_fallback(
+            residual_flat,
+            outer_shape,
+            fn_flat,
+            hc_scale,
+            hc_base,
+            rms_eps,
+            hc_pre_eps,
+            hc_sinkhorn_eps,
+            hc_post_mult_value,
+            sinkhorn_repeat,
+        )
+
     # these number are from deepgemm kernel impl
     block_k = 64
     block_m = 64
@@ -306,6 +320,104 @@ def mhc_pre(
     layer_input = layer_input.view(*outer_shape, hidden_size)
 
     return post_mix, comb_mix, layer_input
+
+
+def _use_torch_mhc_fallback(x: torch.Tensor) -> bool:
+    if not x.is_cuda:
+        return False
+    major, _ = torch.cuda.get_device_capability(x.device)
+    return major < 9
+
+
+def _mhc_pre_torch_fallback(
+    residual_flat: torch.Tensor,
+    outer_shape: torch.Size,
+    fn: torch.Tensor,
+    hc_scale: torch.Tensor,
+    hc_base: torch.Tensor,
+    rms_eps: float,
+    hc_pre_eps: float,
+    hc_sinkhorn_eps: float,
+    hc_post_mult_value: float,
+    sinkhorn_repeat: int,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """SM86 fallback for mHC pre.
+
+    The DeepGEMM hyperconnection pre-norm kernel currently rejects Ampere.
+    Keep vLLM runnable by using standard Torch ops for the small mHC projection.
+    """
+    num_tokens, hc_mult, hidden_size = residual_flat.shape
+    hc_mult2 = hc_mult * hc_mult
+    hc_mult3 = hc_mult * 2 + hc_mult2
+    hc_hidden_size = hc_mult * hidden_size
+
+    post_mix = torch.empty(
+        num_tokens,
+        hc_mult,
+        dtype=torch.float32,
+        device=residual_flat.device,
+    )
+    comb_mix = torch.empty(
+        num_tokens,
+        hc_mult,
+        hc_mult,
+        dtype=torch.float32,
+        device=residual_flat.device,
+    )
+    layer_input = torch.empty(
+        num_tokens,
+        hidden_size,
+        dtype=torch.bfloat16,
+        device=residual_flat.device,
+    )
+
+    fn_t = fn.t().contiguous()
+    # Bound temporary fp32 activation memory during vLLM's large profile run.
+    chunk_tokens = 512
+    for start in range(0, num_tokens, chunk_tokens):
+        end = min(start + chunk_tokens, num_tokens)
+        residual_chunk = residual_flat[start:end].float()
+        x = residual_chunk.view(end - start, hc_hidden_size)
+        mixes = x.matmul(fn_t)
+        rms = torch.rsqrt(x.square().sum(dim=-1, keepdim=True) / hc_hidden_size + rms_eps)
+        mixes = mixes * rms
+
+        pre = (
+            torch.sigmoid(
+                mixes[:, :hc_mult] * hc_scale[0] + hc_base[:hc_mult],
+            )
+            + hc_pre_eps
+        )
+        layer_input[start:end] = torch.sum(
+            pre.unsqueeze(-1) * residual_chunk,
+            dim=1,
+        ).to(torch.bfloat16)
+
+        post_mix[start:end] = (
+            torch.sigmoid(
+                mixes[:, hc_mult : 2 * hc_mult] * hc_scale[1]
+                + hc_base[hc_mult : 2 * hc_mult],
+            )
+            * hc_post_mult_value
+        )
+
+        comb = (
+            mixes[:, 2 * hc_mult : hc_mult3].view(end - start, hc_mult, hc_mult)
+            * hc_scale[2]
+            + hc_base[2 * hc_mult : hc_mult3].view(1, hc_mult, hc_mult)
+        )
+        comb = comb.softmax(dim=-1) + hc_sinkhorn_eps
+        comb = comb / (comb.sum(dim=-2, keepdim=True) + hc_sinkhorn_eps)
+        for _ in range(max(0, sinkhorn_repeat - 1)):
+            comb = comb / (comb.sum(dim=-1, keepdim=True) + hc_sinkhorn_eps)
+            comb = comb / (comb.sum(dim=-2, keepdim=True) + hc_sinkhorn_eps)
+        comb_mix[start:end] = comb
+
+    return (
+        post_mix.view(*outer_shape, hc_mult, 1),
+        comb_mix.view(*outer_shape, hc_mult, hc_mult),
+        layer_input.view(*outer_shape, hidden_size),
+    )
 
 
 def _mhc_pre_fake(
@@ -414,6 +526,34 @@ def mhc_post(
     post_layer_mix: torch.Tensor,
     comb_res_mix: torch.Tensor,
 ) -> torch.Tensor:
+    if _use_torch_mhc_fallback(residual):
+        outer_shape = residual.shape[:-2]
+        hc = residual.shape[-2]
+        hidden = residual.shape[-1]
+        residual_flat = residual.reshape(-1, hc, hidden)
+        x_flat = x.reshape(-1, hidden)
+        post_flat = post_layer_mix.reshape(-1, hc, 1)
+        comb_flat = comb_res_mix.reshape(-1, hc, hc)
+        out = torch.empty_like(residual_flat)
+
+        # The CUDA kernel is unavailable on SM86. Keep the fallback's peak
+        # memory bounded during vLLM's profile run; a full 8192-token fp32
+        # materialization is enough to OOM 24 GB cards after model load.
+        chunk_tokens = 256
+        for start in range(0, residual_flat.shape[0], chunk_tokens):
+            end = min(start + chunk_tokens, residual_flat.shape[0])
+            res_f = residual_flat[start:end].float()
+            mixed = torch.einsum(
+                "nio,nih->noh",
+                comb_flat[start:end].float(),
+                res_f,
+            )
+            mixed.add_(
+                post_flat[start:end].float() *
+                x_flat[start:end].unsqueeze(1).float())
+            out[start:end].copy_(mixed.to(residual.dtype))
+        return out.view(*outer_shape, hc, hidden)
+
     out = torch.empty_like(residual)
     mhc_post_tilelang(
         comb_res_mix,

@@ -40,6 +40,123 @@ RADIX_TOPK_WORKSPACE_SIZE = 1024 * 1024
 MXFP4_BLOCK_SIZE = 32
 
 
+def _use_torch_sparse_indexer_fallback(
+    q_quant: torch.Tensor,
+    use_fp4_cache: bool,
+) -> bool:
+    if use_fp4_cache or not q_quant.is_cuda:
+        return False
+    major, _ = torch.cuda.get_device_capability(q_quant.device)
+    return major < 9
+
+
+def _torch_prefill_indexer_topk(
+    q_slice: torch.Tensor,
+    k_quant: torch.Tensor,
+    k_scale: torch.Tensor,
+    weights: torch.Tensor,
+    cu_seqlen_ks: torch.Tensor,
+    cu_seqlen_ke: torch.Tensor,
+    topk_indices: torch.Tensor,
+    topk_tokens: int,
+) -> None:
+    topk_indices.fill_(-1)
+    q = q_slice.float()
+    k = k_quant.float() * k_scale.float().unsqueeze(-1)
+    w = weights.float()
+    for row in range(q.shape[0]):
+        start = int(cu_seqlen_ks[row].item())
+        end = int(cu_seqlen_ke[row].item())
+        if end <= start:
+            continue
+        # weights already carries the folded Q scale for the FP8 path.
+        scores = torch.matmul(q[row], k[start:end].T)
+        scores = (scores * w[row].unsqueeze(-1)).sum(dim=0)
+        k_top = min(topk_tokens, scores.numel())
+        vals = torch.topk(scores, k_top, dim=0).indices.to(torch.int32) + start
+        topk_indices[row, :k_top].copy_(vals)
+
+
+def _decode_fp8_kv_cache_to_bf16(
+    kv_cache: torch.Tensor,
+    block_table_row: torch.Tensor,
+    seq_len: int,
+    block_size: int,
+    head_dim: int,
+) -> torch.Tensor:
+    if seq_len <= 0:
+        return torch.empty((0, head_dim), device=kv_cache.device,
+                           dtype=torch.float32)
+    positions = torch.arange(seq_len, device=kv_cache.device, dtype=torch.long)
+    block_ids = block_table_row.index_select(0, positions // block_size).to(
+        torch.long)
+    block_offsets = positions % block_size
+    rows = kv_cache[block_ids, block_offsets, 0]
+    vals = rows[:, :head_dim].contiguous().view(torch.float8_e4m3fn).float()
+    scales = rows[:, head_dim:head_dim + 4].contiguous().view(torch.float32)
+    return vals * scales
+
+
+def _decode_fp8_kv_cache_to_bf16_static(
+    kv_cache: torch.Tensor,
+    block_table_row: torch.Tensor,
+    seq_len: torch.Tensor,
+    block_size: int,
+    head_dim: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    max_seq_len = block_table_row.shape[0] * block_size
+    positions = torch.arange(max_seq_len, device=kv_cache.device,
+                             dtype=torch.long)
+    table_offsets = (positions // block_size).clamp(
+        0, block_table_row.shape[0] - 1)
+    block_ids = block_table_row.index_select(0, table_offsets).to(torch.long)
+    valid = (positions < seq_len.to(torch.long)) & (block_ids >= 0)
+    safe_block_ids = block_ids.clamp(0, kv_cache.shape[0] - 1)
+    block_offsets = positions % block_size
+    rows = kv_cache[safe_block_ids, block_offsets, 0]
+    vals = rows[:, :head_dim].contiguous().view(torch.float8_e4m3fn).float()
+    scales = rows[:, head_dim:head_dim + 4].contiguous().view(torch.float32)
+    return vals * scales, valid
+
+
+def _torch_decode_indexer_topk(
+    q_quant: torch.Tensor,
+    kv_cache: torch.Tensor,
+    weights: torch.Tensor,
+    seq_lens: torch.Tensor,
+    block_table: torch.Tensor,
+    topk_indices: torch.Tensor,
+    topk_tokens: int,
+    head_dim: int,
+) -> None:
+    topk_indices.fill_(-1)
+    q = q_quant.float()
+    w = weights.float().view(-1, q.shape[-2])
+    q_flat = q.reshape(-1, q.shape[-2], q.shape[-1])
+    next_n = q.shape[1]
+    block_size = kv_cache.shape[1]
+    for row in range(q_flat.shape[0]):
+        batch_idx = row // next_n
+        step_idx = row % next_n
+        seq_shape = seq_lens.shape
+        seq_len = (seq_lens[batch_idx, step_idx]
+                   if len(seq_shape) == 2 else seq_lens[batch_idx])
+        k, valid = _decode_fp8_kv_cache_to_bf16_static(
+            kv_cache,
+            block_table[batch_idx],
+            seq_len,
+            block_size,
+            head_dim,
+        )
+        scores = torch.matmul(q_flat[row], k.T)
+        scores = (scores * w[row].unsqueeze(-1)).sum(dim=0)
+        scores = scores.masked_fill(~valid, -1.0e30)
+        k_top = min(topk_tokens, scores.numel())
+        top_values, top = torch.topk(scores, k_top, dim=0)
+        top = torch.where(top_values > -1.0e29, top, -1).to(torch.int32)
+        topk_indices[row, :k_top].copy_(top)
+
+
 def _gather_workspace_shapes(
     total_seq_lens: int,
     head_dim: int,
@@ -220,42 +337,54 @@ def sparse_attn_indexer(
                 q_slice_cast = q_slice
                 k_quant_cast = k_quant
                 k_scale_cast = k_scale.view(torch.float32).squeeze(-1)
-            logits = fp8_fp4_mqa_logits(
-                (q_slice_cast, q_scale_slice),
-                (k_quant_cast, k_scale_cast),
-                weights[chunk.token_start : chunk.token_end],
-                chunk.cu_seqlen_ks,
-                chunk.cu_seqlen_ke,
-                clean_logits=False,
-            )
-            num_rows = logits.shape[0]
-
             topk_indices = topk_indices_buffer[
                 chunk.token_start : chunk.token_end, :topk_tokens
             ]
 
-            if current_platform.is_xpu():
-                xpu_ops.top_k_per_row_prefill(  # type: ignore[attr-defined]
-                    logits,
+            if _use_torch_sparse_indexer_fallback(q_slice, use_fp4_cache):
+                _torch_prefill_indexer_topk(
+                    q_slice,
+                    k_quant,
+                    k_scale_cast,
+                    weights[chunk.token_start : chunk.token_end],
                     chunk.cu_seqlen_ks,
                     chunk.cu_seqlen_ke,
                     topk_indices,
-                    num_rows,
-                    logits.stride(0),
-                    logits.stride(1),
                     topk_tokens,
                 )
             else:
-                torch.ops._C.top_k_per_row_prefill(
-                    logits,
+                logits = fp8_fp4_mqa_logits(
+                    (q_slice_cast, q_scale_slice),
+                    (k_quant_cast, k_scale_cast),
+                    weights[chunk.token_start : chunk.token_end],
                     chunk.cu_seqlen_ks,
                     chunk.cu_seqlen_ke,
-                    topk_indices,
-                    num_rows,
-                    logits.stride(0),
-                    logits.stride(1),
-                    topk_tokens,
+                    clean_logits=False,
                 )
+                num_rows = logits.shape[0]
+
+                if current_platform.is_xpu():
+                    xpu_ops.top_k_per_row_prefill(  # type: ignore[attr-defined]
+                        logits,
+                        chunk.cu_seqlen_ks,
+                        chunk.cu_seqlen_ke,
+                        topk_indices,
+                        num_rows,
+                        logits.stride(0),
+                        logits.stride(1),
+                        topk_tokens,
+                    )
+                else:
+                    torch.ops._C.top_k_per_row_prefill(
+                        logits,
+                        chunk.cu_seqlen_ks,
+                        chunk.cu_seqlen_ke,
+                        topk_indices,
+                        num_rows,
+                        logits.stride(0),
+                        logits.stride(1),
+                        topk_tokens,
+                    )
 
     if has_decode:
         decode_metadata = attn_metadata_narrowed.decode
@@ -307,55 +436,70 @@ def sparse_attn_indexer(
             if use_fp4_cache
             else padded_q_quant_decode_tokens
         )
-        logits = fp8_fp4_paged_mqa_logits(
-            (padded_q_quant_cast, padded_q_scale),
-            kv_cache,
-            weights[:num_padded_tokens],
-            seq_lens,
-            decode_metadata.block_table,
-            decode_metadata.schedule_metadata,
-            max_model_len=max_model_len,
-            clean_logits=False,
-        )
-        num_rows = logits.shape[0]
         topk_indices = topk_indices_buffer[:num_padded_tokens, :topk_tokens]
 
-        if current_platform.is_cuda() and topk_tokens in (512, 1024, 2048):
-            workspace_manager = current_workspace_manager()
-            (topk_workspace,) = workspace_manager.get_simultaneous(
-                ((RADIX_TOPK_WORKSPACE_SIZE,), torch.uint8),
-            )
-            torch.ops._C.persistent_topk(
-                logits,
+        if _use_torch_sparse_indexer_fallback(
+            padded_q_quant_decode_tokens, use_fp4_cache
+        ):
+            _torch_decode_indexer_topk(
+                padded_q_quant_decode_tokens,
+                kv_cache,
+                weights[:num_padded_tokens],
                 seq_lens,
+                decode_metadata.block_table,
                 topk_indices,
-                topk_workspace,
                 topk_tokens,
-                attn_metadata_narrowed.max_seq_len,
+                head_dim,
             )
         else:
-            if current_platform.is_xpu():
-                xpu_ops.top_k_per_row_decode(  # type: ignore[attr-defined]
+            logits = fp8_fp4_paged_mqa_logits(
+                (padded_q_quant_cast, padded_q_scale),
+                kv_cache,
+                weights[:num_padded_tokens],
+                seq_lens,
+                decode_metadata.block_table,
+                decode_metadata.schedule_metadata,
+                max_model_len=max_model_len,
+                clean_logits=False,
+            )
+            num_rows = logits.shape[0]
+
+            if current_platform.is_cuda() and topk_tokens in (512, 1024, 2048):
+                workspace_manager = current_workspace_manager()
+                (topk_workspace,) = workspace_manager.get_simultaneous(
+                    ((RADIX_TOPK_WORKSPACE_SIZE,), torch.uint8),
+                )
+                torch.ops._C.persistent_topk(
                     logits,
-                    next_n,
                     seq_lens,
                     topk_indices,
-                    num_rows,
-                    logits.stride(0),
-                    logits.stride(1),
+                    topk_workspace,
                     topk_tokens,
+                    attn_metadata_narrowed.max_seq_len,
                 )
             else:
-                torch.ops._C.top_k_per_row_decode(
-                    logits,
-                    next_n,
-                    seq_lens,
-                    topk_indices,
-                    num_rows,
-                    logits.stride(0),
-                    logits.stride(1),
-                    topk_tokens,
-                )
+                if current_platform.is_xpu():
+                    xpu_ops.top_k_per_row_decode(  # type: ignore[attr-defined]
+                        logits,
+                        next_n,
+                        seq_lens,
+                        topk_indices,
+                        num_rows,
+                        logits.stride(0),
+                        logits.stride(1),
+                        topk_tokens,
+                    )
+                else:
+                    torch.ops._C.top_k_per_row_decode(
+                        logits,
+                        next_n,
+                        seq_lens,
+                        topk_indices,
+                        num_rows,
+                        logits.stride(0),
+                        logits.stride(1),
+                        topk_tokens,
+                    )
 
         if decode_metadata.requires_padding:
             # if padded, we need to unpack

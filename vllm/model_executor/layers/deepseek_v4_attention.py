@@ -303,35 +303,51 @@ class DeepseekV4MultiHeadLatentAttentionWrapper(PluggableLayer):
         )
         o = o_padded[:, : self.n_local_heads, :]
 
-        # O projection: inverse RoPE + FP8 quant + einsum + wo_b
-        o_fp8, o_scale = fused_inv_rope_fp8_quant(
-            o,
-            positions,
-            self.rotary_emb.cos_sin_cache,
-            n_groups=self.n_local_groups,
-            heads_per_group=self.n_local_heads // self.n_local_groups,
-            nope_dim=self.nope_head_dim,
-            rope_dim=self.rope_head_dim,
-            tma_aligned_scales=self._tma_aligned_scales,
-        )
+        if _use_sm86_wo_a_fallback(o) and self.n_local_groups == 1:
+            # On SM86 the fused inverse-RoPE/FP8/DeepGEMM path is not usable:
+            # Triton rejects fp8e4nv and wo_a.weight is Marlin-packed by load
+            # time. Keep the packed Marlin path by feeding BF16 activations to
+            # the real ColumnParallelLinear instead of dequantizing weights.
+            o_wo_a = _inverse_rope_for_wo_a(
+                o,
+                positions,
+                self.rotary_emb.cos_sin_cache,
+                self.nope_head_dim,
+                self.rope_head_dim,
+            )
+            z_out = self.wo_a(o_wo_a)
+            z_flat = z_out[0] if isinstance(z_out, tuple) else z_out
+            z = z_flat.view(num_tokens, self.n_local_groups, self.o_lora_rank)
+        else:
+            # O projection: inverse RoPE + FP8 quant + einsum + wo_b
+            o_fp8, o_scale = fused_inv_rope_fp8_quant(
+                o,
+                positions,
+                self.rotary_emb.cos_sin_cache,
+                n_groups=self.n_local_groups,
+                heads_per_group=self.n_local_heads // self.n_local_groups,
+                nope_dim=self.nope_head_dim,
+                rope_dim=self.rope_head_dim,
+                tma_aligned_scales=self._tma_aligned_scales,
+            )
 
-        wo_a_fp8 = self.wo_a.weight
-        wo_a_scale = self.wo_a.weight_scale_inv
+            wo_a_fp8 = self.wo_a.weight
+            wo_a_scale = self.wo_a.weight_scale_inv
 
-        z = torch.empty(
-            (num_tokens, self.n_local_groups, self.o_lora_rank),
-            device=o.device,
-            dtype=torch.bfloat16,
-        )
-        torch.ops.vllm.deepseek_v4_fp8_einsum(
-            o_fp8,
-            o_scale,
-            wo_a_fp8,
-            wo_a_scale,
-            z,
-            "bhr,hdr->bhd",
-            list(self._einsum_recipe),
-        )
+            z = torch.empty(
+                (num_tokens, self.n_local_groups, self.o_lora_rank),
+                device=o.device,
+                dtype=torch.bfloat16,
+            )
+            torch.ops.vllm.deepseek_v4_fp8_einsum(
+                o_fp8,
+                o_scale,
+                wo_a_fp8,
+                wo_a_scale,
+                z,
+                "bhr,hdr->bhd",
+                list(self._einsum_recipe),
+            )
 
         return self.wo_b(z.flatten(1))
 
@@ -556,6 +572,41 @@ direct_register_custom_op(
 )
 
 
+def _use_sm86_wo_a_fallback(x: torch.Tensor) -> bool:
+    if not x.is_cuda:
+        return False
+    major, _ = torch.cuda.get_device_capability(x.device)
+    return major < 9
+
+
+def _inverse_rope_for_wo_a(
+    o: torch.Tensor,
+    positions: torch.Tensor,
+    cos_sin_cache: torch.Tensor,
+    nope_dim: int,
+    rope_dim: int,
+) -> torch.Tensor:
+    num_tokens, num_heads, head_dim = o.shape
+    x = o.float()
+    rope = x[..., nope_dim : nope_dim + rope_dim]
+    rope_pairs = rope.view(num_tokens, num_heads, rope_dim // 2, 2)
+    pos = positions.to(torch.long)
+    cos_sin = cos_sin_cache.index_select(0, pos)
+    cos = cos_sin[:, : rope_dim // 2].view(num_tokens, 1, rope_dim // 2)
+    sin = cos_sin[:, rope_dim // 2 :].view(num_tokens, 1, rope_dim // 2)
+    even = rope_pairs[..., 0]
+    odd = rope_pairs[..., 1]
+    rotated = torch.empty_like(rope_pairs)
+    rotated[..., 0] = even * cos + odd * sin
+    rotated[..., 1] = odd * cos - even * sin
+    x[..., nope_dim : nope_dim + rope_dim] = rotated.view(
+        num_tokens,
+        num_heads,
+        rope_dim,
+    )
+    return x.to(torch.bfloat16).view(num_tokens, num_heads * head_dim)
+
+
 def deepseek_v4_fp8_einsum(
     a: torch.Tensor,
     a_scale: torch.Tensor,
@@ -565,7 +616,84 @@ def deepseek_v4_fp8_einsum(
     equation: str,
     recipe: list[int],
 ) -> None:
+    if _use_torch_fp8_einsum_fallback(out):
+        a_deq = _dequant_fp8_blocks(a, a_scale)
+        b_deq = _dequant_fp8_blocks(b, b_scale)
+        if equation == "bhr,hdr->bhd" and b_deq.dim() == 2:
+            h = a_deq.shape[1]
+            r = a_deq.shape[2]
+            b_deq = b_deq.view(h, -1, r)
+        out.copy_(torch.einsum(equation, a_deq, b_deq).to(out.dtype))
+        return
     fp8_einsum(equation, (a, a_scale), (b, b_scale), out, recipe=tuple(recipe))
+
+
+def _use_torch_fp8_einsum_fallback(out: torch.Tensor) -> bool:
+    if not out.is_cuda:
+        return False
+    major, _ = torch.cuda.get_device_capability(out.device)
+    return major < 9
+
+
+def _dequant_fp8_blocks(x: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
+    if scale.dtype == torch.int32:
+        raise RuntimeError(
+            "packed INT32 UE8M0 scales are not supported on SM86 fallback"
+        )
+
+    x_f = x.float()
+    s = _scale_to_float(scale)
+
+    if s.dtype != torch.float32:
+        s = s.float()
+
+    # Activation layout: x [B, H, R], scale [B, H, R/128].
+    if s.dim() == x.dim() and s.shape[:-1] == x.shape[:-1]:
+        s_exp = s.repeat_interleave(128, dim=-1)[..., : x.shape[-1]]
+        return (x_f * s_exp).to(torch.bfloat16)
+
+    # 2D weight layout: x [H*D, R]. Scale is either raw [D/128, R/128]
+    # or DeepGEMM-transformed [R/128, padded(D/128)].
+    if x.dim() == 2 and s.dim() == 2:
+        m, k = x.shape
+        m_blocks = (m + 127) // 128
+        k_blocks = (k + 127) // 128
+        if s.shape[0] == m_blocks and s.shape[1] == k_blocks:
+            s_blocks = s
+        elif s.shape[0] == k_blocks and s.shape[1] >= m_blocks:
+            s_blocks = s[:, :m_blocks].transpose(0, 1).contiguous()
+        else:
+            s_blocks = None
+        if s_blocks is not None:
+            s_exp = s_blocks.repeat_interleave(128, dim=0)[:m]
+            s_exp = s_exp.repeat_interleave(128, dim=1)[:, :k]
+            return (x_f * s_exp).to(torch.bfloat16)
+
+    # Weight layout for wo_a: x [H, D, R], scale [(H*D)/128, R/128].
+    if x.dim() == 3 and s.dim() == 2:
+        h, d, r = x.shape
+        x_2d = x_f.reshape(h * d, r)
+        s_exp = s.repeat_interleave(128, dim=0)[: h * d]
+        s_exp = s_exp.repeat_interleave(128, dim=1)[:, :r]
+        return (x_2d * s_exp).reshape(h, d, r).to(torch.bfloat16)
+
+    # Alternative grouped weight layout: scale [H, D/128, R/128].
+    if x.dim() == 3 and s.dim() == 3 and s.shape[0] == x.shape[0]:
+        h, d, r = x.shape
+        s_exp = s.repeat_interleave(128, dim=1)[:, :d]
+        s_exp = s_exp.repeat_interleave(128, dim=2)[:, :, :r]
+        return (x_f * s_exp).to(torch.bfloat16)
+
+    raise RuntimeError(
+        f"unsupported SM86 fp8 einsum scale layout: x={tuple(x.shape)} "
+        f"scale={tuple(scale.shape)}"
+    )
+
+
+def _scale_to_float(scale: torch.Tensor) -> torch.Tensor:
+    if scale.dtype == torch.int32:
+        return scale
+    return scale.float()
 
 
 def deepseek_v4_fp8_einsum_fake(

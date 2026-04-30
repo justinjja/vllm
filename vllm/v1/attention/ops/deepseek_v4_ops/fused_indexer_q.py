@@ -8,6 +8,67 @@ from vllm.triton_utils import tl, triton
 MXFP4_BLOCK_SIZE = 32
 
 
+def _use_torch_indexer_q_fallback(index_q: torch.Tensor) -> bool:
+    if not index_q.is_cuda:
+        return False
+    major, _ = torch.cuda.get_device_capability(index_q.device)
+    return major < 9
+
+
+def _ceil_to_pow2(x: torch.Tensor) -> torch.Tensor:
+    return torch.pow(2.0, torch.ceil(torch.log2(x)))
+
+
+def _fused_indexer_q_rope_quant_torch_fallback(
+    positions: torch.Tensor,
+    index_q: torch.Tensor,
+    index_q_cos_sin_cache: torch.Tensor,
+    index_weights: torch.Tensor,
+    index_weights_softmax_scale: float,
+    index_weights_head_scale: float,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """SM86 fallback for FP8 indexer Q RoPE + scalar quantization.
+
+    The Triton FP8 path lowers to tl.float8e4nv, which Ampere rejects. Torch
+    can still materialize the float8_e4m3fn storage dtype used downstream.
+    """
+    num_tokens = positions.shape[0]
+    num_index_q_heads = index_q.shape[1]
+    index_q_head_dim = index_q.shape[2]
+    half_rot_dim = index_q_cos_sin_cache.shape[-1] // 2
+    rot_dim = half_rot_dim * 2
+    nope_dim = index_q_head_dim - rot_dim
+    assert nope_dim >= 0
+
+    x = index_q.float().clone()
+    if rot_dim:
+        rope = x[..., nope_dim:index_q_head_dim]
+        rope_pairs = rope.view(num_tokens, num_index_q_heads, half_rot_dim, 2)
+        cache = index_q_cos_sin_cache.index_select(0, positions.to(torch.long))
+        cos = cache[:, :half_rot_dim].view(num_tokens, 1, half_rot_dim)
+        sin = cache[:, half_rot_dim:].view(num_tokens, 1, half_rot_dim)
+        even = rope_pairs[..., 0]
+        odd = rope_pairs[..., 1]
+        rotated = torch.empty_like(rope_pairs)
+        rotated[..., 0] = (even * cos - odd * sin).to(torch.bfloat16).float()
+        rotated[..., 1] = (odd * cos + even * sin).to(torch.bfloat16).float()
+        x[..., nope_dim:index_q_head_dim] = rotated.view(
+            num_tokens, num_index_q_heads, rot_dim)
+
+    fp8_dtype = torch.float8_e4m3fn
+    fp8_max = torch.finfo(fp8_dtype).max
+    amax = x.abs().amax(dim=-1)
+    scale = _ceil_to_pow2(amax.clamp_min(1.0e-4) / fp8_max)
+    quant = torch.clamp(x / scale.unsqueeze(-1), -fp8_max, fp8_max)
+    index_q_fp8 = quant.to(fp8_dtype)
+
+    index_weights_out = index_weights.float()
+    index_weights_out = index_weights_out * scale
+    index_weights_out = index_weights_out * index_weights_softmax_scale
+    index_weights_out = index_weights_out * index_weights_head_scale
+    return index_q_fp8, index_weights_out
+
+
 @triton.jit
 def _get_cos_sin(
     cos_sin_cache_ptr,
@@ -375,6 +436,16 @@ def fused_indexer_q_rope_quant(
             index_q_packed,
             index_q_scale.view(torch.int32).squeeze(-1),
         ), index_weights_out
+
+    if _use_torch_indexer_q_fallback(index_q):
+        return _fused_indexer_q_rope_quant_torch_fallback(
+            positions,
+            index_q,
+            index_q_cos_sin_cache,
+            index_weights,
+            index_weights_softmax_scale,
+            index_weights_head_scale,
+        )
 
     index_q_fp8 = torch.empty_like(index_q, dtype=torch.float8_e4m3fn)
     _fused_indexer_q_rope_quant_kernel[(num_tokens, num_index_q_heads)](

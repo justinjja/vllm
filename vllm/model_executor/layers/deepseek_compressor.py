@@ -268,6 +268,161 @@ class DeepseekCompressor(nn.Module):
                 f"Unsupported head_dim for fused quant+cache: {self.head_dim}"
             )
 
+    def _use_torch_fused_fallback(self, x: torch.Tensor) -> bool:
+        if not x.is_cuda or self.use_fp4_cache:
+            return False
+        major, _ = torch.cuda.get_device_capability(x.device)
+        return major < 9
+
+    def _compress_norm_rope_insert_torch(
+        self,
+        state_cache: torch.Tensor,
+        state_width: int,
+        token_to_req_indices: torch.Tensor,
+        positions: torch.Tensor,
+        slot_mapping: torch.Tensor,
+        block_table: torch.Tensor,
+        block_size: int,
+        cos_sin_cache: torch.Tensor,
+        kv_cache: torch.Tensor,
+        kv_slot_mapping: torch.Tensor,
+    ) -> None:
+        head_dim = self.head_dim
+        rope_dim = self.rope_head_dim
+        nope_dim = head_dim - rope_dim
+        history_len = (1 + self.overlap) * self.compress_ratio
+        arange_head = torch.arange(head_dim, device=state_cache.device)
+        history_offsets = torch.arange(history_len, device=state_cache.device)
+        norm_w = self.norm.weight.float()
+        cache_bytes = torch.as_strided(
+            kv_cache,
+            (kv_cache.shape[0] * kv_cache.stride(0),),
+            (1,),
+        )
+
+        for token_idx in range(slot_mapping.shape[0]):
+            slot_id = slot_mapping[token_idx].to(torch.long)
+            position = positions[token_idx].to(torch.long)
+            kv_slot_id = kv_slot_mapping[token_idx].to(torch.long)
+            req_idx = token_to_req_indices[token_idx].to(torch.long)
+            active = (
+                (slot_id >= 0)
+                & (kv_slot_id >= 0)
+                & (req_idx >= 0)
+                & (((position + 1) % self.compress_ratio) == 0)
+            )
+
+            safe_req_idx = req_idx.clamp(0, block_table.shape[0] - 1)
+            start = position - history_len + 1
+            hist_pos = start + history_offsets
+            valid = hist_pos >= 0
+            safe_pos = torch.clamp(hist_pos, min=0)
+            block_indices = safe_pos // block_size
+            block_offsets = safe_pos % block_size
+            req_blocks = block_table.index_select(
+                0, safe_req_idx.reshape(1)).squeeze(0)
+            block_numbers = req_blocks.index_select(
+                0, block_indices.to(torch.long)).to(torch.long)
+
+            rows = state_cache[block_numbers, block_offsets.to(torch.long)]
+            head_offsets = (history_offsets >= self.compress_ratio).to(
+                torch.long) * head_dim
+            gather_idx = head_offsets.unsqueeze(1) + arange_head.unsqueeze(0)
+            kv_hist = rows.gather(1, gather_idx)
+            score_hist = rows.gather(1, state_width + gather_idx)
+            score_hist = torch.where(
+                valid.unsqueeze(1),
+                score_hist,
+                torch.full_like(score_hist, float("-inf")),
+            )
+            weights = torch.softmax(score_hist, dim=0)
+            compressed = (kv_hist * weights).sum(dim=0)
+
+            variance = compressed.pow(2).sum() / head_dim
+            normed = compressed * torch.rsqrt(variance + self.rms_norm_eps)
+            normed = normed * norm_w
+
+            rope = normed.clone()
+            if rope_dim:
+                compressed_pos = (position // self.compress_ratio
+                                  ) * self.compress_ratio
+                compressed_pos = compressed_pos.clamp(
+                    0, cos_sin_cache.shape[0] - 1)
+                cache = cos_sin_cache.index_select(
+                    0, compressed_pos.reshape(1)).squeeze(0)
+                cos = cache[:rope_dim // 2]
+                sin = cache[rope_dim // 2:]
+                pairs = rope[nope_dim:head_dim].view(rope_dim // 2, 2)
+                even = pairs[:, 0].clone()
+                odd = pairs[:, 1].clone()
+                pairs[:, 0] = even * cos - odd * sin
+                pairs[:, 1] = odd * cos + even * sin
+
+            safe_kv_slot_id = kv_slot_id.clamp(
+                0, kv_cache.shape[0] * kv_cache.shape[1] - 1)
+            kv_block_idx = safe_kv_slot_id // kv_cache.shape[1]
+            kv_pos_in_block = safe_kv_slot_id % kv_cache.shape[1]
+            block_base = kv_block_idx * kv_cache.stride(0)
+            token_base = block_base + kv_pos_in_block * self._token_stride
+            scale_base = (
+                block_base
+                + kv_cache.shape[1] * self._token_stride
+                + kv_pos_in_block * self._scale_dim
+            )
+
+            if head_dim == 512:
+                quant_input = normed.to(torch.bfloat16).float()
+                blocks = quant_input.view(-1, self._quant_block)
+                block_absmax = blocks.abs().amax(dim=1).clamp_min(1.0e-4)
+                exponents = torch.ceil(torch.log2(block_absmax / 448.0))
+                scales = torch.pow(2.0, exponents)
+                quant_nope = torch.clamp(
+                    blocks[:self._scale_dim - 1]
+                    / scales[:self._scale_dim - 1].unsqueeze(1),
+                    -448.0,
+                    448.0,
+                ).reshape(-1)
+                fp8_bytes = quant_nope.to(torch.float8_e4m3fn).view(torch.uint8)
+                nope_dst = token_base + torch.arange(
+                    nope_dim, device=state_cache.device)
+                cache_bytes[nope_dst] = torch.where(
+                    active, fp8_bytes, cache_bytes[nope_dst])
+
+                rope_bytes = rope[nope_dim:head_dim].to(
+                    torch.bfloat16).contiguous().view(torch.uint8)
+                rope_dst = token_base + nope_dim + torch.arange(
+                    rope_dim * 2, device=state_cache.device)
+                cache_bytes[rope_dst] = torch.where(
+                    active, rope_bytes, cache_bytes[rope_dst])
+
+                encoded = torch.clamp(
+                    exponents[:self._scale_dim - 1] + 127.0,
+                    0.0,
+                    255.0,
+                ).to(torch.uint8)
+                scale_dst = scale_base + torch.arange(
+                    self._scale_dim - 1, device=state_cache.device)
+                cache_bytes[scale_dst] = torch.where(
+                    active, encoded, cache_bytes[scale_dst])
+            else:
+                result_bf16 = rope.to(torch.bfloat16).float()
+                absmax = result_bf16.abs().amax().clamp_min(1.0e-4)
+                exponent = torch.ceil(torch.log2(absmax / 448.0))
+                scale = torch.pow(2.0, exponent)
+                fp8_bytes = torch.clamp(result_bf16 / scale, -448.0,
+                                        448.0).to(torch.float8_e4m3fn).view(
+                                            torch.uint8)
+                token_dst = token_base + torch.arange(
+                    head_dim, device=state_cache.device)
+                cache_bytes[token_dst] = torch.where(
+                    active, fp8_bytes, cache_bytes[token_dst])
+                scale_bytes = scale.reshape(1).to(torch.float32).view(
+                    torch.uint8)
+                scale_dst = scale_base + torch.arange(
+                    4, device=state_cache.device)
+                cache_bytes[scale_dst] = torch.where(
+                    active, scale_bytes, cache_bytes[scale_dst])
+
     def forward(
         self,
         # [num_tokens, 2 * self.coff * self.head_dim]
@@ -337,6 +492,21 @@ class DeepseekCompressor(nn.Module):
         cos_sin_cache = rotary_emb.cos_sin_cache
         k_cache_metadata = cast(Any, attn_metadata[self.k_cache_prefix])
         kv_cache = self._static_forward_context[self.k_cache_prefix].kv_cache
+
+        if self._use_torch_fused_fallback(x):
+            self._compress_norm_rope_insert_torch(
+                state_cache,
+                state_width,
+                token_to_req_indices,
+                positions,
+                slot_mapping,
+                block_table,
+                block_size,
+                cos_sin_cache,
+                kv_cache,
+                k_cache_metadata.slot_mapping,
+            )
+            return
 
         self._fused_kernel[(num_actual,)](
             # state cache
