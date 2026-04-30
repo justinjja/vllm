@@ -3,6 +3,7 @@
 # adapted from: https://github.com/deepseek-ai/FlashMLA/blob/main/flash_mla/flash_mla_interface.py
 
 from dataclasses import dataclass
+from importlib import import_module
 
 import torch
 
@@ -13,7 +14,7 @@ logger = init_logger(__name__)
 
 if current_platform.is_cuda():
     try:
-        import vllm._flashmla_C  # noqa: F401
+        import_module("vllm._flashmla_C")
 
         _flashmla_C_AVAILABLE = True
     except ImportError:
@@ -23,7 +24,7 @@ else:
 
 if current_platform.is_cuda():
     try:
-        import vllm._flashmla_extension_C  # noqa: F401
+        import_module("vllm._flashmla_extension_C")
 
         _flashmla_extension_C_AVAILABLE = True
     except ImportError:

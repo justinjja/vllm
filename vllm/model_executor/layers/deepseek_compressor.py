@@ -493,7 +493,7 @@ class DeepseekCompressor(nn.Module):
         k_cache_metadata = cast(Any, attn_metadata[self.k_cache_prefix])
         kv_cache = self._static_forward_context[self.k_cache_prefix].kv_cache
 
-        if self._use_torch_fused_fallback(x):
+        if self._use_torch_fused_fallback(kv):
             self._compress_norm_rope_insert_torch(
                 state_cache,
                 state_width,
