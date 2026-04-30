@@ -8,6 +8,8 @@ preparation.
   the paged cache.
 - dequantize_and_gather_k_cache: gather and dequantize FP8 K from the paged
   cache for sparse/SWA prefill.
+- dequantize_and_gather_topk_k_cache: gather only selected top-k compressed K
+  rows for sparse prefill.
 - compute_global_topk_indices_and_lens: map local topk indices to global KV
   cache slots and count valid entries.
 - combine_topk_swa_indices: concatenate topk compressed indices with SWA
@@ -103,6 +105,86 @@ def _dequantize_and_gather_k_cache_torch_fallback(
             offset:offset + gather_len,
             token_fp8_dim:token_fp8_dim + token_bf16_dim,
         ].copy_(bf16_vals)
+
+
+def _dequantize_and_gather_topk_k_cache_torch_fallback(
+    out: torch.Tensor,
+    k_cache: torch.Tensor,
+    topk_indices: torch.Tensor,
+    token_to_req_indices: torch.Tensor,
+    block_table: torch.Tensor,
+    block_size: int,
+) -> None:
+    token_fp8_dim = 448
+    token_bf16_dim = 64
+    token_scale_dim = 8
+    quant_block_size = 64
+    token_data_size = token_fp8_dim + token_bf16_dim * 2
+    n_quant_blocks = 7
+
+    block_stride = k_cache.stride(0)
+    cache_storage = torch.as_strided(
+        k_cache,
+        (k_cache.shape[0] * block_stride,),
+        (1,),
+    )
+    fp8_offsets = torch.arange(token_fp8_dim, device=k_cache.device)
+    bf16_byte_offsets = torch.arange(token_bf16_dim * 2, device=k_cache.device)
+    scale_offsets = torch.arange(n_quant_blocks, device=k_cache.device)
+
+    flat_out = out.view(-1, out.shape[-1])
+    flat_indices = topk_indices.reshape(-1).to(torch.long)
+    req_indices = token_to_req_indices.to(torch.long).repeat_interleave(
+        topk_indices.shape[-1]
+    )
+
+    # Keep temporary tensors bounded; a full [max_num_batched_tokens, topk]
+    # decode can otherwise allocate several hundred MiB of float32 workspace.
+    chunk_size = 8192
+    for start in range(0, flat_indices.numel(), chunk_size):
+        end = min(start + chunk_size, flat_indices.numel())
+        local_idx = flat_indices[start:end]
+        req_idx = req_indices[start:end]
+        valid = local_idx >= 0
+        safe_local_idx = local_idx.clamp_min(0)
+
+        block_in_seq = safe_local_idx // block_size
+        pos_in_block = safe_local_idx % block_size
+        physical_blocks = block_table[req_idx, block_in_seq].to(torch.long)
+        base = physical_blocks * block_stride
+        token_base = base + pos_in_block * token_data_size
+
+        fp8_bytes = cache_storage[
+            token_base.unsqueeze(1) + fp8_offsets.unsqueeze(0)
+        ].contiguous()
+        fp8_vals = fp8_bytes.view(torch.float8_e4m3fn).float()
+
+        scale_base = (
+            base
+            + block_size * token_data_size
+            + pos_in_block * token_scale_dim
+        )
+        encoded_scales = cache_storage[
+            scale_base.unsqueeze(1) + scale_offsets.unsqueeze(0)
+        ].float()
+        scales = torch.pow(2.0, encoded_scales - 127.0)
+        scales = scales.repeat_interleave(quant_block_size, dim=-1)
+
+        out_chunk = flat_out[start:end]
+        out_chunk[:, :token_fp8_dim].copy_((fp8_vals * scales).to(out.dtype))
+
+        bf16_bytes = cache_storage[
+            (token_base + token_fp8_dim).unsqueeze(1)
+            + bf16_byte_offsets.unsqueeze(0)
+        ].contiguous()
+        bf16_vals = bf16_bytes.view(torch.bfloat16)
+        out_chunk[
+            :,
+            token_fp8_dim:token_fp8_dim + token_bf16_dim,
+        ].copy_(bf16_vals)
+
+        if not bool(valid.all()):
+            out_chunk[~valid].zero_()
 
 
 @triton.jit
@@ -447,6 +529,140 @@ def dequantize_and_gather_k_cache(
     )
 
 
+def dequantize_and_gather_topk_k_cache(
+    # [num_tokens, topk, head_size]
+    out: torch.Tensor,
+    # [num_blocks, block_size, head_bytes]
+    k_cache: torch.Tensor,
+    # [num_tokens, topk], local compressed positions per request
+    topk_indices: torch.Tensor,
+    # [num_tokens], request index for each token
+    token_to_req_indices: torch.Tensor,
+    # [num_reqs, max_blocks_per_seq]
+    block_table: torch.Tensor,
+    block_size: int,
+) -> None:
+    TOKEN_FP8_DIM = 448
+    TOKEN_BF16_DIM = 64
+    TOKEN_SCALE_DIM = 8
+    QUANT_BLOCK_SIZE = 64
+    FP8_MAX = 448.0
+    TOKEN_DATA_SIZE = TOKEN_FP8_DIM + TOKEN_BF16_DIM * 2
+
+    if topk_indices.numel() == 0:
+        return
+
+    if _use_torch_cache_fallback(k_cache):
+        _dequantize_and_gather_topk_k_cache_torch_fallback(
+            out,
+            k_cache,
+            topk_indices,
+            token_to_req_indices,
+            block_table,
+            block_size,
+        )
+        return
+
+    _dequantize_and_gather_topk_k_kernel[
+        (topk_indices.shape[0], topk_indices.shape[1])
+    ](
+        out,
+        out.stride(0),
+        out.stride(1),
+        k_cache,
+        topk_indices,
+        topk_indices.stride(0),
+        token_to_req_indices,
+        block_table,
+        block_table.stride(0),
+        fp8_dim=TOKEN_FP8_DIM,
+        bf16_dim=TOKEN_BF16_DIM,
+        scale_dim=TOKEN_SCALE_DIM,
+        quant_block=QUANT_BLOCK_SIZE,
+        cache_block_size=block_size,
+        token_data_size=TOKEN_DATA_SIZE,
+        block_stride=k_cache.stride(0),
+        output_dim=512,
+        fp8_max=FP8_MAX,
+        n_quant_blocks=7,
+    )
+
+
+@triton.jit
+def _dequantize_and_gather_topk_k_kernel(
+    out_ptr,
+    out_stride0,
+    out_stride1,
+    k_cache_ptr,
+    topk_indices_ptr,
+    topk_indices_stride,
+    token_to_req_indices_ptr,
+    block_table_ptr,
+    block_table_stride,
+    fp8_dim: tl.constexpr,
+    bf16_dim: tl.constexpr,
+    scale_dim: tl.constexpr,
+    quant_block: tl.constexpr,
+    cache_block_size: tl.constexpr,
+    token_data_size: tl.constexpr,
+    block_stride: tl.constexpr,
+    output_dim: tl.constexpr,
+    fp8_max: tl.constexpr,
+    n_quant_blocks: tl.constexpr,
+):
+    token_idx = tl.program_id(0)
+    topk_idx = tl.program_id(1)
+
+    local_idx = tl.load(
+        topk_indices_ptr + token_idx * topk_indices_stride + topk_idx
+    )
+    if local_idx < 0:
+        return
+
+    req_idx = tl.load(token_to_req_indices_ptr + token_idx)
+    block_idx = local_idx // cache_block_size
+    pos_in_block = local_idx % cache_block_size
+    block_number = tl.load(block_table_ptr + req_idx * block_table_stride + block_idx)
+
+    cache_block_ptr = k_cache_ptr + block_number.to(tl.int64) * block_stride
+    token_data_ptr = cache_block_ptr + pos_in_block * token_data_size
+    token_scale_ptr = (
+        cache_block_ptr + cache_block_size * token_data_size + pos_in_block * scale_dim
+    )
+    token_fp8_ptr = token_data_ptr
+    token_bf16_ptr = token_data_ptr + fp8_dim
+
+    output_row_ptr = out_ptr + token_idx * out_stride0 + topk_idx * out_stride1
+
+    for qblock_idx in tl.static_range(n_quant_blocks):
+        qblock_start = qblock_idx * quant_block
+
+        if qblock_start < fp8_dim:
+            offsets = qblock_start + tl.arange(0, quant_block)
+            mask = offsets < fp8_dim
+
+            x_uint8 = tl.load(token_fp8_ptr + offsets, mask=mask, other=0).to(
+                tl.uint8
+            )
+            x_fp8 = x_uint8.to(tl.float8e4nv, bitcast=True)
+            x_float = x_fp8.to(tl.float32)
+
+            encoded_scale = tl.load(token_scale_ptr + qblock_idx)
+            exponent = encoded_scale.to(tl.float32) - 127.0
+            scale = tl.exp2(exponent)
+
+            x_dequant = x_float * scale
+            tl.store(output_row_ptr + offsets, x_dequant.to(tl.bfloat16), mask=mask)
+
+    bf16_output_offset = fp8_dim
+    bf16_cache_ptr = token_bf16_ptr.to(tl.pointer_type(tl.bfloat16))
+
+    for j in tl.static_range(bf16_dim // 16):
+        chunk_offsets = j * 16 + tl.arange(0, 16)
+        bf16_vals = tl.load(bf16_cache_ptr + chunk_offsets)
+        tl.store(output_row_ptr + bf16_output_offset + chunk_offsets, bf16_vals)
+
+
 def compute_global_topk_indices_and_lens(
     topk_indices: torch.Tensor,
     token_to_req_indices: torch.Tensor,
@@ -586,6 +802,114 @@ def combine_topk_swa_indices(
         PADDED_TOP_K=triton.next_power_of_2(topk_indices.shape[-1]),
     )
     return combined_indices, combined_lens
+
+
+def combine_gathered_topk_swa_indices(
+    topk_indices: torch.Tensor,
+    query_start_loc: torch.Tensor,
+    seq_lens: torch.Tensor,
+    gather_lens: torch.Tensor,
+    window_size: int,
+    compress_ratio: int,
+    topk: int,
+    swa_base: int,
+    swa_stride: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    num_tokens = topk_indices.shape[0]
+    num_reqs = seq_lens.shape[0]
+    combined_topk = (
+        (topk + window_size + _SPARSE_PREFILL_TOPK_ALIGNMENT - 1)
+        // _SPARSE_PREFILL_TOPK_ALIGNMENT
+        * _SPARSE_PREFILL_TOPK_ALIGNMENT
+    )
+    combined_indices = torch.full(
+        (num_tokens, combined_topk),
+        fill_value=-1,
+        dtype=torch.int32,
+        device=topk_indices.device,
+    )
+    combined_lens = torch.empty(
+        num_tokens, dtype=torch.int32, device=topk_indices.device
+    )
+
+    NUM_WORKERS = 128
+    _combine_gathered_topk_swa_indices_kernel[(num_reqs, NUM_WORKERS)](
+        combined_indices,
+        combined_indices.stride(0),
+        combined_lens,
+        query_start_loc,
+        seq_lens,
+        gather_lens,
+        swa_base,
+        swa_stride,
+        TOP_K=topk,
+        COMPRESS_RATIO=compress_ratio,
+        WINDOW_SIZE=window_size,
+        PADDED_TOP_K=triton.next_power_of_2(topk_indices.shape[-1]),
+    )
+    return combined_indices, combined_lens
+
+
+@triton.jit
+def _combine_gathered_topk_swa_indices_kernel(
+    combined_indices_ptr,
+    combined_indices_stride,
+    combined_lens_ptr,
+    query_start_loc_ptr,
+    seq_lens_ptr,
+    gather_lens_ptr,
+    swa_base,
+    swa_stride,
+    TOP_K: tl.constexpr,
+    COMPRESS_RATIO: tl.constexpr,
+    WINDOW_SIZE: tl.constexpr,
+    PADDED_TOP_K: tl.constexpr,
+):
+    batch_idx = tl.program_id(0)
+    worker_id = tl.program_id(1)
+    num_workers = tl.num_programs(1)
+
+    base = tl.load(query_start_loc_ptr)
+    query_start = tl.load(query_start_loc_ptr + batch_idx) - base
+    query_end = tl.load(query_start_loc_ptr + batch_idx + 1) - base
+    seq_len = tl.load(seq_lens_ptr + batch_idx)
+    gather_len = tl.load(gather_lens_ptr + batch_idx)
+    query_len = query_end - query_start
+    start_pos = seq_len - query_len
+    gather_start = seq_len - gather_len
+
+    for token_idx in range(query_start + worker_id, query_end, num_workers):
+        token_idx_in_query = token_idx - query_start
+        pos = start_pos + token_idx_in_query
+        topk_len = tl.minimum((pos + 1) // COMPRESS_RATIO, TOP_K)
+        swa_len = tl.minimum(pos + 1, WINDOW_SIZE)
+
+        offset = tl.arange(0, PADDED_TOP_K)
+        mask = offset < topk_len
+        tl.store(
+            combined_indices_ptr + token_idx * combined_indices_stride + offset,
+            token_idx * TOP_K + offset,
+            mask=mask,
+        )
+
+        offset = tl.arange(0, WINDOW_SIZE)
+        tl.store(
+            combined_indices_ptr
+            + token_idx * combined_indices_stride
+            + topk_len
+            + offset,
+            swa_base
+            + batch_idx * swa_stride
+            + offset
+            + pos
+            - swa_len
+            + 1
+            - gather_start,
+            mask=offset < swa_len,
+        )
+
+        combined_len = topk_len + swa_len
+        tl.store(combined_lens_ptr + token_idx, combined_len)
 
 
 @triton.jit

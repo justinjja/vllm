@@ -21,9 +21,11 @@ from vllm.model_executor.layers.utils import cublas_gemm_bf16_bf16_fp32
 from vllm.utils.deep_gemm import fp8_einsum
 from vllm.utils.torch_utils import direct_register_custom_op
 from vllm.v1.attention.ops.deepseek_v4_ops import (
+    combine_gathered_topk_swa_indices,
     combine_topk_swa_indices,
     compute_global_topk_indices_and_lens,
     dequantize_and_gather_k_cache,
+    dequantize_and_gather_topk_k_cache,
     fused_indexer_q_rope_quant,
     fused_inv_rope_fp8_quant,
     fused_q_kv_rmsnorm,
@@ -481,19 +483,36 @@ class DeepseekV4MultiHeadLatentAttentionWrapper(PluggableLayer):
 
         # Handle dummy run (no metadata).
         if not isinstance(attn_metadata, dict):
-            # Reserve _forward_prefill's bf16-gather workspace; the dummy
-            # run returns before mla_attn runs, so without this the shared
-            # workspace locks below the real prefill size.
+            # Reserve _forward_prefill's compact bf16-gather workspace; the
+            # dummy run returns before mla_attn runs, so without this the
+            # shared workspace locks below the real prefill size.
             sub = self.mla_attn
             swa_only = sub.compress_ratio <= 1
-            N = (
-                0
-                if swa_only
-                else (sub.max_model_len + sub.compress_ratio - 1) // sub.compress_ratio
-            )
-            M = N + sub.window_size + sub.max_num_batched_tokens
+            swa_stride = sub.window_size + sub.max_num_batched_tokens
+            if swa_only:
+                workspace_rows = PREFILL_CHUNK_SIZE * swa_stride
+            elif sub.compress_ratio == 4:
+                assert sub.topk_indices_buffer is not None
+                top_k = sub.topk_indices_buffer.shape[-1]
+                workspace_rows = (
+                    sub.max_num_batched_tokens * top_k
+                    + PREFILL_CHUNK_SIZE * swa_stride
+                )
+            else:
+                compressed_len = (
+                    sub.max_model_len + sub.compress_ratio - 1
+                ) // sub.compress_ratio
+                c128a_alignment = 128
+                compressed_len = (
+                    (compressed_len + c128a_alignment - 1)
+                    // c128a_alignment
+                    * c128a_alignment
+                )
+                workspace_rows = PREFILL_CHUNK_SIZE * (
+                    compressed_len + swa_stride
+                )
             current_workspace_manager().get_simultaneous(
-                ((PREFILL_CHUNK_SIZE, M, q.shape[-1]), torch.bfloat16),
+                ((workspace_rows, q.shape[-1]), torch.bfloat16),
             )
             out.zero_()
             return
@@ -1032,75 +1051,136 @@ class DeepseekV4MLAAttention(nn.Module, AttentionLayerBase):
                 assert attn_metadata is not None
                 topk_indices = attn_metadata.c128a_prefill_topk_indices
             top_k = topk_indices.shape[-1]
-            # Compressed region must fit the full compressed pool (seq_len //
-            # compress_ratio), not just top_k. top_k bounds how many indices
-            # the indexer selects, not the pool size it indexes into.
-            N = (self.max_model_len + self.compress_ratio - 1) // self.compress_ratio
         else:
             # NOTE(woosuk): topk_indices will not be used for SWA-only layers.
             assert self.topk_indices_buffer is not None
             topk_indices = self.topk_indices_buffer[num_decode_tokens:]
             top_k = 0
-            N = 0
 
-        M = N + self.window_size + self.max_num_batched_tokens
+        swa_stride = self.window_size + self.max_num_batched_tokens
+        use_compact_topk = (not swa_only) and self.compress_ratio == 4
+        if use_compact_topk:
+            compressed_workspace_rows = self.max_num_batched_tokens * top_k
+            swa_base = compressed_workspace_rows
+            workspace_rows = compressed_workspace_rows + PREFILL_CHUNK_SIZE * swa_stride
+        else:
+            N = 0 if swa_only else top_k
+            M = N + swa_stride
+            workspace_rows = PREFILL_CHUNK_SIZE * M
         num_chunks = (num_prefills + PREFILL_CHUNK_SIZE - 1) // PREFILL_CHUNK_SIZE
 
         workspace_manager = current_workspace_manager()
         kv = workspace_manager.get_simultaneous(
-            ((PREFILL_CHUNK_SIZE, M, q.shape[-1]), torch.bfloat16),
+            ((workspace_rows, q.shape[-1]), torch.bfloat16),
         )[0]
         for chunk_idx in range(num_chunks):
             chunk_start = chunk_idx * PREFILL_CHUNK_SIZE
             chunk_end = min(chunk_start + PREFILL_CHUNK_SIZE, num_prefills)
             chunk_size = chunk_end - chunk_start
-            if not swa_only:
-                # Gather compressed KV
+
+            query_start = int(
+                query_start_loc_cpu[num_decodes + chunk_start] - prefill_token_base
+            )
+            query_end = int(
+                query_start_loc_cpu[num_decodes + chunk_end] - prefill_token_base
+            )
+            chunk_topk_indices = topk_indices[query_start:query_end]
+            num_query_tokens = query_end - query_start
+
+            if use_compact_topk:
+                # Gather only the compressed K rows selected by the sparse
+                # indexer. This bounds prefill workspace by
+                # max_num_batched_tokens * top_k instead of max_model_len.
                 assert attn_metadata is not None
-                block_table = attn_metadata.block_table[num_decodes:]
-                dequantize_and_gather_k_cache(
-                    kv[:chunk_size],
+                assert compressed_k_cache is not None
+                topk_kv = kv[: num_query_tokens * top_k].view(
+                    num_query_tokens, top_k, q.shape[-1]
+                )
+                assert swa_metadata.token_to_req_indices is not None
+                token_to_req_indices = swa_metadata.token_to_req_indices[
+                    num_decode_tokens
+                    + query_start : num_decode_tokens
+                    + query_end
+                ]
+                dequantize_and_gather_topk_k_cache(
+                    topk_kv,
                     compressed_k_cache,
-                    seq_lens=seq_lens[chunk_start:chunk_end] // self.compress_ratio,
-                    gather_lens=None,
-                    block_table=block_table[chunk_start:chunk_end],
+                    chunk_topk_indices,
+                    token_to_req_indices,
+                    attn_metadata.block_table,
                     block_size=attn_metadata.block_size // self.compress_ratio,
+                )
+
+                # Gather SWA KV into a compact per-request window region.
+                swa_block_table = swa_metadata.block_table[num_decodes:]
+                swa_kv = kv[
+                    swa_base : swa_base + PREFILL_CHUNK_SIZE * swa_stride
+                ].view(PREFILL_CHUNK_SIZE, swa_stride, q.shape[-1])
+                dequantize_and_gather_k_cache(
+                    swa_kv[:chunk_size],
+                    swa_k_cache,
+                    seq_lens=seq_lens[chunk_start:chunk_end],
+                    gather_lens=gather_lens[chunk_start:chunk_end],
+                    block_table=swa_block_table[chunk_start:chunk_end],
+                    block_size=swa_metadata.block_size,
                     offset=0,
                 )
 
-            # Gather SWA KV
-            swa_block_table = swa_metadata.block_table[num_decodes:]
-            dequantize_and_gather_k_cache(
-                kv[:chunk_size],
-                swa_k_cache,
-                seq_lens=seq_lens[chunk_start:chunk_end],
-                gather_lens=gather_lens[chunk_start:chunk_end],
-                block_table=swa_block_table[chunk_start:chunk_end],
-                block_size=swa_metadata.block_size,
-                offset=N,
-            )
+                combined_indices, combined_lens = combine_gathered_topk_swa_indices(
+                    chunk_topk_indices,
+                    query_start_loc[
+                        num_decodes + chunk_start : num_decodes + chunk_end + 1
+                    ],
+                    seq_lens[chunk_start:chunk_end],
+                    gather_lens[chunk_start:chunk_end],
+                    self.window_size,
+                    self.compress_ratio,
+                    top_k,
+                    swa_base,
+                    swa_stride,
+                )
+            else:
+                kv_3d = kv.view(PREFILL_CHUNK_SIZE, M, q.shape[-1])
+                if not swa_only:
+                    assert attn_metadata is not None
+                    assert compressed_k_cache is not None
+                    block_table = attn_metadata.block_table[num_decodes:]
+                    dequantize_and_gather_k_cache(
+                        kv_3d[:chunk_size],
+                        compressed_k_cache,
+                        seq_lens=(
+                            seq_lens[chunk_start:chunk_end] // self.compress_ratio
+                        ),
+                        gather_lens=None,
+                        block_table=block_table[chunk_start:chunk_end],
+                        block_size=attn_metadata.block_size // self.compress_ratio,
+                        offset=0,
+                    )
 
-            # Combine the topk indices and SWA indices for gathered KV cache
-            query_start = (
-                query_start_loc_cpu[num_decodes + chunk_start] - prefill_token_base
-            )
-            query_end = (
-                query_start_loc_cpu[num_decodes + chunk_end] - prefill_token_base
-            )
+                swa_block_table = swa_metadata.block_table[num_decodes:]
+                dequantize_and_gather_k_cache(
+                    kv_3d[:chunk_size],
+                    swa_k_cache,
+                    seq_lens=seq_lens[chunk_start:chunk_end],
+                    gather_lens=gather_lens[chunk_start:chunk_end],
+                    block_table=swa_block_table[chunk_start:chunk_end],
+                    block_size=swa_metadata.block_size,
+                    offset=N,
+                )
 
-            combined_indices, combined_lens = combine_topk_swa_indices(
-                topk_indices[query_start:query_end],
-                query_start_loc[
-                    num_decodes + chunk_start : num_decodes + chunk_end + 1
-                ],
-                seq_lens[chunk_start:chunk_end],
-                gather_lens[chunk_start:chunk_end],
-                self.window_size,
-                self.compress_ratio,
-                top_k,
-                M,
-                N,
-            )
+                combined_indices, combined_lens = combine_topk_swa_indices(
+                    chunk_topk_indices,
+                    query_start_loc[
+                        num_decodes + chunk_start : num_decodes + chunk_end + 1
+                    ],
+                    seq_lens[chunk_start:chunk_end],
+                    gather_lens[chunk_start:chunk_end],
+                    self.window_size,
+                    self.compress_ratio,
+                    top_k,
+                    M,
+                    N,
+                )
 
             output_chunk, _, _ = flash_mla_sparse_fwd(
                 q=q[query_start:query_end],
@@ -1211,9 +1291,12 @@ class DeepseekV4Indexer(nn.Module):
         )
         self.prefix = prefix
 
-        self.max_total_seq_len = (
-            get_max_prefill_buffer_size(vllm_config) // self.compress_ratio
-        )
+        if self.compress_ratio > 1:
+            self.max_total_seq_len = (
+                vllm_config.model_config.max_model_len + self.compress_ratio - 1
+            ) // self.compress_ratio
+        else:
+            self.max_total_seq_len = get_max_prefill_buffer_size(vllm_config)
 
         assert cache_config is not None, "Deepseek V4 indexer requires cache_config"
         # NOTE(yifan): FP8 indxer cache use the same layout as V3.2:
