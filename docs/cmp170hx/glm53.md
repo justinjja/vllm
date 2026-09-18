@@ -552,6 +552,40 @@ This control did not reproduce the failure; it does not establish its cause.
 matched timings, prompt hashes, acceptance snapshots, quality answers,
 failure details, and recovery checks.
 
+### One-draft schedule comparison
+
+A matched TP2/PP4 trial reduced the BF16 MTP draft count from two to one,
+with corresponding decode graph sizes. Target weights, kernels, BF16 KV,
+pipeline partition, memory utilization, and context limit were unchanged.
+Both columns use two samples with identical prompt hashes and token budgets.
+
+| Measurement | Two drafts, reference | One draft |
+| --- | ---: | ---: |
+| Single steady generation, tokens/s | 49.31 / 52.65 | 50.18 / 45.68 |
+| Concurrency 8, steady aggregate tokens/s | 261.46 / 262.16 | 252.97 / 249.31 |
+| Concurrency 16, steady aggregate tokens/s | 348.14 / 320.49 | 323.70 / 321.52 |
+| 8K prefill, seconds to first token | 5.51 / 5.31 | 5.59 / 5.37 |
+
+The one-draft trial passed 20/20 concurrent and 20/20 sequential objective
+answers, reasoning/tools, and eight concurrent retrieval checks. Fresh
+retrieval from 260,224 input tokens returned all three records correctly,
+with 150.67 s to first token. The cached request ended with empty final
+content: its correct JSON appeared only in the reasoning field. This fails
+the final-answer retrieval check. No driver fault occurred during the trial.
+
+**One draft is not qualified as a replacement.** It did not establish a
+consistent speed gain and failed cached-context output validation. The
+two-draft reference's earlier intermittent lowercase-answer failure remains
+documented. See the [measurement record](glm53-draft-schedule-20260918.json).
+
+An independent CUDA-core expert-projection prototype was also evaluated in
+isolation, using raw row-major NVFP4 weights and BF16 activations. Across
+eight synthetic projection cases and two block sizes it was 2.32–8.46× slower
+than production Marlin. Numerical checks against FP32 matrix multiplication
+and graph/eager agreement passed, but no model integration was attempted.
+These results reject this prototype as a speed improvement; they do not
+establish a limit for other kernel designs.
+
 ### Serving configuration
 
 Preserve the checkpoint's complete quantization configuration when excluding
