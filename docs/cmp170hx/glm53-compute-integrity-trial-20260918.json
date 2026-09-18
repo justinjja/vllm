@@ -1,0 +1,3929 @@
+{
+  "recorded_at_utc": "2026-09-18T17:32:15.557555+00:00",
+  "runtime_source_commit": "d2873235f805ffc1c853a38250f809142f5219df",
+  "configuration": {
+    "hardware": "Eight CMP 170HX GPUs; four symmetric PIX pairs, four GPUs per CPU",
+    "driver": "Original installed custom NVIDIA 610.43.02",
+    "nccl": "2.29.7",
+    "tp": 2,
+    "pp": 4,
+    "partition": [
+      22,
+      20,
+      20,
+      16
+    ],
+    "kv_dtype": "bfloat16",
+    "draft_dtype": "bfloat16",
+    "draft_tokens": 2,
+    "max_model_len": 262144,
+    "batch_tokens": 2048,
+    "max_sequences": 16,
+    "memory_utilization": 0.978,
+    "pipeline_policy": "adaptive",
+    "pipeline_min_batch_requests": 1,
+    "pipeline_max_batch_requests": 8
+  },
+  "diagnostic_settings": {
+    "CUDA_LAUNCH_BLOCKING": "1",
+    "NCCL_P2P_DISABLE": "1",
+    "custom_all_reduce": false,
+    "enforce_eager": true,
+    "cache_tokens": 268608,
+    "physical_order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "clocks": "Default"
+  },
+  "check_exit_codes": {
+    "objectives": 0,
+    "qualification": 0,
+    "concurrent-check": 0,
+    "long-fresh": 0,
+    "long-cached": 0
+  },
+  "objectives": [
+    {
+      "question": "What is 127 + 386?",
+      "expected": 513,
+      "answer": 513,
+      "passed": true,
+      "elapsed_s": 73.71408592999796,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750038,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 513}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to compute 127 + 386 and return only a JSON object with the key \"answer\".\n\n127 + 386:\n- 7 + 6 = 13, write 3, carry 1\n- 2 + 8 = 10, plus 1 = 11, write 1, carry 1\n- 1 + 3 = 4, plus 1 = 5\n\nSo 127 + 386 = 513.\n\nThe user asked to return only a JSON object with the key \"answer\". So I should output just:\n\n{\"answer\": 513}\n\nShould the answer be a number or string? The key \"answer\" \u2014 a number seems most natural. I'll return it as a number."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 32,
+          "total_tokens": 200,
+          "completion_tokens": 168,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 159
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is 94 - 157?",
+      "expected": -63,
+      "answer": -63,
+      "passed": true,
+      "elapsed_s": 27.430738093011314,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750038,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": -63}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to compute 94 - 157.\n\n94 - 157 = -63\n\nLet me verify: 157 - 94 = 63, so 94 - 157 = -63.\n\nThey want only a JSON object with the key \"answer\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 31,
+          "total_tokens": 94,
+          "completion_tokens": 63,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 55
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is 17 multiplied by 23?",
+      "expected": 391,
+      "answer": 391,
+      "passed": true,
+      "elapsed_s": 23.684404814004665,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750038,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 391}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "17 \u00d7 23 = ?\n\n17 \u00d7 23 = 17 \u00d7 20 + 17 \u00d7 3 = 340 + 51 = 391\n\nThe user wants only a JSON object with the key \"answer\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 32,
+          "total_tokens": 87,
+          "completion_tokens": 55,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 46
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is 144 divided by 12?",
+      "expected": 12,
+      "answer": 12,
+      "passed": true,
+      "elapsed_s": 16.677547490980942,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750038,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 12}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user is asking for 144 divided by 12, which is 12. They want only a JSON object with the key \"answer\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 32,
+          "total_tokens": 69,
+          "completion_tokens": 37,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 29
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is the remainder when 83 is divided by 7?",
+      "expected": 6,
+      "answer": 6,
+      "passed": true,
+      "elapsed_s": 16.968237730994588,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750055,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 6}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "83 divided by 7: 7 \u00d7 11 = 77, 83 - 77 = 6. So the remainder is 6."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 36,
+          "total_tokens": 75,
+          "completion_tokens": 39,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 31
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is 15 percent of 240?",
+      "expected": 36,
+      "answer": 36,
+      "passed": true,
+      "elapsed_s": 20.311258353001904,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750062,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 36}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants 15 percent of 240.\n\n15% of 240 = 0.15 \u00d7 240 = 36\n\nThey want only a JSON object with the key \"answer\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 32,
+          "total_tokens": 79,
+          "completion_tokens": 47,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 39
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is 2 raised to the power 10?",
+      "expected": 1024,
+      "answer": 1024,
+      "passed": true,
+      "elapsed_s": 70.6413188779843,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750066,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 1024}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants to know 2^10 and wants only a JSON object with the key \"answer\".\n\n2^10 = 1024\n\nLet me verify: 2^1=2, 2^2=4, 2^3=8, 2^4=16, 2^5=32, 2^6=64, 2^7=128, 2^8=256, 2^9=512, 2^10=1024. Yes, 1024.\n\nThe user asked to return only a JSON object with the key \"answer\". So I should output just the JSON. Should the value be a number or string? A number seems most natural: {\"answer\": 1024}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 34,
+          "total_tokens": 198,
+          "completion_tokens": 164,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 155
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is the sum of all integers from 1 through 20?",
+      "expected": 210,
+      "answer": 210,
+      "passed": true,
+      "elapsed_s": 21.290999842982274,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750072,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 210}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The sum of integers from 1 to 20 is n(n+1)/2 = 20(21)/2 = 210.\n\nThe user wants only a JSON object with the key \"answer\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 37,
+          "total_tokens": 86,
+          "completion_tokens": 49,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 41
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Sort [8, -3, 5, 0, 8] in ascending order.",
+      "expected": [
+        -3,
+        0,
+        5,
+        8,
+        8
+      ],
+      "answer": [
+        -3,
+        0,
+        5,
+        8,
+        8
+      ],
+      "passed": true,
+      "elapsed_s": 48.14515554800164,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750082,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": [-3, 0, 5, 8, 8]}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to sort [8, -3, 5, 0, 8] in ascending order.\n\nSorted ascending: -3, 0, 5, 8, 8\n\nSo the answer is [-3, 0, 5, 8, 8].\n\nThey want only a JSON object with the key \"answer\". So I should return:\n{\"answer\": [-3, 0, 5, 8, 8]}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 43,
+          "total_tokens": 160,
+          "completion_tokens": 117,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 97
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Reverse the string abcDEF exactly, retaining case.",
+      "expected": "FEDcba",
+      "answer": "FEDcba",
+      "passed": true,
+      "elapsed_s": 85.13013566701557,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750093,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": \"FEDcba\"}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to reverse the string \"abcDEF\" exactly, retaining case.\n\nThe string is: a-b-c-D-E-F\n\nReversed: F-E-D-c-b-a\n\nSo the answer is \"FEDcba\".\n\nLet me verify:\n- Original: abcDEF\n- Position 1: a\n- Position 2: b\n- Position 3: c\n- Position 4: D\n- Position 5: E\n- Position 6: F\n\nReversed (reading from position 6 to 1):\n- F\n- E\n- D\n- c\n- b\n- a\n\nResult: FEDcba\n\nThe case is retained: F, E, D are uppercase (they were uppercase in the original), and c, b, a are lowercase (they were lowercase in the original).\n\nThe user wants only a JSON object with the key \"answer\". So I should return:\n{\"answer\": \"FEDcba\"}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 33,
+          "total_tokens": 240,
+          "completion_tokens": 207,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 197
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Convert the hexadecimal number 2A to a decimal integer.",
+      "expected": 42,
+      "answer": 42,
+      "passed": true,
+      "elapsed_s": 43.67423857800895,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750112,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 42}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to convert hexadecimal 2A to decimal.\n\nHexadecimal 2A:\n- 2 in the 16s place: 2 \u00d7 16 = 32\n- A (which is 10) in the 1s place: 10 \u00d7 1 = 10\n- Total: 32 + 10 = 42\n\nThe user wants only a JSON object with the key \"answer\". So I should return:\n{\"answer\": 42}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 35,
+          "total_tokens": 141,
+          "completion_tokens": 106,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 98
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Convert the decimal integer 13 to binary digits as a string.",
+      "expected": "1101",
+      "answer": "1101",
+      "passed": true,
+      "elapsed_s": 58.312107865000144,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750130,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": \"1101\"}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to convert decimal 13 to binary.\n\n13 in binary:\n13 \u00f7 2 = 6 remainder 1\n6 \u00f7 2 = 3 remainder 0\n3 \u00f7 2 = 1 remainder 1\n1 \u00f7 2 = 0 remainder 1\n\nReading remainders from bottom to top: 1101\n\nSo 13 in binary is 1101.\n\nLet me verify: 8 + 4 + 0 + 1 = 13. Yes, correct.\n\nThe user wants only a JSON object with the key \"answer\". So I should return:\n{\"answer\": \"1101\"}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 36,
+          "total_tokens": 179,
+          "completion_tokens": 143,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 134
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "How many elements are in [red, blue, red, green, blue]?",
+      "expected": 5,
+      "answer": 5,
+      "passed": true,
+      "elapsed_s": 65.08134778100066,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750136,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 5}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user is asking how many elements are in the list [red, blue, red, green, blue].\n\nLet me count: red, blue, red, green, blue \u2014 that's 5 elements.\n\nNote that the question asks about \"elements\" not \"unique elements\" or \"distinct elements\". So the answer is 5 (counting duplicates). If they wanted unique elements, it would be 3 (red, blue, green).\n\nThe standard interpretation of \"how many elements are in a list\" is the total count, which is 5.\n\nThey want only a JSON object with the key \"answer\". So I should return:\n{\"answer\": 5}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 40,
+          "total_tokens": 184,
+          "completion_tokens": 144,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 136
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "How many distinct values are in [red, blue, red, green, blue]?",
+      "expected": 3,
+      "answer": 3,
+      "passed": true,
+      "elapsed_s": 34.73188875699998,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750156,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 3}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user is asking how many distinct values are in the list [red, blue, red, green, blue].\n\nLet me count the distinct values:\n- red\n- blue\n- green\n\nThat's 3 distinct values.\n\nThe user wants only a JSON object with the key \"answer\". So I should return:\n{\"answer\": 3}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 41,
+          "total_tokens": 119,
+          "completion_tokens": 78,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 70
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Return the lowercase version of the string CoMPuTe.",
+      "expected": "compute",
+      "answer": "compute",
+      "passed": true,
+      "elapsed_s": 43.911215403990354,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750178,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": \"compute\"}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to return the lowercase version of \"CoMPuTe\" as a JSON object with the key \"answer\".\n\n\"CoMPuTe\" in lowercase is \"compute\".\n\nLet me verify: C\u2192c, o\u2192o, M\u2192m, P\u2192p, u\u2192u, T\u2192t, e\u2192e = \"compute\"\n\nThe output should be a JSON object with the key \"answer\" and the value \"compute\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 35,
+          "total_tokens": 135,
+          "completion_tokens": 100,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 92
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "In a standard week, what day comes immediately after Thursday?",
+      "expected": "Friday",
+      "answer": "Friday",
+      "passed": true,
+      "elapsed_s": 38.347149748995434,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750189,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": \"Friday\"}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user is asking a simple question: what day comes immediately after Thursday in a standard week?\n\nThe days of the week in order are: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday.\n\nThe day immediately after Thursday is Friday.\n\nThe user wants me to return only a JSON object with the key \"answer\". So I should format my response as:\n\n{\"answer\": \"Friday\"}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 35,
+          "total_tokens": 123,
+          "completion_tokens": 88,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 80
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Extract the integer count from {\"item\":\"bolts\",\"count\":37}.",
+      "expected": 37,
+      "answer": 37,
+      "passed": true,
+      "elapsed_s": 27.026053540001158,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750190,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 37}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to extract the integer count from the JSON object {\"item\":\"bolts\",\"count\":37}. The count is 37.\n\nThey want me to return only a JSON object with the key \"answer\". So the output should be:\n\n{\"answer\": 37}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 38,
+          "total_tokens": 102,
+          "completion_tokens": 64,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 56
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "For rows [{\"name\":\"oak\",\"n\":4},{\"name\":\"elm\",\"n\":9}], return the name whose n is largest.",
+      "expected": "elm",
+      "answer": "elm",
+      "passed": true,
+      "elapsed_s": 31.22783695999533,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750201,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": \"elm\"}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to find the name with the largest n value from the rows [{\"name\":\"oak\",\"n\":4},{\"name\":\"elm\",\"n\":9}].\n\nComparing: oak has n=4, elm has n=9. So elm has the largest n.\n\nThey want only a JSON object with the key \"answer\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 51,
+          "total_tokens": 128,
+          "completion_tokens": 77,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 69
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "All mips are lops. All lops are tars. Must every mip be a tar? Return a JSON boolean.",
+      "expected": true,
+      "answer": true,
+      "passed": true,
+      "elapsed_s": 28.00724963398534,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750217,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": true}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user is asking a classic syllogism question: All mips are lops. All lops are tars. Must every mip be a tar?\n\nThis is a valid syllogism (Barbara form): All A are B, All B are C, therefore All A are C.\n\nSo yes, every mip must be a tar. The answer is true.\n\nThe user wants only a JSON object with the key \"answer\" and a boolean value."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 49,
+          "total_tokens": 151,
+          "completion_tokens": 102,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 95
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Some lops are mips. Does that imply all lops are mips? Return a JSON boolean.",
+      "expected": false,
+      "answer": false,
+      "passed": true,
+      "elapsed_s": 30.71774971697596,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750222,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": false}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The question is about logical reasoning: \"Some lops are mips. Does that imply all lops are mips?\"\n\nThis is a classic syllogistic logic question. \"Some lops are mips\" is an existential/particular statement. It does NOT imply the universal statement \"all lops are mips.\"\n\nFor example, if there are 3 lops and only 1 of them is a mip, then \"some lops are mips\" is true, but \"all lops are mips\" is false.\n\nSo the answer is false (no, it does not imply).\n\nThe user wants a JSON object with the key \"answer\" and a boolean value.\n\n{\"answer\": false}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 45,
+          "total_tokens": 197,
+          "completion_tokens": 152,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 145
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    }
+  ],
+  "reasoning_and_tools": {
+    "reasoning": {
+      "object": "chat.completion",
+      "created": 1789750253,
+      "model": "glm-5.3-nvfp4",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "391",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": "17 \u00d7 23 = 391"
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": 154827,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+      "usage": {
+        "prompt_tokens": 30,
+        "total_tokens": 42,
+        "completion_tokens": 12,
+        "prompt_tokens_details": null,
+        "completion_tokens_details": {
+          "reasoning_tokens": 8
+        }
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "ec_transfer_params": null,
+      "metrics": null
+    },
+    "streamed_tool_calls": {
+      "0": {
+        "type": "function",
+        "function": {
+          "name": "lookup_inventory",
+          "arguments": "{\"item\": \"purple widgets\"}"
+        }
+      }
+    },
+    "tool_finish_reason": "tool_calls",
+    "tool_result_response": {
+      "object": "chat.completion",
+      "created": 1789750257,
+      "model": "glm-5.3-nvfp4",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "There are **37 purple widgets** in inventory.",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": 154827,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+      "usage": {
+        "prompt_tokens": 213,
+        "total_tokens": 225,
+        "completion_tokens": 12,
+        "prompt_tokens_details": null,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "ec_transfer_params": null,
+      "metrics": null
+    }
+  },
+  "concurrent_retrieval": [
+    {
+      "case": 0,
+      "expected": "71340621",
+      "passed": true,
+      "elapsed_s": 24.848536522011273,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750265,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71340621",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 110,
+          "total_tokens": 117,
+          "completion_tokens": 7,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 1,
+      "expected": "71352740",
+      "passed": true,
+      "elapsed_s": 6.859730078984285,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750265,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71352740",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 302,
+          "total_tokens": 309,
+          "completion_tokens": 7,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 2,
+      "expected": "71364859",
+      "passed": true,
+      "elapsed_s": 21.650974714983022,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750265,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71364859",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 1070,
+          "total_tokens": 1077,
+          "completion_tokens": 7,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 3,
+      "expected": "71376978",
+      "passed": true,
+      "elapsed_s": 28.284325376007473,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750265,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71376978",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 4143,
+          "total_tokens": 4150,
+          "completion_tokens": 7,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 4,
+      "expected": "71389097",
+      "passed": true,
+      "elapsed_s": 21.625204776995815,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750265,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71389097",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 8239,
+          "total_tokens": 8246,
+          "completion_tokens": 7,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 5,
+      "expected": "71401216",
+      "passed": true,
+      "elapsed_s": 29.634079067996936,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750265,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71401216",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 174,
+          "total_tokens": 181,
+          "completion_tokens": 7,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 6,
+      "expected": "71413335",
+      "passed": true,
+      "elapsed_s": 29.08475402201293,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750265,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71413335",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 2094,
+          "total_tokens": 2100,
+          "completion_tokens": 6,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 7,
+      "expected": "71425454",
+      "passed": true,
+      "elapsed_s": 35.80896765799844,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789750265,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71425454",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user provided a text (from War and Peace) with an embedded instruction: \"The fictional catalog number for item ORCHID-7 is 71425454.\" Then asks to return only the catalog number."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-9ac5aa15",
+        "usage": {
+          "prompt_tokens": 6047,
+          "total_tokens": 6099,
+          "completion_tokens": 52,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 45
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    }
+  ],
+  "fresh_context": {
+    "target_tokens": 262144,
+    "elapsed_s": 181.13094437599648,
+    "positions": [
+      {
+        "project": "LARCH",
+        "approx_token_position": 26009
+      },
+      {
+        "project": "CYPRESS",
+        "approx_token_position": 130048
+      },
+      {
+        "project": "JUNIPER",
+        "approx_token_position": 234086
+      }
+    ],
+    "expected": {
+      "LARCH": "78139462",
+      "CYPRESS": "24681973",
+      "JUNIPER": "93527184"
+    },
+    "answer": {
+      "LARCH": "78139462",
+      "CYPRESS": "24681973",
+      "JUNIPER": "93527184"
+    },
+    "passed": true,
+    "response": {
+      "choices": [
+        {
+          "message": {
+            "role": "assistant",
+            "content": "```json\n{\n  \"LARCH\": \"78139462\",\n  \"CYPRESS\": \"24681973\",\n  \"JUNIPER\": \"93527184\"\n}\n```",
+            "reasoning": "We can answer this directly from the document. The verified registry entries are:\n\n- project LARCH has access code 78139462\n- project CYPRESS has access code 24681973\n- project JUNIPER has access code 93527184\n\nReturn as JSON mapping each uppercase project name to its exact eight-digit access code as a string."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 260224,
+        "total_tokens": 260350,
+        "completion_tokens": 126,
+        "completion_tokens_details": {
+          "reasoning_tokens": 79
+        }
+      }
+    },
+    "document_sha256": "ba322527959095534413ef1aa4e7bc199290e0efc3c329d58b327c645703e7fb",
+    "prefix_tag": "driver-recovery-20260918",
+    "reasoning_effort": "low",
+    "ttft_s": 168.55795634898823,
+    "decode_tokens_s": 9.942496029552768
+  },
+  "cached_context": {
+    "target_tokens": 262144,
+    "elapsed_s": 11.63189384501311,
+    "positions": [
+      {
+        "project": "LARCH",
+        "approx_token_position": 26009
+      },
+      {
+        "project": "CYPRESS",
+        "approx_token_position": 130048
+      },
+      {
+        "project": "JUNIPER",
+        "approx_token_position": 234086
+      }
+    ],
+    "expected": {
+      "LARCH": "78139462",
+      "CYPRESS": "24681973",
+      "JUNIPER": "93527184"
+    },
+    "answer": {
+      "LARCH": "78139462",
+      "CYPRESS": "24681973",
+      "JUNIPER": "93527184"
+    },
+    "passed": true,
+    "response": {
+      "choices": [
+        {
+          "message": {
+            "role": "assistant",
+            "content": "```json\n{\n  \"LARCH\": \"78139462\",\n  \"CYPRESS\": \"24681973\",\n  \"JUNIPER\": \"93527184\"\n}\n```",
+            "reasoning": "We found the entries in the document:\n- LARCH: 78139462\n- CYPRESS: 24681973\n- JUNIPER: 93527184\n\nReturn as JSON."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 260224,
+        "total_tokens": 260319,
+        "completion_tokens": 95,
+        "completion_tokens_details": {
+          "reasoning_tokens": 48
+        }
+      }
+    },
+    "document_sha256": "ba322527959095534413ef1aa4e7bc199290e0efc3c329d58b327c645703e7fb",
+    "prefix_tag": "driver-recovery-20260918",
+    "reasoning_effort": "low",
+    "ttft_s": 1.8486260939971544,
+    "decode_tokens_s": 9.90581352276489
+  },
+  "additional_cached_context": [
+    {
+      "target_tokens": 262144,
+      "elapsed_s": 23.706058783980552,
+      "positions": [
+        {
+          "project": "LARCH",
+          "approx_token_position": 26009
+        },
+        {
+          "project": "CYPRESS",
+          "approx_token_position": 130048
+        },
+        {
+          "project": "JUNIPER",
+          "approx_token_position": 234086
+        }
+      ],
+      "expected": {
+        "LARCH": "78139462",
+        "CYPRESS": "24681973",
+        "JUNIPER": "93527184"
+      },
+      "answer": {
+        "LARCH": "78139462",
+        "CYPRESS": "24681973",
+        "JUNIPER": "93527184"
+      },
+      "passed": true,
+      "response": {
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "{\"LARCH\": \"78139462\", \"CYPRESS\": \"24681973\", \"JUNIPER\": \"93527184\"}",
+              "reasoning": "We're asked to find the verified registry entries for projects LARCH, CYPRESS, and JUNIPER in the document. The document contains embedded lines:\n\n- \"Verified registry entry: project LARCH has access code 78139462.\"\n- \"Verified registry entry: project CYPRESS has access code 24681973.\"\n- \"Verified registry entry: project JUNIPER has access code 93527184.\"\n\nWe need to return only a JSON object mapping each uppercase project name to its exact eight-digit access code as a string.\n\nSo the answer should be:\n\n{\"LARCH\": \"78139462\", \"CYPRESS\": \"24681973\", \"JUNIPER\": \"93527184\"}\n\nWe should return only the JSON object, no extra text."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 260224,
+          "total_tokens": 260433,
+          "completion_tokens": 209,
+          "completion_tokens_details": {
+            "reasoning_tokens": 171
+          }
+        }
+      },
+      "document_sha256": "ba322527959095534413ef1aa4e7bc199290e0efc3c329d58b327c645703e7fb",
+      "prefix_tag": "driver-recovery-20260918",
+      "reasoning_effort": "low",
+      "ttft_s": 1.7863248159992509,
+      "decode_tokens_s": 9.489449334874884
+    },
+    {
+      "target_tokens": 262144,
+      "elapsed_s": 7.476050791010493,
+      "positions": [
+        {
+          "project": "LARCH",
+          "approx_token_position": 26009
+        },
+        {
+          "project": "CYPRESS",
+          "approx_token_position": 130048
+        },
+        {
+          "project": "JUNIPER",
+          "approx_token_position": 234086
+        }
+      ],
+      "expected": {
+        "LARCH": "78139462",
+        "CYPRESS": "24681973",
+        "JUNIPER": "93527184"
+      },
+      "answer": {
+        "LARCH": "78139462",
+        "CYPRESS": "24681973",
+        "JUNIPER": "93527184"
+      },
+      "passed": true,
+      "response": {
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "```json\n{\n  \"LARCH\": \"78139462\",\n  \"CYPRESS\": \"24681973\",\n  \"JUNIPER\": \"93527184\"\n}\n```",
+              "reasoning": "We can answer this directly from the document."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 260224,
+          "total_tokens": 260280,
+          "completion_tokens": 56,
+          "completion_tokens_details": {
+            "reasoning_tokens": 9
+          }
+        }
+      },
+      "document_sha256": "ba322527959095534413ef1aa4e7bc199290e0efc3c329d58b327c645703e7fb",
+      "prefix_tag": "driver-recovery-20260918",
+      "reasoning_effort": "low",
+      "ttft_s": 1.7903363410150632,
+      "decode_tokens_s": 10.199833961963213
+    },
+    {
+      "target_tokens": 262144,
+      "elapsed_s": 9.321600162016694,
+      "positions": [
+        {
+          "project": "LARCH",
+          "approx_token_position": 26009
+        },
+        {
+          "project": "CYPRESS",
+          "approx_token_position": 130048
+        },
+        {
+          "project": "JUNIPER",
+          "approx_token_position": 234086
+        }
+      ],
+      "expected": {
+        "LARCH": "78139462",
+        "CYPRESS": "24681973",
+        "JUNIPER": "93527184"
+      },
+      "answer": {
+        "LARCH": "78139462",
+        "CYPRESS": "24681973",
+        "JUNIPER": "93527184"
+      },
+      "passed": true,
+      "response": {
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "```json\n{\n  \"LARCH\": \"78139462\",\n  \"CYPRESS\": \"24681973\",\n  \"JUNIPER\": \"93527184\"\n}\n```",
+              "reasoning": "Registry entries: LARCH 78139462, CYPRESS 24681973, JUNIPER 93527184."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 260224,
+          "total_tokens": 260304,
+          "completion_tokens": 80,
+          "completion_tokens_details": {
+            "reasoning_tokens": 33
+          }
+        }
+      },
+      "document_sha256": "ba322527959095534413ef1aa4e7bc199290e0efc3c329d58b327c645703e7fb",
+      "prefix_tag": "driver-recovery-20260918",
+      "reasoning_effort": "low",
+      "ttft_s": 1.8332408490241505,
+      "decode_tokens_s": 10.550698714289746
+    }
+  ],
+  "partial_benchmark": {
+    "label": "tp2pp4-mtp2-attention-v4",
+    "started_at": 1789750597.9651322,
+    "args": {
+      "label": "tp2pp4-mtp2-attention-v4",
+      "model": "glm-5.3-nvfp4",
+      "tokenizer": "local-inference-lab/GLM-5.3-NVFP4",
+      "tokenizer_revision": "b472e4ee53f6a9862da5486c56c6ca21be3dab70",
+      "repeats": 2,
+      "concurrency": [
+        8,
+        16
+      ],
+      "contexts": [
+        8192
+      ],
+      "output_tokens": 512,
+      "steady_trim_tokens": 32
+    },
+    "corpus_sha256": "abe2e870ff9dfe5ab177500092ffe113a4011aa22c72c7be14fc3bc64b715eb1",
+    "method": "Unique-prefix corpus; fixed output length with ignore_eos; streaming first/last text timestamps; includes reasoning tokens. Steady decode counts returned accepted token IDs in the shared decoding interval after trimming each request's beginning and end. Performance measurement only; output quality is checked separately.",
+    "script_sha256": "24b3754b5513683dde828f21e33c1168e2a1fa561d65ae191e789825ba8a01dc",
+    "cases": [
+      {
+        "mode": "single",
+        "input_tokens": 512,
+        "concurrency": 1,
+        "repeat": 0,
+        "elapsed_s": 69.86593306998839,
+        "aggregate_tokens_s": 7.328321221833574,
+        "median_ttft_s": 0.9752686100255232,
+        "requests": [
+          {
+            "input_tokens": 512,
+            "output_tokens": 512,
+            "ttft_s": 0.9752686100255232,
+            "elapsed_s": 69.86500669000088,
+            "request_tokens_s": 7.328418392226071,
+            "decode_tokens_s": 7.417706124678087,
+            "prefill_tokens_s": 524.9835734860786,
+            "prompt_sha256": "8715e70315ff67cf63c78ac2d9532a4aa02a9df690e88ebad5dff1af025ceec7",
+            "usage": {
+              "prompt_tokens": 512,
+              "total_tokens": 1024,
+              "completion_tokens": 512
+            },
+            "finish_reason": "length",
+            "output_text_sha256": "dfe28301f65d6d7cb09a0d50f6fb007578babad98c1e5f607d2ae008ed7b43ce"
+          }
+        ],
+        "steady_decode": {
+          "start_s": 5.004578330001095,
+          "end_s": 66.32511884899577,
+          "accepted_tokens": 447,
+          "aggregate_tokens_s": 7.289563924530918
+        }
+      },
+      {
+        "mode": "single",
+        "input_tokens": 512,
+        "concurrency": 1,
+        "repeat": 1,
+        "elapsed_s": 66.23895782898762,
+        "aggregate_tokens_s": 7.729590210671122,
+        "median_ttft_s": 0.994567546993494,
+        "requests": [
+          {
+            "input_tokens": 512,
+            "output_tokens": 512,
+            "ttft_s": 0.994567546993494,
+            "elapsed_s": 66.23829630197724,
+            "request_tokens_s": 7.72966740668897,
+            "decode_tokens_s": 7.832226046248376,
+            "prefill_tokens_s": 514.796608382949,
+            "prompt_sha256": "a07bbaf75f0a303b759f9cc6a586ec138eb6f09a73ae3b91c903f2b195c3b489",
+            "usage": {
+              "prompt_tokens": 512,
+              "total_tokens": 1024,
+              "completion_tokens": 512
+            },
+            "finish_reason": "length",
+            "output_text_sha256": "a58197de2327c29c7e306f364e38c5837198e31ce5e264a06e133e84db336fa8"
+          }
+        ],
+        "steady_decode": {
+          "start_s": 4.762589610007126,
+          "end_s": 63.25367591500981,
+          "accepted_tokens": 448,
+          "aggregate_tokens_s": 7.659286710181736
+        }
+      }
+    ],
+    "raw_sha256": "5f6c5cf40fbf052f9ea9cde9e78d71b89eaf8fa4f8dfa75d3b9d43a9b7a88be6",
+    "interruption": "Stopped intentionally during first C8 to target C16 directly; not a GPU fault"
+  },
+  "focused_c16": {
+    "started_at": 1789750873.6454031,
+    "passed": true,
+    "concurrency": 16,
+    "input_tokens_per_request": 512,
+    "output_tokens_per_request": 512,
+    "prompt_hashes_match_first_reference_c16_case": true,
+    "preceding_request_history": "Fresh plus four cached 262K passes; two singles; interrupted first C8",
+    "limitations": "Synchronous-launch fault diagnostic; not a matched throughput comparison",
+    "requests": {
+      "4": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 4.8655741149850655,
+        "elapsed_s": 237.85115886598942,
+        "request_tokens_s": 2.1526067076615427,
+        "decode_tokens_s": 2.193273604363656,
+        "prefill_tokens_s": 105.22910306167879,
+        "prompt_sha256": "0d34a01250516059d9a6d07fc8e5af7c51e6dc6a00f72c17d02ef7ebeb1e1202",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "c486400056af0329b69e1dca9b640852ca3d8bc36cb383cb745ff0610b8d8b93"
+      },
+      "0": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 1.0829864230181556,
+        "elapsed_s": 238.78942081800778,
+        "request_tokens_s": 2.1441485901932746,
+        "decode_tokens_s": 2.1497149452889945,
+        "prefill_tokens_s": 472.7667763120393,
+        "prompt_sha256": "ebb3cb89c387ca9a1f632481dbc8ac18a58948ba96267506cc1283582d10e68d",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "43d67eaaedb595bbdef48ffc583ba33a88444c690a0ffd8352fb64856eb43592"
+      },
+      "14": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 11.53983566100942,
+        "elapsed_s": 283.6337897880003,
+        "request_tokens_s": 1.805144585850262,
+        "decode_tokens_s": 1.8780312120052403,
+        "prefill_tokens_s": 44.36804951477221,
+        "prompt_sha256": "42daf90ce7c586aeabc2d1ea933b06eb7920e273118adae9a43fc3aace4cc43b",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "cf0f5d9899998afe872f0c59b1f1a01de2844d3f0b37d70d40fd9d1d7251f789"
+      },
+      "13": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 9.483851069002412,
+        "elapsed_s": 288.1425020940078,
+        "request_tokens_s": 1.7768985702531233,
+        "decode_tokens_s": 1.8337881776694758,
+        "prefill_tokens_s": 53.98650783050058,
+        "prompt_sha256": "3296a329a517ba91410e7960789aac3a53c1de4877614571b8a3ab59db0ee919",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "c5ea4cf98786ab7fe85348ad123faa35821e282b423dee23f36387affd50187a"
+      },
+      "10": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 9.479986499005463,
+        "elapsed_s": 292.8725289689901,
+        "request_tokens_s": 1.7482008360511394,
+        "decode_tokens_s": 1.8031556263115776,
+        "prefill_tokens_s": 54.008515735092395,
+        "prompt_sha256": "c19c1af39b53c45eeb81ed216bb4bb2fe185a2f7335f16c60d43a2d374f6b3f8",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "0e448a1a4e31b838d61b669161deb2b99e61ca3bc482ce55a6119a03ed2edf8e"
+      },
+      "7": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 6.923179963981966,
+        "elapsed_s": 299.6554271209752,
+        "request_tokens_s": 1.7086291575600205,
+        "decode_tokens_s": 1.7456253614604225,
+        "prefill_tokens_s": 73.95445484065041,
+        "prompt_sha256": "dc19fd0f336b7d6e10dba3c41c87116961a161d4822535aefdfec33f9a0aff1e",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "88201c25b671dca30c92e2994d7180bbd78aed1d6a5c1f3bf20d5341d212aaf4"
+      },
+      "11": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 9.491749564011116,
+        "elapsed_s": 303.72198752700933,
+        "request_tokens_s": 1.6857521714804036,
+        "decode_tokens_s": 1.7367379597700228,
+        "prefill_tokens_s": 53.94158332424798,
+        "prompt_sha256": "0c0fe46a7845035e31d215d1b306ee9a3a2a81aadf86632bd0d399296583458a",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "b5818f6655a804a11c91b5d5264867ae772b7507d11691431c33a78d0900b1fb"
+      },
+      "9": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 9.481415210000705,
+        "elapsed_s": 305.7508172939997,
+        "request_tokens_s": 1.6745662514703206,
+        "decode_tokens_s": 1.7247843852210356,
+        "prefill_tokens_s": 54.000377439431,
+        "prompt_sha256": "bc5f271aa0074b0ec42b9c51d045eb60e7b4a4e48c5bfb32752a2701b8aacbd7",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "69225f394738517eca5d12d9161773306fab4871a0f7398f71b07433ee2819ec"
+      },
+      "15": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 11.539499983016867,
+        "elapsed_s": 309.4385743080056,
+        "request_tokens_s": 1.6546094847579376,
+        "decode_tokens_s": 1.7153487607391757,
+        "prefill_tokens_s": 44.36934015802508,
+        "prompt_sha256": "838e0a9b638f82baacd724fe9ed608ca76144b04cd019d57f0a6b16c310814e1",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "64104e4f43f72f61216e9e452e7e547ba819d5778d73ecdff6421c16b9ea9179"
+      },
+      "2": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 4.8612528550147545,
+        "elapsed_s": 318.73349098901963,
+        "request_tokens_s": 1.6063577078495288,
+        "decode_tokens_s": 1.628053559207738,
+        "prefill_tokens_s": 105.32264320952423,
+        "prompt_sha256": "f4c15aa07ef5ec722a16090be03d85b2273cb6996c0efd48030f1ec3d871ab16",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "84c95e3401bede947a9d16be269e3f12da084c1180bc56b920a18a0810fc63f8"
+      },
+      "5": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 4.870640078996075,
+        "elapsed_s": 319.0172926399973,
+        "request_tokens_s": 1.6049286725587588,
+        "decode_tokens_s": 1.6266312719958105,
+        "prefill_tokens_s": 105.11965402820982,
+        "prompt_sha256": "d2e19ea57e4d6926d958cd5270364e58e63b9c47d146a104bd18b5b0d28c2350",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "c211bea4b7b2954399aa25de05a62e22699d7c80beb1f2e80694d026f825dce9"
+      },
+      "1": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 2.0192271709966008,
+        "elapsed_s": 319.0218792309752,
+        "request_tokens_s": 1.6049055984317195,
+        "decode_tokens_s": 1.6119762685713226,
+        "prefill_tokens_s": 253.56235660562132,
+        "prompt_sha256": "f31b8440b3acc44eca121e975f8950fcab25f42e9daf8e1f342acd338bf4a627",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "bcf58221df4254517dea28042d899a6d5f892042ea23e257f4a39cfd6d13059c"
+      },
+      "6": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 6.923254118999466,
+        "elapsed_s": 320.39216700801626,
+        "request_tokens_s": 1.5980415650648216,
+        "decode_tokens_s": 1.6301481639385127,
+        "prefill_tokens_s": 73.9536627140292,
+        "prompt_sha256": "70d89b6b28c8358b8fda4d3be59fedade9134b9705d09136652556475dd1aedc",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "d34cf9b4dbca7159db2701579f1f31d90b423e3155d3ff88e7e9b9547709e0ce"
+      },
+      "8": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 6.9279406479909085,
+        "elapsed_s": 323.08936836299836,
+        "request_tokens_s": 1.5847008603042494,
+        "decode_tokens_s": 1.616265342761958,
+        "prefill_tokens_s": 73.90363544013316,
+        "prompt_sha256": "65c605c36ae6bca17c99353f30583c3288940dbe4b575aee23827fab37e1d62a",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "9d2e6252c763aff718cce76c4e80a424a3e75e53d7d2a97f63bb9bb85656e8b4"
+      },
+      "12": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 11.54806724897935,
+        "elapsed_s": 326.0656995049794,
+        "request_tokens_s": 1.5702356941478328,
+        "decode_tokens_s": 1.6247126438370119,
+        "prefill_tokens_s": 44.336423486384874,
+        "prompt_sha256": "8ada3307f1e513daf0173a355aa790fe371e5feec13db8090962bbf002053434",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "94310ce60bae218fdbd950b63b52bbbdbf4416a5debf11f1582d67ac10e887ed"
+      },
+      "3": {
+        "input_tokens": 512,
+        "output_tokens": 512,
+        "ttft_s": 4.85219462600071,
+        "elapsed_s": 326.34495342400623,
+        "request_tokens_s": 1.5688920408546352,
+        "decode_tokens_s": 1.5894630318052492,
+        "prefill_tokens_s": 105.51926282107982,
+        "prompt_sha256": "80458ad0bf8af44ee4f29b24eb6f3d9b5fa5906df7b390dfcdf4fe5ce6eac6d9",
+        "usage": {
+          "prompt_tokens": 512,
+          "total_tokens": 1024,
+          "completion_tokens": 512
+        },
+        "finish_reason": "length",
+        "output_text_sha256": "bbc0a51d064e85bd8386bceb89267055cc6a7fd6d568dd8a46da091a7d3bf416"
+      }
+    },
+    "elapsed_s": 326.366127863992,
+    "steady_decode": {
+      "start_s": 35.60178215999622,
+      "end_s": 224.26543359301286,
+      "accepted_tokens": 5184,
+      "aggregate_tokens_s": 27.477470941669615
+    },
+    "finished_at": 1789751200.016675,
+    "raw_sha256": "b4e5243e10e35330195ecc34711b57903dca1ace071872382c2a6cc748465cba"
+  },
+  "combined_pressure": {
+    "results": [
+      {
+        "device": 0,
+        "passed": true,
+        "phases": {
+          "eager": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.871006625995506
+          },
+          "graph": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.81158261600649
+          }
+        },
+        "matrix_size": 4096,
+        "reserve_mib": 128,
+        "tp_peer": 1,
+        "pp_previous": 6,
+        "detector_self_checks": 15,
+        "retained_bytes": 67108864000,
+        "free_bytes_before_loop": 194248704
+      },
+      {
+        "device": 1,
+        "passed": true,
+        "phases": {
+          "eager": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.870758341974579
+          },
+          "graph": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.81184139099787
+          }
+        },
+        "matrix_size": 4096,
+        "reserve_mib": 128,
+        "tp_peer": 0,
+        "pp_previous": 7,
+        "detector_self_checks": 15,
+        "retained_bytes": 67108864000,
+        "free_bytes_before_loop": 194248704
+      },
+      {
+        "device": 2,
+        "passed": true,
+        "phases": {
+          "eager": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.87112244500895
+          },
+          "graph": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.811600825021742
+          }
+        },
+        "matrix_size": 4096,
+        "reserve_mib": 128,
+        "tp_peer": 3,
+        "pp_previous": 0,
+        "detector_self_checks": 15,
+        "retained_bytes": 67108864000,
+        "free_bytes_before_loop": 194248704
+      },
+      {
+        "device": 3,
+        "passed": true,
+        "phases": {
+          "eager": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.870822850003606
+          },
+          "graph": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.81176515200059
+          }
+        },
+        "matrix_size": 4096,
+        "reserve_mib": 128,
+        "tp_peer": 2,
+        "pp_previous": 1,
+        "detector_self_checks": 15,
+        "retained_bytes": 67108864000,
+        "free_bytes_before_loop": 194248704
+      },
+      {
+        "device": 4,
+        "passed": true,
+        "phases": {
+          "eager": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.870523890014738
+          },
+          "graph": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.811465146020055
+          }
+        },
+        "matrix_size": 4096,
+        "reserve_mib": 128,
+        "tp_peer": 5,
+        "pp_previous": 2,
+        "detector_self_checks": 15,
+        "retained_bytes": 67108864000,
+        "free_bytes_before_loop": 194248704
+      },
+      {
+        "device": 5,
+        "passed": true,
+        "phases": {
+          "eager": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.870628152013524
+          },
+          "graph": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.811684248008532
+          }
+        },
+        "matrix_size": 4096,
+        "reserve_mib": 128,
+        "tp_peer": 4,
+        "pp_previous": 3,
+        "detector_self_checks": 15,
+        "retained_bytes": 67108864000,
+        "free_bytes_before_loop": 194248704
+      },
+      {
+        "device": 6,
+        "passed": true,
+        "phases": {
+          "eager": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.870694066979922
+          },
+          "graph": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.81152888800716
+          }
+        },
+        "matrix_size": 4096,
+        "reserve_mib": 128,
+        "tp_peer": 7,
+        "pp_previous": 4,
+        "detector_self_checks": 15,
+        "retained_bytes": 67108864000,
+        "free_bytes_before_loop": 194248704
+      },
+      {
+        "device": 7,
+        "passed": true,
+        "phases": {
+          "eager": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.870591035025427
+          },
+          "graph": {
+            "iterations": 10000,
+            "mismatched_elements": 0,
+            "elapsed_s": 10.811744481994538
+          }
+        },
+        "matrix_size": 4096,
+        "reserve_mib": 128,
+        "tp_peer": 6,
+        "pp_previous": 5,
+        "detector_self_checks": 15,
+        "retained_bytes": 67108864000,
+        "free_bytes_before_loop": 194248704
+      }
+    ],
+    "environment": {
+      "CUDA_DEVICE_ORDER": "PCI_BUS_ID",
+      "NCCL_P2P_DISABLE": "0",
+      "NCCL_PROTO": null
+    }
+  },
+  "broad_vram_compute": {
+    "checked": {
+      "started_at_utc": "2026-09-18T17:06:54.893209+00:00",
+      "passed": false,
+      "seconds": 120,
+      "memory_percent": 98,
+      "source_revision": "3ead140434da9473582b68452f7115967a7a0581",
+      "source_sha256": {
+        "gpu_burn-drv.cpp": "f457757dbb5565437877f0e0f0f1cc96adc52496b1083a1ffc9011189c411bed",
+        "compare-checked.cu": "19cd9c102e764d43477174bc9f9f4dedd4d6f122f8cf5442aa52dac19cbe36d9",
+        "check_comparator.cu": "2c92e281b590d8fab6148bc35f30f67ac9a2a98686393c79e5dee077d419d67b"
+      },
+      "detector_returncode": 0,
+      "detector_checks": 112,
+      "burn_returncode": 0,
+      "devices": [
+        {
+          "device": 0,
+          "result": "OK"
+        },
+        {
+          "device": 1,
+          "result": "OK"
+        },
+        {
+          "device": 2,
+          "result": "OK"
+        },
+        {
+          "device": 3,
+          "result": "OK"
+        },
+        {
+          "device": 4,
+          "result": "FAULTY"
+        },
+        {
+          "device": 5,
+          "result": "OK"
+        },
+        {
+          "device": 6,
+          "result": "OK"
+        },
+        {
+          "device": 7,
+          "result": "OK"
+        }
+      ],
+      "new_xids": [],
+      "finished_at_utc": "2026-09-18T17:09:34.214407+00:00",
+      "raw_log_sha256": "89e952f9b4c51dc45408bbbccbc060936646594810d7b857b3ea5994c43d79a4",
+      "recorded_mismatches": []
+    },
+    "upstream": {
+      "started_at_utc": "2026-09-18T17:09:43.662050+00:00",
+      "passed": false,
+      "seconds": 120,
+      "memory_percent": 98,
+      "comparator": "upstream",
+      "source_revision": "3ead140434da9473582b68452f7115967a7a0581",
+      "source_sha256": {
+        "gpu_burn-drv.cpp": "f457757dbb5565437877f0e0f0f1cc96adc52496b1083a1ffc9011189c411bed",
+        "compare-checked.cu": "19cd9c102e764d43477174bc9f9f4dedd4d6f122f8cf5442aa52dac19cbe36d9",
+        "check_comparator.cu": "2c92e281b590d8fab6148bc35f30f67ac9a2a98686393c79e5dee077d419d67b"
+      },
+      "detector_returncode": 0,
+      "detector_checks": 112,
+      "burn_returncode": 0,
+      "devices": [
+        {
+          "device": 0,
+          "result": "OK"
+        },
+        {
+          "device": 1,
+          "result": "OK"
+        },
+        {
+          "device": 2,
+          "result": "OK"
+        },
+        {
+          "device": 3,
+          "result": "OK"
+        },
+        {
+          "device": 4,
+          "result": "FAULTY"
+        },
+        {
+          "device": 5,
+          "result": "OK"
+        },
+        {
+          "device": 6,
+          "result": "OK"
+        },
+        {
+          "device": 7,
+          "result": "OK"
+        }
+      ],
+      "completed_products_per_gpu": [
+        6615,
+        8085,
+        8330,
+        8085,
+        7840,
+        7840,
+        8820,
+        8330
+      ],
+      "reported_error_high_water_per_gpu": [
+        0,
+        0,
+        0,
+        0,
+        245,
+        0,
+        0,
+        0
+      ],
+      "new_xids": [],
+      "finished_at_utc": "2026-09-18T17:12:22.537097+00:00",
+      "raw_log_sha256": "217e6c81d43acffe76570f24a3b1a16861ba73f05792fb3a022e199fdd289611",
+      "recorded_mismatches": []
+    },
+    "record": {
+      "started_at_utc": "2026-09-18T17:12:40.336233+00:00",
+      "passed": false,
+      "seconds": 60,
+      "memory_percent": 98,
+      "comparator": "record-values",
+      "source_revision": "3ead140434da9473582b68452f7115967a7a0581",
+      "source_sha256": {
+        "gpu_burn-drv.cpp": "f457757dbb5565437877f0e0f0f1cc96adc52496b1083a1ffc9011189c411bed",
+        "compare.cu": "c0539e4c6f0494027be8083b25a0ee5a5f74f734d07e7bba99d354e5fee7e0ba",
+        "compare-checked.cu": "19cd9c102e764d43477174bc9f9f4dedd4d6f122f8cf5442aa52dac19cbe36d9",
+        "check_comparator.cu": "2c92e281b590d8fab6148bc35f30f67ac9a2a98686393c79e5dee077d419d67b",
+        "gpu_burn-drv-record.cpp": "f60bc0272dad6d9466ce1404591d8c981e5a912fbdb3b259518500b44d5cece9",
+        "compare-record.cu": "e3df07de081f21b0d3d884284418a968fc4134a0f1990d20bc245d6501164bfb",
+        "check_comparator_record.cu": "d4b409060a26c03eb7765a50f45b5a022797a73a8f0c0ca61f02731fbd1f8cf6"
+      },
+      "detector_returncode": 0,
+      "detector_checks": 112,
+      "burn_returncode": 0,
+      "recorded_mismatches": [
+        {
+          "device": 4,
+          "index": 13010786,
+          "matrix_copy": 174,
+          "reference_bits": "0x48456777",
+          "observed_bits": "0x48456737",
+          "reference_value": 202141.859375,
+          "observed_value": 202140.859375
+        },
+        {
+          "device": 4,
+          "index": 59149874,
+          "matrix_copy": 215,
+          "reference_bits": "0x4849d7aa",
+          "observed_bits": "0x4849d62a",
+          "reference_value": 206686.65625,
+          "observed_value": 206680.65625
+        },
+        {
+          "device": 4,
+          "index": 5277531,
+          "matrix_copy": 8,
+          "reference_bits": "0x48496c18",
+          "observed_bits": "0x48496b98",
+          "reference_value": 206256.375,
+          "observed_value": 206254.375
+        },
+        {
+          "device": 4,
+          "index": 29794019,
+          "matrix_copy": 183,
+          "reference_bits": "0x4848384a",
+          "observed_bits": "0x484837ea",
+          "reference_value": 205025.15625,
+          "observed_value": 205023.65625
+        },
+        {
+          "device": 4,
+          "index": 61375307,
+          "matrix_copy": 214,
+          "reference_bits": "0x484641ed",
+          "observed_bits": "0x48463ded",
+          "reference_value": 203015.703125,
+          "observed_value": 202999.703125
+        },
+        {
+          "device": 4,
+          "index": 21662193,
+          "matrix_copy": 151,
+          "reference_bits": "0x48498032",
+          "observed_bits": "0x48497e32",
+          "reference_value": 206336.78125,
+          "observed_value": 206328.78125
+        },
+        {
+          "device": 4,
+          "index": 39883522,
+          "matrix_copy": 47,
+          "reference_bits": "0x48479af4",
+          "observed_bits": "0x484799f4",
+          "reference_value": 204395.8125,
+          "observed_value": 204391.8125
+        },
+        {
+          "device": 4,
+          "index": 43031642,
+          "matrix_copy": 73,
+          "reference_bits": "0x4848ea60",
+          "observed_bits": "0x4848e460",
+          "reference_value": 205737.5,
+          "observed_value": 205713.5
+        },
+        {
+          "device": 4,
+          "index": 7504731,
+          "matrix_copy": 67,
+          "reference_bits": "0x4847e0f1",
+          "observed_bits": "0x4847d4f1",
+          "reference_value": 204675.765625,
+          "observed_value": 204627.765625
+        },
+        {
+          "device": 4,
+          "index": 50240883,
+          "matrix_copy": 24,
+          "reference_bits": "0x4846c0ae",
+          "observed_bits": "0x4846beae",
+          "reference_value": 203522.71875,
+          "observed_value": 203514.71875
+        }
+      ],
+      "devices": [
+        {
+          "device": 0,
+          "result": "OK"
+        },
+        {
+          "device": 1,
+          "result": "OK"
+        },
+        {
+          "device": 2,
+          "result": "OK"
+        },
+        {
+          "device": 3,
+          "result": "OK"
+        },
+        {
+          "device": 4,
+          "result": "FAULTY"
+        },
+        {
+          "device": 5,
+          "result": "OK"
+        },
+        {
+          "device": 6,
+          "result": "OK"
+        },
+        {
+          "device": 7,
+          "result": "OK"
+        }
+      ],
+      "completed_products_per_gpu": [
+        3675,
+        4410,
+        4410,
+        4410,
+        4410,
+        4165,
+        4410,
+        4410
+      ],
+      "reported_error_high_water_per_gpu": [
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0
+      ],
+      "new_xids": [],
+      "finished_at_utc": "2026-09-18T17:14:19.467991+00:00",
+      "raw_log_sha256": "86a5671f8048678d073454f452c9cfb63bb08b5ea665992d2b575e5b92bfa234"
+    },
+    "after-b1-reset": {
+      "started_at_utc": "2026-09-18T17:15:27.012463+00:00",
+      "passed": false,
+      "seconds": 120,
+      "memory_percent": 98,
+      "comparator": "upstream",
+      "source_revision": "3ead140434da9473582b68452f7115967a7a0581",
+      "source_sha256": {
+        "gpu_burn-drv.cpp": "f457757dbb5565437877f0e0f0f1cc96adc52496b1083a1ffc9011189c411bed",
+        "compare.cu": "c0539e4c6f0494027be8083b25a0ee5a5f74f734d07e7bba99d354e5fee7e0ba",
+        "compare-checked.cu": "19cd9c102e764d43477174bc9f9f4dedd4d6f122f8cf5442aa52dac19cbe36d9",
+        "check_comparator.cu": "2c92e281b590d8fab6148bc35f30f67ac9a2a98686393c79e5dee077d419d67b"
+      },
+      "detector_returncode": 0,
+      "detector_checks": 112,
+      "burn_returncode": 0,
+      "recorded_mismatches": [],
+      "devices": [
+        {
+          "device": 0,
+          "result": "OK"
+        },
+        {
+          "device": 1,
+          "result": "OK"
+        },
+        {
+          "device": 2,
+          "result": "OK"
+        },
+        {
+          "device": 3,
+          "result": "OK"
+        },
+        {
+          "device": 4,
+          "result": "FAULTY"
+        },
+        {
+          "device": 5,
+          "result": "OK"
+        },
+        {
+          "device": 6,
+          "result": "OK"
+        },
+        {
+          "device": 7,
+          "result": "OK"
+        }
+      ],
+      "completed_products_per_gpu": [
+        7105,
+        8575,
+        8820,
+        8820,
+        8575,
+        8330,
+        9065,
+        8820
+      ],
+      "reported_error_high_water_per_gpu": [
+        0,
+        0,
+        0,
+        0,
+        1246,
+        0,
+        0,
+        0
+      ],
+      "new_xids": [],
+      "finished_at_utc": "2026-09-18T17:18:08.309471+00:00",
+      "raw_log_sha256": "ea141efe5efcc403bac173ca7344d8fe2c4d9a53b8eef92ba4e76cb859fc91fd"
+    },
+    "b1-1350": {
+      "started_at_utc": "2026-09-18T17:18:28.158039+00:00",
+      "passed": false,
+      "seconds": 120,
+      "memory_percent": 98,
+      "comparator": "upstream",
+      "source_revision": "3ead140434da9473582b68452f7115967a7a0581",
+      "source_sha256": {
+        "gpu_burn-drv.cpp": "f457757dbb5565437877f0e0f0f1cc96adc52496b1083a1ffc9011189c411bed",
+        "compare.cu": "c0539e4c6f0494027be8083b25a0ee5a5f74f734d07e7bba99d354e5fee7e0ba",
+        "compare-checked.cu": "19cd9c102e764d43477174bc9f9f4dedd4d6f122f8cf5442aa52dac19cbe36d9",
+        "check_comparator.cu": "2c92e281b590d8fab6148bc35f30f67ac9a2a98686393c79e5dee077d419d67b"
+      },
+      "detector_returncode": 0,
+      "detector_checks": 112,
+      "burn_returncode": 0,
+      "recorded_mismatches": [],
+      "devices": [
+        {
+          "device": 0,
+          "result": "OK"
+        },
+        {
+          "device": 1,
+          "result": "OK"
+        },
+        {
+          "device": 2,
+          "result": "OK"
+        },
+        {
+          "device": 3,
+          "result": "OK"
+        },
+        {
+          "device": 4,
+          "result": "FAULTY"
+        },
+        {
+          "device": 5,
+          "result": "OK"
+        },
+        {
+          "device": 6,
+          "result": "OK"
+        },
+        {
+          "device": 7,
+          "result": "OK"
+        }
+      ],
+      "completed_products_per_gpu": [
+        6860,
+        8330,
+        8330,
+        8575,
+        8085,
+        8085,
+        8820,
+        8575
+      ],
+      "reported_error_high_water_per_gpu": [
+        0,
+        0,
+        0,
+        0,
+        7,
+        0,
+        0,
+        0
+      ],
+      "new_xids": [],
+      "finished_at_utc": "2026-09-18T17:21:06.802444+00:00",
+      "raw_log_sha256": "643a0607ef1e138a6e5b6dbe2a0407c1fb03d6f21bfb8ca5561d126012cb87b2"
+    },
+    "b1-alone": {
+      "started_at_utc": "2026-09-18T17:22:13.107725+00:00",
+      "passed": false,
+      "seconds": 60,
+      "memory_percent": 98,
+      "device_ids": [
+        4
+      ],
+      "comparator": "record-values",
+      "source_revision": "3ead140434da9473582b68452f7115967a7a0581",
+      "source_sha256": {
+        "gpu_burn-drv.cpp": "f457757dbb5565437877f0e0f0f1cc96adc52496b1083a1ffc9011189c411bed",
+        "compare.cu": "c0539e4c6f0494027be8083b25a0ee5a5f74f734d07e7bba99d354e5fee7e0ba",
+        "compare-checked.cu": "19cd9c102e764d43477174bc9f9f4dedd4d6f122f8cf5442aa52dac19cbe36d9",
+        "check_comparator.cu": "2c92e281b590d8fab6148bc35f30f67ac9a2a98686393c79e5dee077d419d67b",
+        "gpu_burn-drv-record.cpp": "f60bc0272dad6d9466ce1404591d8c981e5a912fbdb3b259518500b44d5cece9",
+        "compare-record.cu": "e3df07de081f21b0d3d884284418a968fc4134a0f1990d20bc245d6501164bfb",
+        "check_comparator_record.cu": "d4b409060a26c03eb7765a50f45b5a022797a73a8f0c0ca61f02731fbd1f8cf6"
+      },
+      "detector_returncode": 0,
+      "detector_checks": 112,
+      "burn_returncode": 0,
+      "recorded_mismatches": [
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 1,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 2,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 3,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 4,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 5,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 6,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 7,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 8,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 9,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 10,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 11,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 12,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 13,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 14,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 15,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 41456305,
+          "matrix_copy": 16,
+          "reference_bits": "0x48458356",
+          "observed_bits": "0x48458396",
+          "reference_value": 202253.34375,
+          "observed_value": 202254.34375
+        },
+        {
+          "device": 4,
+          "index": 1212667,
+          "matrix_copy": 12,
+          "reference_bits": "0x48490744",
+          "observed_bits": "0x484906c4",
+          "reference_value": 205853.0625,
+          "observed_value": 205851.0625
+        },
+        {
+          "device": 4,
+          "index": 12359017,
+          "matrix_copy": 12,
+          "reference_bits": "0x484a9f56",
+          "observed_bits": "0x484a9e96",
+          "reference_value": 207485.34375,
+          "observed_value": 207482.34375
+        },
+        {
+          "device": 4,
+          "index": 43814610,
+          "matrix_copy": 12,
+          "reference_bits": "0x4847b713",
+          "observed_bits": "0x4847b113",
+          "reference_value": 204508.296875,
+          "observed_value": 204484.296875
+        },
+        {
+          "device": 4,
+          "index": 54955176,
+          "matrix_copy": 12,
+          "reference_bits": "0x48455ea2",
+          "observed_bits": "0x48455e82",
+          "reference_value": 202106.53125,
+          "observed_value": 202106.03125
+        },
+        {
+          "device": 4,
+          "index": 6720897,
+          "matrix_copy": 11,
+          "reference_bits": "0x48484912",
+          "observed_bits": "0x48484812",
+          "reference_value": 205092.28125,
+          "observed_value": 205088.28125
+        },
+        {
+          "device": 4,
+          "index": 13275586,
+          "matrix_copy": 10,
+          "reference_bits": "0x48476904",
+          "observed_bits": "0x48476a04",
+          "reference_value": 204196.0625,
+          "observed_value": 204200.0625
+        },
+        {
+          "device": 4,
+          "index": 15766568,
+          "matrix_copy": 9,
+          "reference_bits": "0x48479232",
+          "observed_bits": "0x48478e32",
+          "reference_value": 204360.78125,
+          "observed_value": 204344.78125
+        },
+        {
+          "device": 4,
+          "index": 24416697,
+          "matrix_copy": 10,
+          "reference_bits": "0x48474d58",
+          "observed_bits": "0x48474d54",
+          "reference_value": 204085.375,
+          "observed_value": 204085.3125
+        },
+        {
+          "device": 4,
+          "index": 25073955,
+          "matrix_copy": 11,
+          "reference_bits": "0x48490926",
+          "observed_bits": "0x484907a6",
+          "reference_value": 205860.59375,
+          "observed_value": 205854.59375
+        },
+        {
+          "device": 4,
+          "index": 30968409,
+          "matrix_copy": 12,
+          "reference_bits": "0x484a73df",
+          "observed_bits": "0x484a73e3",
+          "reference_value": 207311.484375,
+          "observed_value": 207311.546875
+        },
+        {
+          "device": 4,
+          "index": 31361544,
+          "matrix_copy": 12,
+          "reference_bits": "0x4847196e",
+          "observed_bits": "0x4847176e",
+          "reference_value": 203877.71875,
+          "observed_value": 203869.71875
+        },
+        {
+          "device": 4,
+          "index": 41583322,
+          "matrix_copy": 12,
+          "reference_bits": "0x48483830",
+          "observed_bits": "0x48483630",
+          "reference_value": 205024.75,
+          "observed_value": 205016.75
+        },
+        {
+          "device": 4,
+          "index": 46961417,
+          "matrix_copy": 11,
+          "reference_bits": "0x48478c7a",
+          "observed_bits": "0x4847897a",
+          "reference_value": 204337.90625,
+          "observed_value": 204325.90625
+        },
+        {
+          "device": 4,
+          "index": 48662938,
+          "matrix_copy": 10,
+          "reference_bits": "0x484a577c",
+          "observed_bits": "0x484a597c",
+          "reference_value": 207197.9375,
+          "observed_value": 207205.9375
+        },
+        {
+          "device": 4,
+          "index": 56265905,
+          "matrix_copy": 11,
+          "reference_bits": "0x48494f21",
+          "observed_bits": "0x48494ee1",
+          "reference_value": 206140.515625,
+          "observed_value": 206139.515625
+        },
+        {
+          "device": 4,
+          "index": 56268456,
+          "matrix_copy": 10,
+          "reference_bits": "0x484773de",
+          "observed_bits": "0x4847725e",
+          "reference_value": 204239.46875,
+          "observed_value": 204233.46875
+        },
+        {
+          "device": 4,
+          "index": 56528010,
+          "matrix_copy": 11,
+          "reference_bits": "0x4846986f",
+          "observed_bits": "0x4846956f",
+          "reference_value": 203361.734375,
+          "observed_value": 203349.734375
+        },
+        {
+          "device": 4,
+          "index": 59677475,
+          "matrix_copy": 11,
+          "reference_bits": "0x4844e0ba",
+          "observed_bits": "0x4844e0aa",
+          "reference_value": 201602.90625,
+          "observed_value": 201602.65625
+        },
+        {
+          "device": 4,
+          "index": 15893827,
+          "matrix_copy": 17,
+          "reference_bits": "0x4849f538",
+          "observed_bits": "0x4849f3b8",
+          "reference_value": 206804.875,
+          "observed_value": 206798.875
+        },
+        {
+          "device": 4,
+          "index": 32409297,
+          "matrix_copy": 17,
+          "reference_bits": "0x48455e5e",
+          "observed_bits": "0x48455cde",
+          "reference_value": 202105.46875,
+          "observed_value": 202099.46875
+        },
+        {
+          "device": 4,
+          "index": 11438880,
+          "matrix_copy": 11,
+          "reference_bits": "0x4847f744",
+          "observed_bits": "0x4847f544",
+          "reference_value": 204765.0625,
+          "observed_value": 204757.0625
+        },
+        {
+          "device": 4,
+          "index": 27165706,
+          "matrix_copy": 12,
+          "reference_bits": "0x484b244c",
+          "observed_bits": "0x484b224c",
+          "reference_value": 208017.1875,
+          "observed_value": 208009.1875
+        },
+        {
+          "device": 4,
+          "index": 46306250,
+          "matrix_copy": 12,
+          "reference_bits": "0x4849da18",
+          "observed_bits": "0x4849d418",
+          "reference_value": 206696.375,
+          "observed_value": 206672.375
+        },
+        {
+          "device": 4,
+          "index": 48268771,
+          "matrix_copy": 11,
+          "reference_bits": "0x48484490",
+          "observed_bits": "0x48484480",
+          "reference_value": 205074.25,
+          "observed_value": 205074.0
+        },
+        {
+          "device": 4,
+          "index": 33850283,
+          "matrix_copy": 9,
+          "reference_bits": "0x4843d342",
+          "observed_bits": "0x4843d242",
+          "reference_value": 200525.03125,
+          "observed_value": 200521.03125
+        },
+        {
+          "device": 4,
+          "index": 37131483,
+          "matrix_copy": 10,
+          "reference_bits": "0x48483c1a",
+          "observed_bits": "0x48483b9a",
+          "reference_value": 205040.40625,
+          "observed_value": 205038.40625
+        },
+        {
+          "device": 4,
+          "index": 48534929,
+          "matrix_copy": 10,
+          "reference_bits": "0x484875df",
+          "observed_bits": "0x4848755f",
+          "reference_value": 205271.484375,
+          "observed_value": 205269.484375
+        },
+        {
+          "device": 4,
+          "index": 57445080,
+          "matrix_copy": 11,
+          "reference_bits": "0x484735ea",
+          "observed_bits": "0x484734ea",
+          "reference_value": 203991.65625,
+          "observed_value": 203987.65625
+        },
+        {
+          "device": 4,
+          "index": 59150569,
+          "matrix_copy": 9,
+          "reference_bits": "0x4848eeaf",
+          "observed_bits": "0x4848ee7f",
+          "reference_value": 205754.734375,
+          "observed_value": 205753.984375
+        },
+        {
+          "device": 4,
+          "index": 60719545,
+          "matrix_copy": 10,
+          "reference_bits": "0x4843f7d4",
+          "observed_bits": "0x4843f654",
+          "reference_value": 200671.3125,
+          "observed_value": 200665.3125
+        },
+        {
+          "device": 4,
+          "index": 65311786,
+          "matrix_copy": 11,
+          "reference_bits": "0x4845d3bc",
+          "observed_bits": "0x4845d3ac",
+          "reference_value": 202574.9375,
+          "observed_value": 202574.6875
+        },
+        {
+          "device": 4,
+          "index": 12093697,
+          "matrix_copy": 10,
+          "reference_bits": "0x4845120d",
+          "observed_bits": "0x48451205",
+          "reference_value": 201800.203125,
+          "observed_value": 201800.078125
+        },
+        {
+          "device": 4,
+          "index": 13016345,
+          "matrix_copy": 9,
+          "reference_bits": "0x48489444",
+          "observed_bits": "0x48489044",
+          "reference_value": 205393.0625,
+          "observed_value": 205377.0625
+        },
+        {
+          "device": 4,
+          "index": 56135305,
+          "matrix_copy": 11,
+          "reference_bits": "0x4848d5a8",
+          "observed_bits": "0x4848d528",
+          "reference_value": 205654.625,
+          "observed_value": 205652.625
+        },
+        {
+          "device": 4,
+          "index": 20744473,
+          "matrix_copy": 166,
+          "reference_bits": "0x4847508e",
+          "observed_bits": "0x48474a8e",
+          "reference_value": 204098.21875,
+          "observed_value": 204074.21875
+        },
+        {
+          "device": 4,
+          "index": 34636946,
+          "matrix_copy": 118,
+          "reference_bits": "0x4845c240",
+          "observed_bits": "0x4845c230",
+          "reference_value": 202505.0,
+          "observed_value": 202504.75
+        }
+      ],
+      "devices": [
+        {
+          "device": 4,
+          "result": "FAULTY"
+        }
+      ],
+      "completed_products_per_gpu": [
+        4410
+      ],
+      "reported_error_high_water_per_gpu": [
+        248
+      ],
+      "new_xids": [],
+      "finished_at_utc": "2026-09-18T17:23:51.247311+00:00",
+      "raw_log_sha256": "8a2cdb01aa12001e2f69466a0f005a8a16e579e27378bd3f5426a8328e36da19"
+    },
+    "b1-900": {
+      "started_at_utc": "2026-09-18T17:24:00.439979+00:00",
+      "passed": true,
+      "seconds": 60,
+      "memory_percent": 98,
+      "device_ids": [
+        4
+      ],
+      "comparator": "record-values",
+      "source_revision": "3ead140434da9473582b68452f7115967a7a0581",
+      "source_sha256": {
+        "gpu_burn-drv.cpp": "f457757dbb5565437877f0e0f0f1cc96adc52496b1083a1ffc9011189c411bed",
+        "compare.cu": "c0539e4c6f0494027be8083b25a0ee5a5f74f734d07e7bba99d354e5fee7e0ba",
+        "compare-checked.cu": "19cd9c102e764d43477174bc9f9f4dedd4d6f122f8cf5442aa52dac19cbe36d9",
+        "check_comparator.cu": "2c92e281b590d8fab6148bc35f30f67ac9a2a98686393c79e5dee077d419d67b",
+        "gpu_burn-drv-record.cpp": "f60bc0272dad6d9466ce1404591d8c981e5a912fbdb3b259518500b44d5cece9",
+        "compare-record.cu": "e3df07de081f21b0d3d884284418a968fc4134a0f1990d20bc245d6501164bfb",
+        "check_comparator_record.cu": "d4b409060a26c03eb7765a50f45b5a022797a73a8f0c0ca61f02731fbd1f8cf6"
+      },
+      "detector_returncode": 0,
+      "detector_checks": 112,
+      "burn_returncode": 0,
+      "recorded_mismatches": [],
+      "devices": [
+        {
+          "device": 4,
+          "result": "OK"
+        }
+      ],
+      "completed_products_per_gpu": [
+        3430
+      ],
+      "reported_error_high_water_per_gpu": [
+        0
+      ],
+      "new_xids": [],
+      "finished_at_utc": "2026-09-18T17:25:38.579132+00:00",
+      "raw_log_sha256": "63b45c4b524d9ffc098b045b8e6022614fd54b657b62254c549c59419a5449ca"
+    },
+    "b1-900-all": {
+      "started_at_utc": "2026-09-18T17:25:54.208242+00:00",
+      "passed": true,
+      "seconds": 300,
+      "memory_percent": 98,
+      "device_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "comparator": "upstream",
+      "source_revision": "3ead140434da9473582b68452f7115967a7a0581",
+      "source_sha256": {
+        "gpu_burn-drv.cpp": "f457757dbb5565437877f0e0f0f1cc96adc52496b1083a1ffc9011189c411bed",
+        "compare.cu": "c0539e4c6f0494027be8083b25a0ee5a5f74f734d07e7bba99d354e5fee7e0ba",
+        "compare-checked.cu": "19cd9c102e764d43477174bc9f9f4dedd4d6f122f8cf5442aa52dac19cbe36d9",
+        "check_comparator.cu": "2c92e281b590d8fab6148bc35f30f67ac9a2a98686393c79e5dee077d419d67b"
+      },
+      "detector_returncode": 0,
+      "detector_checks": 112,
+      "burn_returncode": 0,
+      "recorded_mismatches": [],
+      "devices": [
+        {
+          "device": 0,
+          "result": "OK"
+        },
+        {
+          "device": 1,
+          "result": "OK"
+        },
+        {
+          "device": 2,
+          "result": "OK"
+        },
+        {
+          "device": 3,
+          "result": "OK"
+        },
+        {
+          "device": 4,
+          "result": "OK"
+        },
+        {
+          "device": 5,
+          "result": "OK"
+        },
+        {
+          "device": 6,
+          "result": "OK"
+        },
+        {
+          "device": 7,
+          "result": "OK"
+        }
+      ],
+      "completed_products_per_gpu": [
+        16905,
+        20825,
+        21070,
+        21315,
+        18130,
+        20090,
+        22050,
+        21070
+      ],
+      "reported_error_high_water_per_gpu": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "new_xids": [],
+      "finished_at_utc": "2026-09-18T17:31:33.584572+00:00",
+      "raw_log_sha256": "2bc792e534d8fc1e159efe2d6a77ec1b6a59d6e0183799f6b94f5bd834a41574"
+    }
+  },
+  "mismatch_values": [
+    {
+      "device": 4,
+      "index": 13010786,
+      "matrix_copy": 174,
+      "reference": 202141.859375,
+      "observed": 202140.859375,
+      "delta": -1.0,
+      "xor_bits": "0x40"
+    },
+    {
+      "device": 4,
+      "index": 59149874,
+      "matrix_copy": 215,
+      "reference": 206686.65625,
+      "observed": 206680.65625,
+      "delta": -6.0,
+      "xor_bits": "0x180"
+    },
+    {
+      "device": 4,
+      "index": 5277531,
+      "matrix_copy": 8,
+      "reference": 206256.375,
+      "observed": 206254.375,
+      "delta": -2.0,
+      "xor_bits": "0x780"
+    },
+    {
+      "device": 4,
+      "index": 29794019,
+      "matrix_copy": 183,
+      "reference": 205025.15625,
+      "observed": 205023.65625,
+      "delta": -1.5,
+      "xor_bits": "0xfa0"
+    },
+    {
+      "device": 4,
+      "index": 61375307,
+      "matrix_copy": 214,
+      "reference": 203015.703125,
+      "observed": 202999.703125,
+      "delta": -16.0,
+      "xor_bits": "0x7c00"
+    },
+    {
+      "device": 4,
+      "index": 21662193,
+      "matrix_copy": 151,
+      "reference": 206336.78125,
+      "observed": 206328.78125,
+      "delta": -8.0,
+      "xor_bits": "0xfe00"
+    },
+    {
+      "device": 4,
+      "index": 39883522,
+      "matrix_copy": 47,
+      "reference": 204395.8125,
+      "observed": 204391.8125,
+      "delta": -4.0,
+      "xor_bits": "0x300"
+    },
+    {
+      "device": 4,
+      "index": 43031642,
+      "matrix_copy": 73,
+      "reference": 205737.5,
+      "observed": 205713.5,
+      "delta": -24.0,
+      "xor_bits": "0xe00"
+    },
+    {
+      "device": 4,
+      "index": 7504731,
+      "matrix_copy": 67,
+      "reference": 204675.765625,
+      "observed": 204627.765625,
+      "delta": -48.0,
+      "xor_bits": "0x3400"
+    },
+    {
+      "device": 4,
+      "index": 50240883,
+      "matrix_copy": 24,
+      "reference": 203522.71875,
+      "observed": 203514.71875,
+      "delta": -8.0,
+      "xor_bits": "0x7e00"
+    }
+  ],
+  "recovery": {
+    "started_at_utc": "2026-09-18T17:14:46.181287+00:00",
+    "finished_at_utc": "2026-09-18T17:15:14.428652+00:00",
+    "pci_device": "0000:b1:00.0",
+    "reset_performed": true,
+    "driver_parameters_unchanged": true,
+    "installed_modules_unchanged": true,
+    "reboot_performed": false
+  },
+  "core_clock_controls": [
+    {
+      "device": 4,
+      "pci_device": "0000:b1:00.0",
+      "requested_core_limit_mhz": 1350,
+      "observed_under_load_core_mhz": 1140,
+      "memory_mhz": 1728,
+      "default_clock_restored": true,
+      "limit": "The requested cap was above the observed load clock, so this is not evidence of a lower-clock pass or failure."
+    },
+    {
+      "device": 4,
+      "pci_device": "0000:b1:00.0",
+      "requested_core_limit_mhz": 900,
+      "load_samples": [
+        {
+          "timestamp_utc": "2026/09/18 17:24:10.369",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 167.84,
+          "temperature_celsius": 71,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:24:15.388",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 169.13,
+          "temperature_celsius": 73,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:24:20.405",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 168.84,
+          "temperature_celsius": 74,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:24:25.423",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 170.78,
+          "temperature_celsius": 74,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:24:30.440",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 171.54,
+          "temperature_celsius": 75,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:24:35.457",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 171.73,
+          "temperature_celsius": 76,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:24:40.472",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 171.45,
+          "temperature_celsius": 76,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:24:45.488",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 171.64,
+          "temperature_celsius": 77,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:24:50.503",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 172.71,
+          "temperature_celsius": 77,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:24:55.521",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 173.09,
+          "temperature_celsius": 77,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:25:00.537",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 174.54,
+          "temperature_celsius": 76,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:25:05.553",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 173.76,
+          "temperature_celsius": 78,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:25:10.570",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 174.05,
+          "temperature_celsius": 78,
+          "gpu_utilization_percent": 100
+        }
+      ],
+      "default_clock_restored": true
+    },
+    {
+      "device": 4,
+      "pci_device": "0000:b1:00.0",
+      "requested_core_limit_mhz": 900,
+      "all_gpus_loaded": true,
+      "load_samples": [
+        {
+          "timestamp_utc": "2026/09/18 17:26:14.549",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 165.82,
+          "temperature_celsius": 70,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:26:24.672",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 167.39,
+          "temperature_celsius": 72,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:26:34.796",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 168.39,
+          "temperature_celsius": 73,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:26:44.920",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 169.88,
+          "temperature_celsius": 74,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:26:55.045",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 171.84,
+          "temperature_celsius": 76,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:27:05.168",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 172.33,
+          "temperature_celsius": 76,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:27:15.289",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 172.42,
+          "temperature_celsius": 77,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:27:25.412",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 173.44,
+          "temperature_celsius": 78,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:27:35.532",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 174.07,
+          "temperature_celsius": 78,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:27:45.652",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 175.5,
+          "temperature_celsius": 79,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:27:55.772",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 174.9,
+          "temperature_celsius": 79,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:28:05.892",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 175.89,
+          "temperature_celsius": 80,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:28:16.012",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 177.04,
+          "temperature_celsius": 80,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:28:26.133",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 177.24,
+          "temperature_celsius": 80,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:28:36.253",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 177.34,
+          "temperature_celsius": 81,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:28:46.373",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 177.48,
+          "temperature_celsius": 81,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:28:56.494",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 177.52,
+          "temperature_celsius": 81,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:29:06.616",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 179.02,
+          "temperature_celsius": 82,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:29:16.738",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 178.44,
+          "temperature_celsius": 82,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:29:26.858",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 179.39,
+          "temperature_celsius": 82,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:29:36.978",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 178.91,
+          "temperature_celsius": 82,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:29:47.099",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 180.16,
+          "temperature_celsius": 82,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:29:57.220",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 178.97,
+          "temperature_celsius": 83,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:30:07.339",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 179.73,
+          "temperature_celsius": 83,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:30:17.459",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 181.02,
+          "temperature_celsius": 83,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:30:27.581",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 180.5,
+          "temperature_celsius": 83,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:30:37.702",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 181.12,
+          "temperature_celsius": 83,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:30:47.822",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 181.66,
+          "temperature_celsius": 83,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:30:57.942",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 180.64,
+          "temperature_celsius": 83,
+          "gpu_utilization_percent": 100
+        },
+        {
+          "timestamp_utc": "2026/09/18 17:31:08.065",
+          "core_mhz": 900,
+          "memory_mhz": 1728,
+          "power_watts": 135.85,
+          "temperature_celsius": 81,
+          "gpu_utilization_percent": 100
+        }
+      ],
+      "default_clock_restored": true
+    }
+  ],
+  "compute_probe_provenance": {
+    "upstream": "https://github.com/wilicc/gpu-burn/tree/3ead140434da9473582b68452f7115967a7a0581",
+    "dimensions": [
+      8192,
+      8192
+    ],
+    "result_matrices_per_device": 245,
+    "result_storage_gib_per_device": 61.25,
+    "physical_device_4": "0000:b1:00.0",
+    "upstream_comparison_source_unchanged": true,
+    "cuda_toolkit": "13.0.3",
+    "cublas": "13.1.1.3",
+    "local_variants": "Nonfinite detection; a separate variant prints mismatch locations and FP32 bits"
+  },
+  "limits": [
+    "Synchronous launches change timing and overlap; a pass does not identify a specific lifetime defect.",
+    "The focused C16 prompts match, but the preceding request history differs from the earlier full matrix.",
+    "The synchronous configuration is substantially slower and is not a performance candidate.",
+    "The combined probe retains 62.5 GiB but reuses small GEMM operands; it is not a long soak.",
+    "GPU Burn compares repeated SGEMM results across VRAM; it is not an independent mathematical reference.",
+    "The private comparator also rejects nonfinite values; its injected-error tests passed separately.",
+    "Both the upstream and nonfinite-aware comparisons reported corruption on physical b1 outside vLLM.",
+    "Comparison counts can multiply one bad reference value across result copies; they are not counts of independent bit flips.",
+    "The fault source remains unresolved between hardware, driver/firmware and other lower-level compute components."
+  ]
+}

@@ -11,6 +11,8 @@ BF16 profile. The [context-sharding trial](#context-sharding-trial) and
 [transport and recovery controls](#nccl-transport-comparison) retain those
 failures alongside the earlier successful measurements. A full driver reset
 and reload did not prevent recurrence; reliable serving remains unresolved.
+Independent compute tests also reproduced incorrect matrix results on physical
+`b1`, outside vLLM; see [compute integrity](#independent-compute-corruption).
 
 ## Implementation and provenance
 
@@ -691,6 +693,60 @@ diagnostic measurements; they do not establish a performance improvement
 or a clock-only performance effect. The matching uncapped stage-swap trial
 failed before benchmarking. The [clock-control record](glm53-clock-trial-20260918.json)
 preserves all completed checks and the failure.
+
+### Independent compute corruption
+
+An independent SGEMM workload reproduced incorrect results on physical `b1`
+(device 4). It used GPU Burn revision
+[`3ead140`](https://github.com/wilicc/gpu-burn/tree/3ead140434da9473582b68452f7115967a7a0581),
+eight separate GPU processes, and the `-tc` math-mode option. Each device
+held 245 result matrices of 8,192 by 8,192 FP32 values: **61.25 GiB of result
+storage**, plus the two input matrices. The workload compares repeated
+products across those allocations and does not use vLLM or NCCL.
+
+Two 120-second trials flagged device 4, using a comparator extended to reject
+nonfinite values and then the unmodified upstream comparator. A separate
+60-second recording trial also flagged device 4 and captured ten finite
+mismatches at different matrix positions and copies. Differences from the
+reference ranged from 1 to 48, exceeding the 0.001 comparison tolerance.
+All seven other devices passed these trials, and no new driver Xid was logged.
+The extended comparators passed 112 correct-value and injected-error checks
+before their workloads. Reported mismatch counts can multiply one incorrect
+reference value across copies; they are not counts of independent bit flips.
+
+A further 120-second upstream repeat failed on the same device after its PCI
+function reset and an original-driver reload. A 60-second trial with only
+device 4 computing also failed, so this reproduction does not require
+inter-GPU transfers or simultaneous eight-GPU computation. A requested
+1,350 MHz core limit did not prevent errors; its observed clock under load
+was already lower, at 1,140 MHz. A separate 900 MHz control held the requested
+clock and passed 3,430 products in 60 seconds. That bounded pass does not yet
+establish reliable model serving. A subsequent five-minute upstream-comparator
+trial with all eight GPUs loaded passed on every device: device 4 completed
+18,130 products at 900 MHz, with zero reported mismatches and no new Xid.
+The other seven devices retained their default core clocks, and memory clocks
+were unchanged. Model qualification with this temporary limit remains open.
+
+Earlier exact-pattern BF16 compute and memory tests passed. A combined probe
+also passed 10,000 eager and 10,000 graph iterations per card with dense BF16
+compute, pair reductions, pipeline transfers, and 62.5 GiB retained per GPU.
+That probe reused a small set of matrix operands. These passes therefore did
+not establish correctness for the larger, random-input SGEMM workload.
+
+A separate model diagnostic with synchronous CUDA launches passed 20/20
+objective answers, reasoning/tools, eight concurrent retrieval requests,
+fresh retrieval from 260,224 input tokens, and four cached repeats. A focused
+16-request workload also completed all 512 output tokens per request. Its
+prompts matched the prior C16 case, but its preceding request history differed:
+the timing matrix was stopped during C8 after two completed single cases.
+Synchronous launches reduced single decode to 7.29–7.66 tokens/s and the
+focused C16 rate to 27.48 tokens/s, so this remains a timing and overlap
+diagnostic. The independent compute failures prevent attributing every model
+failure to asynchronous buffer reuse. The driver/firmware versus physical-card
+cause remains unresolved.
+
+The [compute-integrity record](glm53-compute-integrity-trial-20260918.json)
+preserves these results, detector checks, sampled values, and diagnostic limits.
 
 ### Draft expert compression measurements
 
