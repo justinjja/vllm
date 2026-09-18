@@ -2,8 +2,10 @@
 
 `local-inference-lab/GLM-5.3-NVFP4` runs on eight 64-GiB CMP 170HX GPUs with
 the Triton sparse MLA backend and Marlin NVFP4 experts. BF16 and software FP8
-KV paths pass kernel and engine integration checks. Real-model performance
-qualification has begun with BF16 KV; layout and high-context tuning continue.
+KV paths pass kernel and engine integration checks. TP2/PP4 with BF16 KV and
+two MTP drafts remains preferred for generation. A separate PP8/FP8 profile
+passes fresh and cached retrieval from 1,046,659 input tokens, although its
+fresh prefill is slow; see the [full-context measurements](#full-context-pp8-profile).
 
 ## Implementation and provenance
 
@@ -39,7 +41,7 @@ to those draft steps could create negative query lengths or divide by zero
 during startup. The correction passes 37 graph/scheduling tests and a
 random-weight GLM engine check with sequential, concurrent, chunked-prefill,
 and 7,900-token inputs. This establishes integration correctness; the
-qualified full-model serving recipe continues to use two fixed draft tokens.
+preferred TP2/PP4 serving recipe continues to use two fixed draft tokens.
 
 ## SM80 attention improvements
 
@@ -271,7 +273,9 @@ cached TTFT was 2.48 s.
 
 The revised run's failed objective gate withheld its serving benchmark and
 Max-effort long-context test. An end-to-end FP8 speedup and usable output
-at 458K therefore remain unqualified. The BF16 recipe below remains preferred.
+at 458K remain unqualified for that TP2/PP4 trial. The separate PP8/FP8
+full-context result is reported below. BF16 TP2/PP4 remains preferred for
+generation.
 
 ### Throughput targets and qualified context
 
@@ -289,8 +293,61 @@ The [measurement record](glm53-attention-20260918.json) retains the earlier
 dense-prefill results separately from this sparse-prefill qualification.
 The cache has 269,056 BF16 tokens, enough for one near-limit request. The
 0.985 configuration exhausted prefill activation memory and is not the
-qualified high-context recipe. This does not qualify the model's advertised
-1,048,576-token limit.
+qualified BF16 high-context recipe. These BF16 measurements cover the
+262,144-token setting; the full-context PP8 results follow.
+
+### Full-context PP8 profile
+
+TP1/PP8 with FP8 KV admits the model's 1,048,576-token context setting and
+allocates 1,100,928 cache tokens. On the same checkpoint and eight-GPU system,
+fresh and cached requests each retrieved all three synthetic records from
+1,046,659 input tokens. The records were inserted near 10%, 50%, and 90% of
+the document. Both responses contained the correct JSON answer in the final
+content, and both finished normally within a 1,024-token output budget.
+The requests used temperature zero and maximum reasoning effort.
+
+| Request | First-token latency | Total latency | Output tokens | Decode tokens/s |
+| --- | ---: | ---: | ---: | ---: |
+| Fresh prefix | 1,580.62 s | 1,590.08 s | 195 | 20.70 |
+| Cached prefix | 5.32 s | 16.67 s | 225 | 19.88 |
+
+The cached request intentionally reused the identical prompt. Generation
+rates include reasoning tokens and describe these short answers, rather
+than a matched steady-decode benchmark. The complete
+[measurement record](glm53-full-context-20260918.json) includes prompt hashes,
+record positions, final answers, and raw quality results. This configuration
+also passed 20/20 objective checks, reasoning and streamed tool use with tool
+continuation, and eight concurrent mixed-length retrieval requests.
+
+This profile establishes usable retrieval near the advertised context limit.
+Fresh prefill takes about 26 minutes and remains a substantial performance
+gap. Three-record retrieval does not establish general long-document accuracy.
+The cache supports roughly one full-length request; `--max-num-seqs 16` does
+not provide sixteen million-token contexts. TP2/PP4 below remains the
+preferred generation profile.
+
+The measured PP8 configuration uses no speculative model or worker extension:
+
+```bash
+export CUDA_DEVICE_ORDER=PCI_BUS_ID
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+export VLLM_PP_LAYER_PARTITION=12,10,10,10,9,9,9,9
+export PYTORCH_ALLOC_CONF=pinned_max_round_threshold_mb:1024
+uv run --python .venv/bin/python -m vllm.entrypoints.cli.main serve \
+  local-inference-lab/GLM-5.3-NVFP4 \
+  --revision b472e4ee53f6a9862da5486c56c6ca21be3dab70 \
+  --served-model-name glm-5.3-nvfp4 \
+  --tensor-parallel-size 1 --pipeline-parallel-size 8 \
+  --dtype bfloat16 --kv-cache-dtype fp8 \
+  --attention-config '{"backend":"TRITON_MLA_SPARSE"}' \
+  --additional-config '{"sparse_indexer_max_prefill_tokens":1048576,"pipeline_max_batch_requests":8,"pipeline_batch_policy":"adaptive","pipeline_min_batch_requests":1}' \
+  --compilation-config '{"mode":0,"cudagraph_mode":"FULL_DECODE_ONLY","cudagraph_capture_sizes":[1,2,4,8,16]}' \
+  --max-model-len 1048576 --max-num-batched-tokens 1024 --max-num-seqs 16 \
+  --gpu-memory-utilization 0.978 --numa-bind --async-scheduling \
+  --safetensors-load-strategy prefetch \
+  --reasoning-parser glm45 --tool-call-parser glm47 --enable-auto-tool-choice \
+  --host 127.0.0.1 --port 8000
+```
 
 ### Serving configuration
 
