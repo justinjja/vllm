@@ -17,6 +17,69 @@ INDEXER_LAYER = "model.layers.0.self_attn.indexer.k_cache"
 MLA_LAYER = "model.layers.0.self_attn.attn"
 
 
+@pytest.mark.parametrize("predecode", [False, True])
+def test_indexer_profiles_full_prefill_decode_workspace(monkeypatch, predecode):
+    """A one-token dummy run must reserve conversion space for a full batch."""
+    from vllm.v1.worker.workspace import WorkspaceManager
+
+    manager = WorkspaceManager(torch.device("meta"))
+    monkeypatch.setattr(sparse_indexer, "current_workspace_manager", lambda: manager)
+    monkeypatch.setattr(
+        sparse_indexer,
+        "get_forward_context",
+        lambda: SimpleNamespace(attn_metadata=None),
+    )
+
+    def no_config_context():
+        raise AssertionError("Profiling runs outside the model configuration context")
+
+    monkeypatch.setattr(sparse_indexer, "get_current_vllm_config", no_config_context)
+    monkeypatch.setattr(sparse_indexer.current_platform, "is_cuda", lambda: True)
+    monkeypatch.setattr(
+        sparse_indexer.current_platform, "is_device_capability", lambda _: True
+    )
+    monkeypatch.setattr(
+        sparse_indexer.current_platform, "fp8_dtype", lambda: torch.float8_e4m3fn
+    )
+    topk = torch.empty(1, 2048, dtype=torch.int32)
+    sparse_indexer.sparse_attn_indexer(
+        torch.empty(1, 1),
+        INDEXER_LAYER,
+        torch.empty(0),
+        torch.empty(1, 32, 128, dtype=torch.float8_e4m3fn),
+        None,
+        None,
+        torch.empty(1, 32),
+        128,
+        "ue8m0",
+        2048,
+        128,
+        1048576,
+        1048576,
+        topk,
+        True,
+        False,
+        "",
+        predecode_query_capacity=1024 if predecode else 0,
+    )
+    manager.lock()
+    specs = [
+        ((1048576, 128), torch.float8_e4m3fn),
+        ((1048576, 4), torch.uint8),
+        (
+            (sparse_indexer.envs.VLLM_SPARSE_INDEXER_MAX_LOGITS_MB * 1024**2 // 4,),
+            torch.float32,
+        ),
+        ((1024, 32, 128), torch.float16),
+        ((1048576, 128), torch.float16),
+    ]
+    if predecode:
+        manager.get_simultaneous(*specs)
+    else:
+        with pytest.raises(AssertionError, match="Workspace is locked"):
+            manager.get_simultaneous(*specs)
+
+
 def test_sparse_attention_refreshes_batch_state_inside_eager_segment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

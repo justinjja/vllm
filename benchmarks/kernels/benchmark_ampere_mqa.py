@@ -16,6 +16,65 @@ from vllm.model_executor.kernels.attention.dsa.ampere_mqa import (
 from vllm.triton_utils import triton
 
 
+def benchmark_predecode(rows, heads, n):
+    """Include conversion cost and bound scores to the serving workspace size."""
+    q = torch.randn(rows, heads, 128, device="cuda", dtype=torch.bfloat16).to(
+        torch.float8_e4m3fn
+    )
+    k = torch.randn(n, 128, device="cuda", dtype=torch.bfloat16).to(torch.float8_e4m3fn)
+    scales = torch.rand(n, device="cuda")
+    weights = torch.randn(rows, heads, device="cuda")
+    starts = torch.zeros(rows, device="cuda", dtype=torch.int32)
+    ends = torch.arange(n - rows + 1, n + 1, device="cuda", dtype=torch.int32)
+    args = ((q, None), (k, scales), weights, starts, ends)
+    reference = mqa_logits(*args)
+    output = torch.empty_like(reference)
+    workspace = (
+        torch.empty_like(q, dtype=torch.float16),
+        torch.empty_like(k, dtype=torch.float16),
+    )
+
+    def run(predecode):
+        return mqa_logits(
+            *args, out=output, decode_workspace=workspace if predecode else None
+        )
+
+    run(True)
+    torch.testing.assert_close(output, reference, rtol=2e-5, atol=2e-4)
+    unequal = (output != reference).sum().item()
+    max_abs = torch.nan_to_num((output - reference).abs(), nan=0.0).max().item()
+    ref_topk = reference.topk(2048, dim=1).indices.sort(dim=1).values
+    actual_topk = output.topk(2048, dim=1).indices.sort(dim=1).values
+    changed_rows = (ref_topk != actual_topk).any(dim=1).sum().item()
+    samples = [[], []]
+    for choice in (False, True):
+        triton.testing.do_bench_cudagraph(lambda choice=choice: run(choice), rep=200)
+    for repeat in range(4):
+        for choice in (0, 1) if repeat % 2 == 0 else (1, 0):
+            samples[choice].append(
+                triton.testing.do_bench_cudagraph(
+                    lambda choice=choice: run(choice), rep=240
+                )
+            )
+    baseline, predecoded = [statistics.median(values) for values in samples]
+    result = {
+        "rows": rows,
+        "heads": heads,
+        "kv_len": n,
+        "baseline_ms": baseline,
+        "predecoded_ms": predecoded,
+        "speedup": baseline / predecoded,
+        "samples_ms": samples,
+        "conversion_included": True,
+        "extra_workspace_bytes": sum(x.numel() * x.element_size() for x in workspace),
+        "unequal_logits": unequal,
+        "max_abs_difference": max_abs,
+        "topk_rows_with_changed_membership": changed_rows,
+    }
+    print(json.dumps(result), flush=True)
+    return result
+
+
 def benchmark(mode, batch, next_n, heads, n, fp16=False, verify_dispatch=False):
     m = batch * next_n
     q = torch.randn(m, heads, 128, device="cuda").to(torch.float8_e4m3fn)
@@ -132,7 +191,10 @@ if __name__ == "__main__":
     parser.add_argument("--mode", choices=["dense", "paged", "all"], default="all")
     parser.add_argument("--fp16", action="store_true")
     parser.add_argument("--verify-dispatch", action="store_true")
+    parser.add_argument("--predecode", action="store_true")
     args = parser.parse_args()
+    if args.predecode and args.mode != "dense":
+        parser.error("--predecode requires --mode dense")
     torch.manual_seed(2026)
     torch.set_num_threads(1)
     records = []
@@ -143,9 +205,18 @@ if __name__ == "__main__":
         workloads += [("dense", m, 1) for m in [128, 1024]]
     for heads in args.heads:
         for n in args.contexts:
-            for mode, b, s in workloads:
+            cases = (
+                [("dense", min(1024, (512 * 1024**2) // (4 * n)), 1)]
+                if args.predecode
+                else workloads
+            )
+            for mode, b, s in cases:
                 records.append(
-                    benchmark(mode, b, s, heads, n, args.fp16, args.verify_dispatch)
+                    benchmark_predecode(b, heads, n)
+                    if args.predecode
+                    else benchmark(
+                        mode, b, s, heads, n, args.fp16, args.verify_dispatch
+                    )
                 )
                 Path(args.output).write_text(
                     json.dumps(

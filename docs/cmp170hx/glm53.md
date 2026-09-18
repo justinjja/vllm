@@ -320,8 +320,9 @@ also passed 20/20 objective checks, reasoning and streamed tool use with tool
 continuation, and eight concurrent mixed-length retrieval requests.
 
 This profile establishes usable retrieval near the advertised context limit.
-Fresh prefill takes about 26 minutes and remains a substantial performance
-gap. Three-record retrieval does not establish general long-document accuracy.
+The baseline fresh prefill took about 26 minutes; the
+[predecoded variant](#predecoded-full-context-prefill) reduces it to about
+15 minutes. Three-record retrieval does not establish general long-document accuracy.
 The cache supports roughly one full-length request; `--max-num-seqs 16` does
 not provide sixteen million-token contexts. TP2/PP4 below remains the
 preferred generation profile.
@@ -347,6 +348,68 @@ uv run --python .venv/bin/python -m vllm.entrypoints.cli.main serve \
   --safetensors-load-strategy prefetch \
   --reasoning-parser glm45 --tool-call-parser glm47 --enable-auto-tool-choice \
   --host 127.0.0.1 --port 8000
+```
+
+### Predecoded full-context prefill
+
+For large SM80 prefills with 32 indexer heads, the optional
+`sparse_indexer_predecode` path converts FP8 queries and keys to FP16 once
+per scoring call. This avoids repeating software FP8 conversion inside
+each matrix tile. The conversion buffers share the profiled workspace;
+paged decode and prefills below 64 query rows or 65,536 keys retain their
+existing paths. Tensor-parallel query sharding also supports the workspace.
+
+On the same PP8 configuration and identical 1,046,659-token prompt, fresh
+first-token latency fell **43.5%**, from 1,580.62 s to **892.51 s**
+(1.77× faster). Both fresh and cached requests retrieved all three records
+correctly. The fresh answer, including reasoning, matched the baseline's
+text exactly. The configuration also passed 20/20 objective checks,
+reasoning and streamed tools with continuation, and 8/8 concurrent retrieval
+checks. The [complete record](glm53-predecoded-prefill-20260918.json) contains
+source hashes, raw answers, kernel measurements, and the earlier rounding
+diagnostic.
+
+| Request | First-token latency | Total latency | Output tokens | Decode tokens/s |
+| --- | ---: | ---: | ---: | ---: |
+| Fresh prefix | 892.51 s | 902.29 s | 195 | 19.99 |
+| Cached prefix | 5.01 s | 14.75 s | 195 | 20.09 |
+
+These are one fresh and one cached measurement per configuration. The
+cached request deliberately reused the prompt. They establish synthetic
+retrieval and a prefill improvement; they do not establish general accuracy
+or a generation-throughput gain. TP2/PP4 remains preferred for generation.
+
+The option is off by default. For this faster full-context PP8 variant,
+replace the recipe above's `--additional-config` value with:
+
+```json
+{"sparse_indexer_max_prefill_tokens":1048576,"sparse_indexer_predecode":true,"pipeline_max_batch_requests":8,"pipeline_batch_policy":"adaptive","pipeline_min_batch_requests":1}
+```
+
+With 1,024 batched tokens and a 1,048,576-token prefill workspace, conversion
+reserves **264 MiB**. Measured KV capacity falls from 1,100,928 to
+**1,055,936 tokens**, retaining the full-context request. This memory cost
+must be included when choosing a context limit on other configurations.
+
+The integrated kernel benchmark includes query and key conversion costs:
+
+| Query rows | KV tokens | Existing kernel | Predecoded kernel | Speedup |
+| ---: | ---: | ---: | ---: | ---: |
+| 512 | 262,144 | 47.27 ms | 15.66 ms | 3.02× |
+| 128 | 1,048,576 | 47.30 ms | 16.73 ms | 2.83× |
+
+Four alternating timing samples were taken for each path. Both benchmark
+inputs produced identical scores and top-2048 membership. Conversion is
+exact, but the MMA layout can change FP32 rounding: an earlier prototype
+input changed one score by 3.81e-6, with unchanged top-k membership.
+These checks do not establish universal output equivalence. Seventy-five
+distinct kernel, distributed, layer, and workspace cases passed; seven
+cases requiring other hardware were skipped.
+
+```bash
+PYTHONPATH=. uv run --no-project --python .venv/bin/python \
+  benchmarks/kernels/benchmark_ampere_mqa.py --mode dense --heads 32 \
+  --contexts 262144 1048576 --predecode --output predecode-kernels.json
 ```
 
 ### Serving configuration

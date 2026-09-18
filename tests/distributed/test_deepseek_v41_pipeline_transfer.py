@@ -225,6 +225,20 @@ def _prefill_tp_worker(rank, port):
                             if not write_candidates
                             else None
                         ),
+                        decode_workspace=(
+                            (
+                                torch.empty(
+                                    ((rows + 1) // 2, heads, 128),
+                                    device="cuda",
+                                    dtype=torch.float16,
+                                ),
+                                torch.empty(
+                                    (columns, 128), device="cuda", dtype=torch.float16
+                                ),
+                            )
+                            if heads == 32 and not write_candidates
+                            else None
+                        ),
                     )
                     torch.testing.assert_close(
                         actual.sort(-1).values, expected.sort(-1).values, rtol=0, atol=0

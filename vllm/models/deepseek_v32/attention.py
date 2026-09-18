@@ -492,6 +492,7 @@ class DeepseekV32Attention(MLAAttention):
                     self._vllm_config.parallel_config.cp_kv_cache_interleave_size
                 ),
                 skip_topk_buffer_clear=True,
+                predecode_query_capacity=self.indexer.indexer_op.predecode_query_capacity,
             )
         self.impl.record_logical_topk_ready()  # type: ignore[attr-defined]
 

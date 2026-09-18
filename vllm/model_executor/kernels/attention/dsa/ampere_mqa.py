@@ -67,6 +67,7 @@ def _mqa_logits(
     FP16: tl.constexpr,
     DENSE_M,
     DENSE_N,
+    PREDECODED: tl.constexpr = False,
 ):
     m = M if PAGED else DENSE_M
     n = N if PAGED else DENSE_N
@@ -121,7 +122,9 @@ def _mqa_logits(
             valid_q[:, None],
             other=0,
         )
-        if FP16:
+        if PREDECODED:
+            scores = tl.dot(qb, kb)
+        elif FP16:
             scores = tl.dot(decode_e4m3_fp16(qb), decode_e4m3_fp16(kb))
         else:
             scores = tl.dot(decode_e4m3_bf16(qb), decode_e4m3_bf16(kb))
@@ -173,13 +176,26 @@ def _paged_tile(batch, next_n, heads, columns):
 
 
 def mqa_logits(
-    q, kv, weights, starts, ends, clean_logits=False, *, tile=None, fp16=True, out=None
+    q,
+    kv,
+    weights,
+    starts,
+    ends,
+    clean_logits=False,
+    *,
+    tile=None,
+    fp16=True,
+    out=None,
+    decode_workspace=None,
 ):
     """Return FP32 sum_h(weight_h * relu(Q_h K)) with [start, end) masking.
 
     FP8 query scales are folded into weights; keys carry one FP32 scale per
     position. Invalid positions are always -inf, including clean_logits=False.
     ``tile`` is an explicit (query rows, KV columns, warps) benchmark override.
+    ``decode_workspace`` supplies FP16 query/key buffers for one-time conversion
+    before large prefills. Their contents are overwritten on every call.
+    Conversion is exact; the different MMA layout may round FP32 scores differently.
     """
     values = _check_query(q, weights)
     keys, scales = kv
@@ -199,10 +215,25 @@ def mqa_logits(
         assert out.dtype == torch.float32 and out.device == values.device
     if m == 0 or n == 0:
         return out
-    br, bn, warps = tile or _dense_tile(m, h, n)
+    if decode_workspace is not None:
+        assert fp16
+        query_buffer, key_buffer = decode_workspace
+        assert query_buffer.dtype == key_buffer.dtype == torch.float16
+        assert query_buffer.device == key_buffer.device == values.device
+        assert query_buffer.shape[0] >= m and query_buffer.shape[1:] == (h, d)
+        assert key_buffer.shape[0] >= n and key_buffer.shape[1:] == (d,)
+        assert query_buffer.is_contiguous() and key_buffer.is_contiguous()
+        decoded_q, decoded_k = query_buffer[:m], key_buffer[:n]
+        decoded_q.copy_(values)
+        decoded_k.copy_(keys)
+        values, keys = decoded_q, decoded_k
+        br, bn, warps = tile or (4, 128, 4)
+    else:
+        values, keys = values.view(torch.uint8), keys.view(torch.uint8)
+        br, bn, warps = tile or _dense_tile(m, h, n)
     _mqa_logits[(triton.cdiv(m, br), triton.cdiv(n, bn))](
-        values.view(torch.uint8),
-        keys.view(torch.uint8),
+        values,
+        keys,
         scales,
         weights,
         starts,
@@ -232,6 +263,7 @@ def mqa_logits(
         fp16,
         m,
         n,
+        PREDECODED=decode_workspace is not None,
         num_warps=warps,
     )
     return out

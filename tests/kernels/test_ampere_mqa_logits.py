@@ -155,6 +155,73 @@ def test_dense_logits_reuses_preallocated_workspace():
         assert torch.all(buffer[rows * columns :] == 123.0)
 
 
+def test_predecoded_prefill_preserves_masking_topk_and_workspace():
+    """Refresh strided FP8 inputs without allocations or stale padded rows."""
+    from vllm import _custom_ops as ops
+
+    torch.manual_seed(170)
+    q = torch.randn(130, 64, 128, device="cuda").to(torch.float8_e4m3fn)[::2, ::2]
+    k = torch.randn(131072, 128, device="cuda").to(torch.float8_e4m3fn)[::2]
+    scales = torch.rand(131072, device="cuda")[::2]
+    weights = torch.randn(65, 64, device="cuda")[:, ::2]
+    starts = torch.zeros(65, device="cuda", dtype=torch.int32)
+    ends = torch.empty_like(starts)
+    query_buffer = torch.empty((65, 32, 128), device="cuda", dtype=torch.float16)
+    key_buffer = torch.empty((65536, 128), device="cuda", dtype=torch.float16)
+    output_buffer = torch.empty(65 * 65536 + 16, device="cuda")
+    for rows, columns in ((65, 65536), (7, 197), (0, 197), (7, 0)):
+        starts[:rows].zero_()
+        starts[2:rows:2] = columns // 3
+        ends[:rows].fill_(columns)
+        if rows and columns:
+            ends[0] = 0
+            ends[1] = 1
+            # Change inputs as well as window bounds between calls.
+            q.copy_(q.flip(0))
+            k.copy_(k.flip(0))
+        args = (
+            (q[:rows], None),
+            (k[:columns], scales[:columns]),
+            weights[:rows],
+            starts[:rows],
+            ends[:rows],
+        )
+        expected = mqa_logits(*args)
+        output_buffer.fill_(123.0)
+        output = output_buffer[: rows * columns].view(rows, columns)
+
+        def run(args=args, output=output):
+            return mqa_logits(
+                *args, out=output, decode_workspace=(query_buffer, key_buffer)
+            )
+
+        run()  # Compile before checking allocator use.
+        torch.accelerator.synchronize()
+        allocated = torch.accelerator.memory_allocated()
+        torch.accelerator.reset_peak_memory_stats()
+        result = run()
+        torch.accelerator.synchronize()
+        assert torch.accelerator.max_memory_allocated() == allocated
+        assert result.data_ptr() == output.data_ptr()
+        assert torch.all(output_buffer[rows * columns :] == 123.0)
+        torch.testing.assert_close(result, expected, rtol=2e-5, atol=2e-4)
+        if rows and columns:
+            indices = []
+            for logits in (expected, result):
+                topk = torch.full((rows, 2048), -1, device="cuda", dtype=torch.int32)
+                ops.top_k_per_row_prefill(
+                    logits,
+                    starts[:rows],
+                    ends[:rows],
+                    topk,
+                    rows,
+                    *logits.stride(),
+                    2048,
+                )
+                indices.append(topk.sort(dim=-1).values)
+            torch.testing.assert_close(*indices, rtol=0, atol=0)
+
+
 def _paged_case(next_n, heads=16):
     torch.manual_seed(17)
     b, n, page = 3, 197, 64

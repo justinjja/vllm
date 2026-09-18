@@ -338,6 +338,7 @@ def ampere_sharded_prefill_topk(
     candidates: torch.Tensor | None,
     candidate_block_size: int,
     logits_buffer: torch.Tensor | None = None,
+    decode_workspace: tuple[torch.Tensor, torch.Tensor] | None = None,
 ) -> None:
     """Partition replicated dense-indexer queries; exchange only selected IDs."""
     group = get_tp_group()
@@ -367,7 +368,12 @@ def ampere_sharded_prefill_topk(
             weights[begin:end],
             starts[begin:end],
             ends[begin:end],
-            tile=_ampere_dense_tile(rows, heads, k.shape[0]),
+            tile=(
+                _ampere_dense_tile(rows, heads, k.shape[0])
+                if decode_workspace is None
+                else None
+            ),
+            decode_workspace=decode_workspace,
             out=(
                 logits_buffer[: count * k.shape[0]].view(count, k.shape[0])
                 if logits_buffer is not None
@@ -427,6 +433,7 @@ def sparse_attn_indexer(
     candidate_block_size: int = 0,
     candidate_write: bool = False,
     topk_backend: str = "auto",
+    predecode_query_capacity: int = 0,
 ) -> torch.Tensor:
     # careful! this will be None in dummy run
     forward_context = get_forward_context()
@@ -445,6 +452,18 @@ def sparse_attn_indexer(
     logits_specs = (
         [((logits_bytes // 4,), torch.float32)] if reuse_ampere_logits else []
     )
+    decode_specs: list[tuple[tuple[int, ...], torch.dtype]] = []
+    if (
+        reuse_ampere_logits
+        and q_quant.ndim == 3
+        and q_quant.shape[1:] == (32, 128)
+        and total_seq_lens >= 65536
+        and predecode_query_capacity > 0
+    ):
+        decode_specs = [
+            ((predecode_query_capacity, 32, 128), torch.float16),
+            ((total_seq_lens, 128), torch.float16),
+        ]
 
     if candidate_blocks is not None:
         # Candidate blocks are request-local; the DCP-sharded logits layout
@@ -465,6 +484,7 @@ def sparse_attn_indexer(
             scales_spec,
             ((RADIX_TOPK_WORKSPACE_SIZE,), torch.uint8),
             *logits_specs,
+            *decode_specs,
         ]
         if use_pcp and dcp_world_size > 1:
             # The PCP+DCP path takes an all-gather destination and a
@@ -606,7 +626,13 @@ def sparse_attn_indexer(
             scales_spec,
             *gather_specs,
             *logits_specs,
+            *decode_specs,
         )
+        decode_workspace = None
+        if decode_specs:
+            decoded_k = gather_bufs.pop()
+            decoded_q = gather_bufs.pop()
+            decode_workspace = (decoded_q, decoded_k)
         # A fixed score buffer avoids allocator fragmentation as prefill grows.
         logits_buffer = gather_bufs.pop() if reuse_ampere_logits else None
         for chunk in prefill_metadata.chunks:
@@ -650,6 +676,11 @@ def sparse_attn_indexer(
             topk_indices = topk_indices_buffer[
                 chunk.token_start : chunk.token_end, :topk_tokens
             ]
+            chunk_decode_workspace = (
+                decode_workspace
+                if q_slice.shape[0] >= 64 and k_quant.shape[0] >= 65536
+                else None
+            )
 
             if (
                 not use_fp4_cache
@@ -678,6 +709,7 @@ def sparse_attn_indexer(
                     ),
                     candidate_block_size,
                     logits_buffer=logits_buffer,
+                    decode_workspace=chunk_decode_workspace,
                 )
                 continue
 
@@ -724,6 +756,7 @@ def sparse_attn_indexer(
                         cu_seqlen_ks,
                         cu_seqlen_ke,
                         out=logits_buffer[: rows * columns].view(rows, columns),
+                        decode_workspace=chunk_decode_workspace,
                     )
                 elif current_platform.is_xpu():
                     if q_scale_slice is not None:
@@ -975,6 +1008,7 @@ def sparse_attn_indexer_fake(
     candidate_block_size: int = 0,
     candidate_write: bool = False,
     topk_backend: str = "auto",
+    predecode_query_capacity: int = 0,
 ) -> torch.Tensor:
     return topk_indices_buffer
 
@@ -1040,6 +1074,12 @@ class SparseAttnIndexer(CustomOp):
         # during model construction) and pass them into the custom op, rather
         # than threading them through per-step metadata.
         vllm_config = get_current_vllm_config()
+        extra = vllm_config.additional_config
+        self.predecode_query_capacity = (
+            vllm_config.scheduler_config.max_num_batched_tokens
+            if isinstance(extra, dict) and extra.get("sparse_indexer_predecode", False)
+            else 0
+        )
         parallel_config = vllm_config.parallel_config
         self.topk_backend = vllm_config.kernel_config.sparse_indexer_topk_backend
         self._parallel_config = parallel_config
@@ -1157,6 +1197,7 @@ class SparseAttnIndexer(CustomOp):
             candidate_block_size=self.candidate_block_size,
             candidate_write=self.candidate_write,
             topk_backend=self.topk_backend,
+            predecode_query_capacity=self.predecode_query_capacity,
         )
 
     def forward_xpu(
