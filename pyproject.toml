@@ -135,6 +135,7 @@ extend-exclude = ["tests/models/fixtures/*", "tests/prompts/*", "tests/tokenizer
     "tests/v1/engine/test_fast_incdec_prefix_err.py", ".git/*", "csrc/cpu/sgl-kernels/*",
     "docs/cmp170hx/glm53-full-context-20260918.json",
     "docs/cmp170hx/glm53-predecoded-prefill-20260918.json",
+    "docs/cmp170hx/glm53-balanced-prefill-trial-20260918.json",
     "rust/src/chat/src/renderer/deepseek_v32/fixtures/*", "rust/src/parser/**",
     "rust/src/text/src/output/decoded.rs",
     "rust/src/tokenizer/src/incremental.rs"]

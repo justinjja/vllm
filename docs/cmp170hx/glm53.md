@@ -412,6 +412,25 @@ PYTHONPATH=. uv run --no-project --python .venv/bin/python \
   --contexts 262144 1048576 --predecode --output predecode-kernels.json
 ```
 
+### Balanced partition trial
+
+Changing only the predecoded PP8 profile's layer partition to
+`9,10,10,10,10,10,10,9` reduced fresh first-token latency from 892.51 s to
+697.38 s on the identical 1,046,659-token retrieval prompt. All three records
+were correct; total latency was 707.32 s with 196 output tokens. Startup
+allocated 1,053,440 KV tokens, and 20/20 objective checks, reasoning/tools
+with continuation, and 8/8 concurrent retrieval checks passed.
+
+**This partition is not qualified.** The subsequent cached request failed
+during generation with an unspecified CUDA launch failure. The driver logged
+Xid 32 and 31, and the engine shut down. The root cause is unresolved; this
+does not establish a physical connectivity difference. The
+[trial record](glm53-balanced-prefill-trial-20260918.json) retains the successful
+fresh measurement and the failed cached check. The 21.9% fresh latency
+reduction is a single trial result, not a validated replacement for the
+`12,10,10,10,9,9,9,9` full-context recipe above. TP2/PP4 remains preferred for
+generation.
+
 ### Serving configuration
 
 Preserve the checkpoint's complete quantization configuration when excluding
