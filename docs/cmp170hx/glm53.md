@@ -6,9 +6,11 @@ KV paths pass kernel and engine integration checks. TP2/PP4 with BF16 KV and
 two MTP drafts remains preferred for generation. A separate PP8/FP8 profile
 passes fresh and cached retrieval from 1,046,659 input tokens, although its
 fresh prefill is slow; see the [full-context measurements](#full-context-pp8-profile).
-Subsequent cached-context crashes also affected the BF16 profile; the
-[context-sharding trial and recovery controls](#context-sharding-trial) retain
-those failures alongside the earlier successful measurements.
+Subsequent cached-context and concurrent-generation crashes also affected the
+BF16 profile. The [context-sharding trial](#context-sharding-trial) and
+[transport and recovery controls](#nccl-transport-comparison) retain those
+failures alongside the earlier successful measurements. A full driver reset
+and reload did not prevent recurrence; reliable serving remains unresolved.
 
 ## Implementation and provenance
 
@@ -536,13 +538,109 @@ No new GPU fault occurred during this control, which was left serving with
 268,608 cache tokens.
 
 This control changes both communication paths and allocation layout. It does
-not isolate the failing component or establish a permanent fix. No matched
-generation benchmark or throughput gain is claimed. To reproduce this
+not isolate the failing component or establish a permanent fix. The initial
+recovery checks did not include a generation benchmark. To reproduce this
 diagnostic on the BF16/MTP2 recipe below, set `NCCL_P2P_DISABLE=1` in the
 environment and add `--disable-custom-all-reduce` to the serving command.
 
 The [trial record](glm53-context-sharding-trial-20260918.json) preserves both
-failed model configurations, memory checks, and the transport control.
+failed model configurations, memory checks, and the transport control. The
+subsequent [NCCL transport comparison](#nccl-transport-comparison) adds generation
+measurements and a failure with custom all-reduce still disabled.
+
+### NCCL transport comparison
+
+The next comparison kept custom all-reduce disabled and changed
+`NCCL_P2P_DISABLE` from `1` to `0`. TP2/PP4, the 22/20/20/16 partition, BF16 KV,
+two BF16 MTP drafts, 262,144-token context limit, 2,048-token prefill chunks,
+and 268,608 cache tokens were unchanged. NCCL 2.29.7 initialization logs
+confirmed `P2P/CUMEM` in both directions on all four symmetric PIX pairs;
+pipeline links between pairs used shared host memory.
+
+The peer-enabled run passed 20/20 objective answers, reasoning/tools, 8/8
+concurrent retrieval checks, fresh 262K retrieval, and four cached requests.
+Every long request returned the three records in final content. Fresh
+first-token latency was 145.79 s, versus 161.57 s for the host-transport
+control; cached latencies were 1.42–1.53 s.
+
+It subsequently **failed during the first concurrency-16 generation run**.
+The NaN guard reported invalid logits for three requests and terminated the
+engine. The active pipeline microbatch contained four requests and twelve
+verification tokens, with 132–161 output tokens already recorded. No new
+driver Xid was logged, and all eight CUDA computation checks passed after
+the processes exited. No reset, driver reload, or reboot was required.
+
+Only the two single-request and two concurrency-eight timing cases completed
+for the peer-enabled run. Its partial timings do not qualify this configuration
+for serving. Five successful long-context requests did not predict successful
+concurrent generation, and disabling custom all-reduce did not prevent this
+failure. The source of the NaNs remains unresolved.
+
+Repeating the host-transport control also passed the short checks, fresh
+retrieval, and four cached requests. Fresh first-token latency was 160.05 s.
+Its first concurrency-16 run then failed with an unspecified CUDA launch
+error and Xid 31 on `b2`, an MMU virtual-read fault. Seven requests remained
+active; the scheduled microbatch held two requests with 477 and 488 output
+tokens recorded. All eight CUDA computation checks passed after application
+exit, and the driver reported no reset requirement. This recurrence with
+both peer transport and custom all-reduce disabled prevents treating either
+setting as a sufficient fix.
+
+| Graph execution control | Single tokens/s | C8 aggregate tokens/s | C16 aggregate tokens/s | 8K first-token latency |
+| --- | ---: | ---: | ---: | ---: |
+| Host transport, initial run | 39.49–51.94 | 212.72–253.47 | 282.27–295.52 | 6.09–6.27 s |
+| NCCL peer transport | 44.08–47.01 | 205.99–240.91 | Failed: NaN logits | Not reached |
+| Host transport, repeated run | 39.53–40.72 | 212.51–214.82 | Failed: MMU fault | Not reached |
+| Preferred transport after reset/reload | 57.54–60.54 | 248.58–261.71 | 311.97 first run; second failed | Not reached |
+
+An eager-execution control then disabled CUDA graph replay while retaining
+host transport and exactly 268,608 cache tokens. It scored 19/20 objective
+answers, with the previously observed `compute` → `computer` failure, and
+passed reasoning/tools, 8/8 concurrent retrieval, fresh 262K retrieval,
+and the first cached request. Fresh first-token latency was 162.58 s.
+The next cached request failed on `b2` with two Xid 31 MMU faults, after
+90 recorded output tokens. Its generation benchmark was withheld. This
+failure occurred with graph replay, NCCL peer transport, and custom
+all-reduce all disabled.
+
+After that failure, the installed driver was unloaded without force and
+`b2` received a PCI function-level reset while unbound. The original reset
+method was restored, and the unchanged installed driver and persistence
+service were reloaded. Driver parameters and all five installed-module
+hashes matched their saved values. All eight CUDA computation checks passed;
+no reboot or boot-configuration change was needed.
+
+The preferred configuration was then tested with custom all-reduce and
+NCCL peer transport enabled, giving 269,056 cache tokens. It passed 20/20
+objective answers, reasoning/tools, 8/8 concurrent retrieval, fresh 262K
+retrieval, and four cached requests. Fresh first-token latency was 147.28 s.
+The first concurrency-16 benchmark completed at 311.97 accepted tokens/s,
+but the second failed: `b2` reported a power-management firmware halt,
+Xid 62, followed by Xid 154 requiring a function-level reset. Thus a clean
+driver reload did not prevent recurrence. This run is **not qualified**.
+
+A second unbound function-level reset and unchanged-driver reload recovered
+all eight GPUs without rebooting. Independent checks then passed:
+
+- Eight simultaneous BF16 matrix tests, each retaining 62 GiB of allocations,
+  checked every result element against an analytical reference for sixty
+  seconds. Each card completed 62,065–65,471 checked products with zero
+  mismatches; deliberate single-element corruption was detected on every card.
+- NCCL reductions on all four PIX pairs retained 61.75 GiB per card and
+  exercised 3/6/12/24/48-token BF16 inputs of width 6,144. Every rank completed
+  20,000 reductions in eager execution and 20,000 in graph replay, checking
+  the final output of each sixteen-reduction group against exact values.
+  All checks and deliberate-corruption detector checks passed.
+
+These bounded tests do not exercise every model kernel, allocation, transfer,
+or buffer lifetime. Their success neither establishes the cause of the model
+failures nor rules out all hardware or software faults.
+
+The [comparison record](glm53-transport-comparison-20260918.json) retains the
+matched prompt hashes, accepted-token timing summaries, quality responses,
+and failure details. Generation uses 512 input and 512 output tokens with
+the same corpus and prompts in both configurations. The benchmark forces
+output length; quality checks are separate.
 
 ### Draft expert compression measurements
 
