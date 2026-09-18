@@ -781,6 +781,14 @@ conversion or identify the failing operation within the layer. The
 [trace record](glm53-first-nonfinite-trace-20260918.json) preserves the observations
 and limits. Reliable serving remains unresolved.
 
+A broader trace added attention and MoE boundaries throughout layers 42–61.
+Fresh and one cached 262K retrieval passed, but the next cached request failed
+with an MMU page-directory fault (Xid 31) on `b2`. Its last completed check was
+layer 56's MoE input; this identifies a boundary, not the faulting kernel.
+No nonfinite record was captured in that run. An unbound PCI function-level
+reset and reload of the unchanged installed driver restored all eight GPUs
+without a reboot; allocation and compute checks passed on every card.
+
 ### Draft expert compression measurements
 
 The checkpoint stores its MTP routed experts in BF16. An isolated comparison

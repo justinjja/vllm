@@ -171,5 +171,131 @@
     "Instrumentation changes execution timing; this is not a performance benchmark.",
     "Earlier trace attempts used the legacy decoder class and covered inherited final logits only; their lack of layer records is not evidence of finite decoder outputs.",
     "The CPU checkpoint check does not validate every loader conversion, CUDA copy, or model operation."
-  ]
+  ],
+  "expanded_stage2_trace": {
+    "coverage": "All decoder inputs/outputs; attention and MoE inputs/outputs throughout layers 42 through 61; final norm and logits",
+    "source_sha256": "10e957069bb52f835f9d329dced3e9b97a0c21c338cc78b50f687ad8e26ffb6c",
+    "same_clock_and_model_configuration": true,
+    "check_exit_codes": {
+      "objectives": 1,
+      "qualification": 0,
+      "concurrent-check": 0,
+      "long-fresh": 0,
+      "long-cached": 0
+    },
+    "objective_score": "19/20; compute was returned as computer",
+    "fresh_context": {
+      "target_tokens": 262144,
+      "passed": true,
+      "ttft_s": 171.93298737800797,
+      "elapsed_s": 172.9793166440213,
+      "decode_tokens_s": 52.59626274579125,
+      "document_sha256": "ba322527959095534413ef1aa4e7bc199290e0efc3c329d58b327c645703e7fb"
+    },
+    "first_cached_context": {
+      "target_tokens": 262144,
+      "passed": true,
+      "ttft_s": 1.4929744520050008,
+      "elapsed_s": 5.098874304996571,
+      "decode_tokens_s": 48.2634589185319,
+      "document_sha256": "ba322527959095534413ef1aa4e7bc199290e0efc3c329d58b327c645703e7fb"
+    },
+    "additional_cached_repeats": [
+      {
+        "repeat": 1,
+        "returncode": 1
+      }
+    ],
+    "last_progress": [
+      {
+        "device": 0,
+        "observed_at_utc": "2026-09-18T18:31:22.644076+00:00",
+        "epoch": 1414,
+        "position": 260243,
+        "layer": 21,
+        "point": 1
+      },
+      {
+        "device": 1,
+        "observed_at_utc": "2026-09-18T18:31:22.640134+00:00",
+        "epoch": 1414,
+        "position": 260243,
+        "layer": 21,
+        "point": 1
+      },
+      {
+        "device": 2,
+        "observed_at_utc": "2026-09-18T18:31:22.597665+00:00",
+        "epoch": 1414,
+        "position": 260243,
+        "layer": 41,
+        "point": 1
+      },
+      {
+        "device": 3,
+        "observed_at_utc": "2026-09-18T18:31:22.675740+00:00",
+        "epoch": 1414,
+        "position": 260243,
+        "layer": 41,
+        "point": 1
+      },
+      {
+        "device": 4,
+        "observed_at_utc": "2026-09-18T18:31:22.630530+00:00",
+        "epoch": 1414,
+        "position": 260243,
+        "layer": 57,
+        "point": 0
+      },
+      {
+        "device": 5,
+        "observed_at_utc": "2026-09-18T18:31:22.659575+00:00",
+        "epoch": 1414,
+        "position": 260243,
+        "layer": 56,
+        "point": 7
+      },
+      {
+        "device": 6,
+        "observed_at_utc": "2026-09-18T18:31:22.686826+00:00",
+        "epoch": 1410,
+        "position": 260240,
+        "layer": 78,
+        "point": 1
+      },
+      {
+        "device": 7,
+        "observed_at_utc": "2026-09-18T18:31:22.681606+00:00",
+        "epoch": 1410,
+        "position": 260240,
+        "layer": 78,
+        "point": 1
+      }
+    ],
+    "nonfinite_reports": [],
+    "failure": {
+      "time_utc": "2026-09-18T18:31:22Z",
+      "device": 5,
+      "pci_device": "0000:b2:00.0",
+      "xid": 31,
+      "engine": "GR0_PBDMA1",
+      "client": "HUBCLIENT_ESC",
+      "fault": "FAULT_PDE ACCESS_TYPE_VIRT_READ",
+      "address": "0x2_424e5000",
+      "last_checked_boundary": "Layer 56 MoE input, epoch 1414, position 260243",
+      "phase": "First additional cached request after fresh and one cached pass"
+    },
+    "recovery": {
+      "reset_performed": true,
+      "driver_parameters_unchanged": true,
+      "installed_modules_unchanged": true,
+      "reboot_performed": false
+    },
+    "recovered_cuda_smoke_passed": 8,
+    "limits": [
+      "The last progress marker identifies a completed check, not the kernel that caused the MMU fault.",
+      "No first-nonfinite record was captured in this run; it does not establish that all subsequent values remained finite.",
+      "Clock limits and tracing change execution timing; the root cause remains unresolved."
+    ]
+  }
 }
