@@ -725,7 +725,15 @@ establish reliable model serving. A subsequent five-minute upstream-comparator
 trial with all eight GPUs loaded passed on every device: device 4 completed
 18,130 products at 900 MHz, with zero reported mismatches and no new Xid.
 The other seven devices retained their default core clocks, and memory clocks
-were unchanged. Model qualification with this temporary limit remains open.
+were unchanged.
+
+The model trial with only `b1` limited to 900 MHz retained the preferred
+TP2/PP4 graphs, peer transfers, asynchronous scheduling, and 269,056 KV tokens.
+It passed 20/20 objective answers, reasoning/tools, and eight concurrent
+retrieval checks. The first fresh long-context response then failed: after
+68 scheduler-counted output tokens, rank 6 reported 154,880 NaN logits.
+No new driver Xid appeared. Cached-context checks and the benchmark were not
+reached. Thus the bounded compute passes did not establish a serving fix.
 
 Earlier exact-pattern BF16 compute and memory tests passed. A combined probe
 also passed 10,000 eager and 10,000 graph iterations per card with dense BF16
