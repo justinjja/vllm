@@ -46,12 +46,13 @@ def decode_fp8(bits, use_fnuz: tl.constexpr = False):
     if use_fnuz:
         return bits.to(tl.uint8).to(tl.float8e4b8, bitcast=True).to(tl.float32)
     elif SOFTWARE_FP8:
-        bits = bits.to(tl.uint32)
+        # E4M3FN values, including subnormals, are exact in FP16. Correct
+        # the exponent bias in FP16 to avoid wide intermediate registers.
+        bits = bits.to(tl.uint16)
         payload = bits & 127
-        normal = ((payload << 20) + 0x3C000000).to(tl.float32, bitcast=True)
-        magnitude = tl.where(payload < 8, payload.to(tl.float32) / 512.0, normal)
-        signed = magnitude.to(tl.uint32, bitcast=True) | ((bits & 128) << 24)
-        value = signed.to(tl.float32, bitcast=True)
-        return tl.where(payload == 127, float("nan"), value)
+        half_bits = (payload << 7) | ((bits & 128) << 8)
+        value = half_bits.to(tl.float16, bitcast=True)
+        value = value * tl.full((), 256.0, tl.float16)
+        return tl.where(payload == 127, float("nan"), value.to(tl.float32))
     else:
         return bits.to(tl.uint8).to(tl.float8e4nv, bitcast=True).to(tl.float32)

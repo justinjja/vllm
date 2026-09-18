@@ -1,0 +1,524 @@
+{
+  "date_utc": "2026-09-18",
+  "model": "local-inference-lab/GLM-5.3-NVFP4",
+  "revision": "b472e4ee53f6a9862da5486c56c6ca21be3dab70",
+  "hardware": "8x CMP170HX SM80; four symmetric PIX pairs, four GPUs per CPU",
+  "base_commit": "1eb223e49f4aa138592c38fff8889723fa189279",
+  "source_path": "vllm/triton_utils/fp8_compat.py",
+  "source_sha256": "d573ef11672bfdc3663a31cf9d2197eb1b2919b6207c29e9bac8fe69d68bfeb2",
+  "reference_tests": {
+    "passed": 28,
+    "coverage": "All 256 FP8 encodings, including signed zero and NaNs; 27 independent BF16/FP8 attention cases with multiple scales, head counts and split counts."
+  },
+  "compiled_prefill_kernel": {
+    "block_n": 128,
+    "warps": 8,
+    "stages": 1,
+    "registers_per_thread_before_and_after": 255,
+    "stack_bytes_per_thread_before": 440,
+    "stack_bytes_per_thread_after": 16
+  },
+  "kernel_benchmark": {
+    "raw_record_sha256": "1316506adcd0890a474d5250cf43fc2640dca3c4608e5987d47a43772ff8549e",
+    "kv_slots": 262144,
+    "kv_scale": 1.0,
+    "repeats": 3,
+    "method": "Alternating CUDA-graph timings on an idle GPU; same query, cache and selected-key tensors. Kernel timings, not serving throughput.",
+    "samples": [
+      {
+        "queries": 1,
+        "heads": 32,
+        "valid_topk": 512,
+        "ms": {
+          "baseline": [
+            0.04739134917824955,
+            0.04097750954165353,
+            0.04097567662172626
+          ],
+          "candidate": [
+            0.030937746359821508,
+            0.030847851220136453,
+            0.030861385980622796
+          ]
+        },
+        "baseline_median_ms": 0.04097750954165353,
+        "candidate_median_ms": 0.030861385980622796,
+        "time_reduction_percent": 24.687014106476436,
+        "numerically_equal_outputs": true
+      },
+      {
+        "queries": 3,
+        "heads": 32,
+        "valid_topk": 512,
+        "ms": {
+          "baseline": [
+            0.04300935987729501,
+            0.04299919556234485,
+            0.04301223021991887
+          ],
+          "candidate": [
+            0.03208108395946269,
+            0.03207924934086612,
+            0.03207550797507028
+          ]
+        },
+        "baseline_median_ms": 0.04300935987729501,
+        "candidate_median_ms": 0.03207924934086612,
+        "time_reduction_percent": 25.413329953322528,
+        "numerically_equal_outputs": true
+      },
+      {
+        "queries": 12,
+        "heads": 32,
+        "valid_topk": 512,
+        "ms": {
+          "baseline": [
+            0.08308536736248749,
+            0.07839193694966294,
+            0.07745606253487723
+          ],
+          "candidate": [
+            0.0503766802038131,
+            0.0506308492861296,
+            0.05067488092954467
+          ]
+        },
+        "baseline_median_ms": 0.07839193694966294,
+        "candidate_median_ms": 0.0506308492861296,
+        "time_reduction_percent": 35.41319266209649,
+        "numerically_equal_outputs": true
+      },
+      {
+        "queries": 3,
+        "heads": 32,
+        "valid_topk": 2048,
+        "ms": {
+          "baseline": [
+            0.08821391195917326,
+            0.08614456854926215,
+            0.08809832285888403
+          ],
+          "candidate": [
+            0.05410452084552183,
+            0.05409588600272563,
+            0.05404926220391577
+          ]
+        },
+        "baseline_median_ms": 0.08809832285888403,
+        "candidate_median_ms": 0.05409588600272563,
+        "time_reduction_percent": 38.5960092686708,
+        "numerically_equal_outputs": true
+      },
+      {
+        "queries": 512,
+        "heads": 32,
+        "valid_topk": 2048,
+        "ms": {
+          "baseline": [
+            8.03475456237793,
+            7.680085372924805,
+            7.687349114051232
+          ],
+          "candidate": [
+            4.85410816192627,
+            4.854804458618164,
+            4.854369277954102
+          ]
+        },
+        "baseline_median_ms": 7.687349114051232,
+        "candidate_median_ms": 4.854369277954102,
+        "time_reduction_percent": 36.85249354577771,
+        "numerically_equal_outputs": true
+      },
+      {
+        "queries": 2048,
+        "heads": 32,
+        "valid_topk": 2048,
+        "ms": {
+          "baseline": [
+            30.077337392171223,
+            30.028731791178387,
+            30.05620905558268
+          ],
+          "candidate": [
+            19.051212768554688,
+            19.051233215332033,
+            19.051929626464844
+          ]
+        },
+        "baseline_median_ms": 30.05620905558268,
+        "candidate_median_ms": 19.051233215332033,
+        "time_reduction_percent": 36.614650303700124,
+        "numerically_equal_outputs": true
+      }
+    ]
+  },
+  "paired_real_model": {
+    "raw_record_sha256": "d8ae15ae5e31519268b71ce290ab4ff9a211d3c106cdb637c0c4e5325796db18",
+    "method": "Both kernels run on each identical live attention input; a GPU flag selects which result continues through the model. Prefix cache reset before each objective suite. Outputs compared as BF16 bit patterns on all eight ranks.",
+    "config": {
+      "tp": 2,
+      "pp": 4,
+      "partition": [
+        22,
+        20,
+        20,
+        16
+      ],
+      "kv_cache_dtype": "fp8",
+      "context": 32768,
+      "batch_tokens": 512,
+      "mtp_tokens": 2,
+      "gpu_memory_utilization": 0.95
+    },
+    "attention_calls": 478400,
+    "compared_bf16_elements": 30627987456,
+    "bit_differences": 0,
+    "runs": [
+      {
+        "mode": "candidate-first",
+        "attention_calls": 121760,
+        "compared_bf16_elements": 7763165184,
+        "bit_differences": 0,
+        "objectives": {
+          "passed": 20,
+          "total": 20,
+          "raw_record_sha256": "026507a21d1759b2379d5f9b7bcff7dcb9777fdd93fd419f961b7126004c54e2",
+          "failures": []
+        }
+      },
+      {
+        "mode": "original-first",
+        "attention_calls": 117120,
+        "compared_bf16_elements": 7535099904,
+        "bit_differences": 0,
+        "objectives": {
+          "passed": 20,
+          "total": 20,
+          "raw_record_sha256": "bec6140ebedc6fdd60bee756c545c623cd1d0a68dbd701fc2f3217500f680ae0",
+          "failures": []
+        }
+      },
+      {
+        "mode": "candidate-repeat",
+        "attention_calls": 117600,
+        "compared_bf16_elements": 7558692864,
+        "bit_differences": 0,
+        "objectives": {
+          "passed": 19,
+          "total": 20,
+          "raw_record_sha256": "f48375eed99b3db5e94902a65a57a9d825ad6d2485f4ed9391843ae1ab68ac35",
+          "failures": [
+            {
+              "question": "Return the lowercase version of the string CoMPuTe.",
+              "expected": "compute",
+              "answer": "computer"
+            }
+          ]
+        }
+      },
+      {
+        "mode": "original-repeat",
+        "attention_calls": 121920,
+        "compared_bf16_elements": 7771029504,
+        "bit_differences": 0,
+        "objectives": {
+          "passed": 20,
+          "total": 20,
+          "raw_record_sha256": "fc78d1bf986443595eaff4bc61838fc2927db0d6b1f73520fd4284b40d128700",
+          "failures": []
+        }
+      }
+    ],
+    "limitation": "This diagnostic validates observed attention-output equivalence. Its extra computation changes timing and is not a serving benchmark or proof of universal generated-output equivalence."
+  },
+  "uninstrumented_candidate_objectives": {
+    "passed": 19,
+    "total": 20,
+    "raw_record_sha256": "27f91eacee22d0f0b312203935b359dff27ca37513cc69939fa564ded6902306",
+    "failures": [
+      {
+        "question": "Return the lowercase version of the string CoMPuTe.",
+        "expected": "compute",
+        "answer": "computer"
+      }
+    ]
+  },
+  "original_fp8_configuration": {
+    "tp": 2,
+    "pp": 4,
+    "partition": [
+      22,
+      20,
+      20,
+      16
+    ],
+    "kv_cache_dtype": "fp8",
+    "kv_scale": 1.0,
+    "context": 458752,
+    "kv_token_capacity": 516672,
+    "batch_tokens": 2048,
+    "mtp_tokens": 2,
+    "gpu_memory_utilization": 0.978,
+    "objectives": [
+      {
+        "passed": 20,
+        "total": 20,
+        "raw_record_sha256": "5739202ab0c40a00f0a9b6264afc6ed361658c946e0b869b391d57b79ba6ce58",
+        "failures": []
+      },
+      {
+        "passed": 20,
+        "total": 20,
+        "raw_record_sha256": "e5bb5775a19f6a6e0435c9fa0466d382ac591b84986d06a0a037ab5ac2f21ddc",
+        "failures": []
+      }
+    ],
+    "measurements_before_conversion_change": {
+      "raw_record_sha256": "23145d146aacdc956a325d0acd1d68f4c637feb58645e6818bcd5fc7a53ff93a",
+      "bf16_baseline_raw_record_sha256": "0ed5c1c396e19dd42497887864cc0b17d906334bccc5a38478cc695ac27bc3cc",
+      "all_prompt_hashes_match_bf16": true,
+      "benchmark_script_sha256": "24b3754b5513683dde828f21e33c1168e2a1fa561d65ae191e789825ba8a01dc",
+      "samples": [
+        {
+          "mode": "single",
+          "input_tokens": 512,
+          "concurrency": 1,
+          "repeat": 0,
+          "elapsed_s": 10.782415944006061,
+          "aggregate_tokens_s": 47.484719812225435,
+          "median_ttft_s": 0.6880303109937813,
+          "steady_decode": {
+            "start_s": 1.3487565420218743,
+            "end_s": 10.27263258601306,
+            "accepted_tokens": 447,
+            "aggregate_tokens_s": 50.09034166280061
+          },
+          "prompt_sha256": [
+            "8715e70315ff67cf63c78ac2d9532a4aa02a9df690e88ebad5dff1af025ceec7"
+          ]
+        },
+        {
+          "mode": "single",
+          "input_tokens": 512,
+          "concurrency": 1,
+          "repeat": 1,
+          "elapsed_s": 12.310093406995293,
+          "aggregate_tokens_s": 41.59188586733652,
+          "median_ttft_s": 0.6906517900060862,
+          "steady_decode": {
+            "start_s": 1.4007433269871399,
+            "end_s": 11.599787894985639,
+            "accepted_tokens": 447,
+            "aggregate_tokens_s": 43.827634737723386
+          },
+          "prompt_sha256": [
+            "a07bbaf75f0a303b759f9cc6a586ec138eb6f09a73ae3b91c903f2b195c3b489"
+          ]
+        },
+        {
+          "mode": "concurrent",
+          "input_tokens": 512,
+          "concurrency": 8,
+          "repeat": 0,
+          "elapsed_s": 20.716966509004124,
+          "aggregate_tokens_s": 197.71234356245031,
+          "median_ttft_s": 1.9371032810013276,
+          "steady_decode": {
+            "start_s": 4.517499957000837,
+            "end_s": 15.238394255982712,
+            "accepted_tokens": 2665,
+            "aggregate_tokens_s": 248.5800088760399
+          },
+          "prompt_sha256": [
+            "0e4c6818c596b732858457f525340628b5ff52dab54367059e516b01faab98c8",
+            "19cc9cea2f24975ff95faebf35470f4db826f7253b36edaf5b98083524898cde",
+            "bf21ee83fe0637c616ad014cc0b7f5f6c0797bed68a779a98752fd185619a1b7",
+            "7f8a7f8d54a91f75e6e23faf9f81c96b29434303dc8afc83695d065713f299c0",
+            "0c62033654f0e222d1b2fedb2fb23994e70730d96b2140d9c1124ace311364c5",
+            "3acd7e3ebc013f72040d95417b5f5a1e25b32adfb16d8b4b9f3d889d9688c6c2",
+            "0fc9fd8eb70bfc36a0d6c5c16796557698b56e71e955f662121d301673d8a43c",
+            "9ab94574f4971c0ee49998008d2044988ebca882c3fa21ab03849510e47c55b5"
+          ]
+        },
+        {
+          "mode": "concurrent",
+          "input_tokens": 512,
+          "concurrency": 8,
+          "repeat": 1,
+          "elapsed_s": 21.174696313013555,
+          "aggregate_tokens_s": 193.43842950336332,
+          "median_ttft_s": 2.1342907899961574,
+          "steady_decode": {
+            "start_s": 4.076215448003495,
+            "end_s": 16.376084862014977,
+            "accepted_tokens": 2902,
+            "aggregate_tokens_s": 235.93746423796713
+          },
+          "prompt_sha256": [
+            "364d3a3a0ac1668da4019ba602014d6203d02af833432d997025468ed6546a02",
+            "47078924d63198253d49249585067635cac424d1bcdd20f35f45c588039a398d",
+            "1ee3b8be610ae9df736add30b519eb29d85f7b712955d3a8a65af19f9db8ff88",
+            "a6d376412ac853fc38f7c99a45d40d80265f6aec4d4b49e4794dfb56ec4f2fc3",
+            "8119c0dfd33925050cf974bf8e74110c175bdee025d8a6c67e328e0102f9a853",
+            "fb8e05e86df6e4b9807780b2d1eedda682d56a50f8f85c2b93859bec1ab975f7",
+            "28ff650a42043ce0c092565e3a5cc323e6086685ae5b62d5afa276761cb483d9",
+            "f788e5e95c4b993d075f2d34a8cb41f3f9ee06134e06d941efbf35bc833ac008"
+          ]
+        },
+        {
+          "mode": "concurrent",
+          "input_tokens": 512,
+          "concurrency": 16,
+          "repeat": 0,
+          "elapsed_s": 30.411807027994655,
+          "aggregate_tokens_s": 269.36906420782907,
+          "median_ttft_s": 3.9305753975058906,
+          "steady_decode": {
+            "start_s": 6.7672498270112555,
+            "end_s": 22.76103289599996,
+            "accepted_tokens": 5437,
+            "aggregate_tokens_s": 339.94458825330213
+          },
+          "prompt_sha256": [
+            "ebb3cb89c387ca9a1f632481dbc8ac18a58948ba96267506cc1283582d10e68d",
+            "f31b8440b3acc44eca121e975f8950fcab25f42e9daf8e1f342acd338bf4a627",
+            "f4c15aa07ef5ec722a16090be03d85b2273cb6996c0efd48030f1ec3d871ab16",
+            "80458ad0bf8af44ee4f29b24eb6f3d9b5fa5906df7b390dfcdf4fe5ce6eac6d9",
+            "0d34a01250516059d9a6d07fc8e5af7c51e6dc6a00f72c17d02ef7ebeb1e1202",
+            "d2e19ea57e4d6926d958cd5270364e58e63b9c47d146a104bd18b5b0d28c2350",
+            "70d89b6b28c8358b8fda4d3be59fedade9134b9705d09136652556475dd1aedc",
+            "dc19fd0f336b7d6e10dba3c41c87116961a161d4822535aefdfec33f9a0aff1e",
+            "65c605c36ae6bca17c99353f30583c3288940dbe4b575aee23827fab37e1d62a",
+            "bc5f271aa0074b0ec42b9c51d045eb60e7b4a4e48c5bfb32752a2701b8aacbd7",
+            "c19c1af39b53c45eeb81ed216bb4bb2fe185a2f7335f16c60d43a2d374f6b3f8",
+            "0c0fe46a7845035e31d215d1b306ee9a3a2a81aadf86632bd0d399296583458a",
+            "8ada3307f1e513daf0173a355aa790fe371e5feec13db8090962bbf002053434",
+            "3296a329a517ba91410e7960789aac3a53c1de4877614571b8a3ab59db0ee919",
+            "42daf90ce7c586aeabc2d1ea933b06eb7920e273118adae9a43fc3aace4cc43b",
+            "838e0a9b638f82baacd724fe9ed608ca76144b04cd019d57f0a6b16c310814e1"
+          ]
+        },
+        {
+          "mode": "concurrent",
+          "input_tokens": 512,
+          "concurrency": 16,
+          "repeat": 1,
+          "elapsed_s": 32.50119413199718,
+          "aggregate_tokens_s": 252.05227742494046,
+          "median_ttft_s": 3.870235435999348,
+          "steady_decode": {
+            "start_s": 6.938338103995193,
+            "end_s": 26.54144106199965,
+            "accepted_tokens": 5960,
+            "aggregate_tokens_s": 304.03349983765594
+          },
+          "prompt_sha256": [
+            "1d7cc1123f082eb80c07eeb209a62948b32c6354bee8254a245eeaf86e635f4e",
+            "47daf65f68aa3a5a47989c966e8a6452a82754d1061b08544f4ca02905683ee5",
+            "498008c1952b5acc0a052e8dcf7c805cd1e05a90c8126418db26354ae2a830b4",
+            "44d8ede7836b10ef36481e81c98b4b12b87a465e2f5202068ce280bf1b631376",
+            "cb199717b64245cdd8f75d3ef0a234f8b0852fcd45a14b32fe70533ee371a3d1",
+            "2676cda469023d25089ee4abf24902bd919522a287cfff18580e867567ab752b",
+            "371b656323ba54531958871b320bc4e328089cd61a9cc0d63de2803adf23dfc3",
+            "8f3e3f09c00b2166d97c2633252759ea634cb9389efd9d8ee045f5c33e0e67b9",
+            "ced08aedba490d1249a24d3bcaccc5d01b55e8f3e4e439b195a6ebab209754b9",
+            "f3a6c34eb8119b8c9478bb1d2ac72b4f4c718764bc71f35231f0f190c11704c6",
+            "0f5bb2f4852d2a754c46e102f7be83ca803ec1f5d03519cb0602de7da5bf20b0",
+            "0e640c55aa4de5393d1ab38df8e6f81bb27815b85a3019fac021fd51e855bc67",
+            "c57227b20ea8f8bcf4dcc5e10f6f8c1f32beb480495e77850c692642b97d3c09",
+            "68d3ea90883d83992f2f10056b8779b49c68c72bfdb1a945c4cc175e03963954",
+            "309b403a892cf98efb84b3b5458ae4497779aa63f53d82d5a67e306f8a929dfc",
+            "32bf7e676ec454973d69c53e308da52f4656ea44bf5d6f52f801aacfb4464d2b"
+          ]
+        },
+        {
+          "mode": "prefill",
+          "input_tokens": 8192,
+          "concurrency": 1,
+          "repeat": 0,
+          "elapsed_s": 7.761121338000521,
+          "aggregate_tokens_s": 0.12884736063894958,
+          "median_ttft_s": 7.759171110024909,
+          "steady_decode": null,
+          "prompt_sha256": [
+            "7c0132d5b08440e6ae5786336c8fab30eb86c84e1ad9c06427074fcf8f49f8de"
+          ]
+        },
+        {
+          "mode": "prefill",
+          "input_tokens": 8192,
+          "concurrency": 1,
+          "repeat": 1,
+          "elapsed_s": 7.517820926004788,
+          "aggregate_tokens_s": 0.13301726788156315,
+          "median_ttft_s": 7.515887552028289,
+          "steady_decode": null,
+          "prompt_sha256": [
+            "25a31630b2efa3cd547daf3bd1841f382cca35d1fd5b41a29c37ba402053322b"
+          ]
+        },
+        {
+          "mode": "context_decode",
+          "input_tokens": 8192,
+          "concurrency": 1,
+          "repeat": 0,
+          "elapsed_s": 8.603174375020899,
+          "aggregate_tokens_s": 7.43911458842708,
+          "median_ttft_s": 7.4515378209762275,
+          "steady_decode": null,
+          "prompt_sha256": [
+            "927a32436d58a2131dfeeba9888eaa87c460f258f5ad374de374591b67bf1cf6"
+          ]
+        },
+        {
+          "mode": "context_decode",
+          "input_tokens": 8192,
+          "concurrency": 1,
+          "repeat": 1,
+          "elapsed_s": 8.697133103996748,
+          "aggregate_tokens_s": 7.358746754213632,
+          "median_ttft_s": 7.437536607001675,
+          "steady_decode": null,
+          "prompt_sha256": [
+            "642f90f49fa38de79586cfa343ebf654a7a2254e8eda9f06799e844148d28893"
+          ]
+        }
+      ]
+    },
+    "long_context": [
+      {
+        "mode": "fresh",
+        "reasoning_effort": "low",
+        "passed": false,
+        "prompt_tokens": 456831,
+        "completion_tokens": 37,
+        "ttft_s": 411.5643365109863,
+        "elapsed_s": 412.04435858799843,
+        "final_answer_empty": true,
+        "all_three_codes_correct_in_reasoning": true,
+        "document_sha256": "a4f1d79d09434472b463e33e501542d11d9e1e280b75e3676346bf016a98c7ef",
+        "raw_record_sha256": "e5bd165f21748a8e721779d392da2b06e96c294bcc74683aa23dcced5e80a1ee"
+      },
+      {
+        "mode": "cached",
+        "reasoning_effort": "low",
+        "passed": false,
+        "prompt_tokens": 456831,
+        "completion_tokens": 32,
+        "ttft_s": 2.483808279997902,
+        "elapsed_s": 2.8777895719977096,
+        "final_answer_empty": true,
+        "all_three_codes_correct_in_reasoning": true,
+        "document_sha256": "a4f1d79d09434472b463e33e501542d11d9e1e280b75e3676346bf016a98c7ef",
+        "raw_record_sha256": "ebc568719017232f15f9cc107db259edc831e43676b3373ee3c287b8cd263bc7"
+      }
+    ]
+  },
+  "limitations": [
+    "The revised uninstrumented FP8 run passed reasoning/tools and eight concurrent retrieval checks, but its 19/20 objective result withheld the queued serving benchmark and Max-effort long-context check.",
+    "The paired diagnostic found zero attention-output bit differences even during the failed objective run; the generation difference is not explained by different conversion values on those inputs.",
+    "The low-effort 456831-token tests failed usable-final-answer qualification despite all three correct codes appearing in reasoning. No 458752-token usable-answer qualification is claimed.",
+    "End-to-end FP8 speed improvement has not yet been established. The qualified BF16 serving recipe remains preferred, and 100/300/450 throughput targets remain unmet."
+  ]
+}

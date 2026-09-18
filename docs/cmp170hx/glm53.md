@@ -109,6 +109,43 @@ TTFT was 8.93 seconds, and BF16 KV capacity was 40,000 tokens. This trial
 does not improve the preferred TP2/PP4 operating point; its exact results
 are included in the [measurement record](glm53-attention-20260918.json).
 
+### Software FP8 conversion
+
+The SM80 byte decoder now expands E4M3 through an exact FP16 representation
+before FP32 scaling. All 256 encodings match the CPU reference, including
+subnormals, signed zero, and NaNs. This reduces the compiled sparse-prefill
+kernel's per-thread stack from 440 to 16 bytes. In six isolated sparse-MLA
+shapes, three alternating timing rounds measured 25–39% less kernel time;
+the 2,048-query case fell from 30.06 to 19.05 ms. These are component timings.
+The [FP8 record](glm53-fp8-20260918.json) contains configurations and samples.
+
+A paired real-model diagnostic ran both conversions on each identical
+attention input and selected either output for subsequent model execution.
+Across 478,400 calls and 30,627,987,456 BF16 output elements, there were zero
+bit differences. Four objective suites scored 79/80: the revised conversion
+scored 20/20 and 19/20, and the original scored 20/20 twice. The failed case
+lowercased `CoMPuTe` as `computer`. The uninstrumented revised run also
+scored 19/20, although three isolated retries passed. The paired check
+rules out different attention values as the explanation on those inputs;
+it does not establish universal generated-output equivalence. Reasoning,
+tools, and eight concurrent retrieval checks passed.
+
+Before this conversion change, FP8 KV with TP2/PP4 and two drafts provided
+516,672 cache tokens at a configured 458,752-token limit. Matched runs
+measured 43.83–50.09 single, 235.94–248.58 aggregate at concurrency eight,
+and 304.03–339.94 at concurrency sixteen. The 8K prefill TTFT was
+7.52–7.76 seconds. A 456,831-input-token low-effort request completed
+without exhausting memory, but both fresh and cached responses placed all
+three correct codes only in reasoning and left the final answer empty.
+Those tests failed usable-answer qualification. Fresh TTFT was 411.56 s;
+cached TTFT was 2.48 s.
+
+The revised run's failed objective gate withheld its serving benchmark and
+Max-effort long-context test. An end-to-end FP8 speedup and usable output
+at 458K therefore remain unqualified. The BF16 recipe below remains preferred.
+
+### Throughput targets and qualified context
+
 The working steady-decode targets are 100 single, 300 aggregate at concurrency
 eight, and 450 aggregate at concurrency sixteen. These are planning targets,
 not measured results. Single generation remains substantially below target.
