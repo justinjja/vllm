@@ -33,6 +33,14 @@ index tensors created by boolean indexing across all experts. The original
 conversion attempted a 9-GiB temporary allocation and prevented PP8 loading
 on this checkpoint; the bounded version successfully loads the same weights.
 
+Dynamic speculative-token schedules now preserve the autoregressive drafter's
+one-query-per-request graph shape. Previously, applying the target's schedule
+to those draft steps could create negative query lengths or divide by zero
+during startup. The correction passes 37 graph/scheduling tests and a
+random-weight GLM engine check with sequential, concurrent, chunked-prefill,
+and 7,900-token inputs. This establishes integration correctness; the
+qualified full-model serving recipe continues to use two fixed draft tokens.
+
 ## SM80 attention improvements
 
 Sparse MLA now chooses KV splits from the number of active query/head blocks
@@ -92,6 +100,14 @@ TTFT was 9.00–9.01 seconds, versus 5.10–5.20 seconds for TP2/PP4. TP2/PP4
 remains the stronger combined throughput, prefill, and context configuration.
 The model now supports the existing opt-in `--enable-batch-sharded-sampling`
 path; the default serving recipe does not require it.
+
+Enabling expert parallelism on the same TP8 configuration also passed 20/20
+objective checks, reasoning/tools, and 8/8 concurrent retrieval checks.
+Two matched runs measured 52.80–55.47 single, 218.57–224.91 aggregate at
+concurrency eight, and 293.98–303.63 at concurrency sixteen. The 8K prefill
+TTFT was 8.93 seconds, and BF16 KV capacity was 40,000 tokens. This trial
+does not improve the preferred TP2/PP4 operating point; its exact results
+are included in the [measurement record](glm53-attention-20260918.json).
 
 The working steady-decode targets are 100 single, 300 aggregate at concurrency
 eight, and 450 aggregate at concurrency sixteen. These are planning targets,
@@ -171,8 +187,9 @@ are separate from this performance benchmark, which forces the output length.
 Measured September 18, 2026, using checkpoint revision
 `b472e4ee53f6a9862da5486c56c6ca21be3dab70`, TP8/PP1, BF16 KV, 32,768 context,
 1,024 batched tokens, 16 sequences, GPU memory utilization 0.95, and full
-decode CUDA graphs. All GPUs report PCIe Gen2 x16, with four cards per NUMA
-node. The software environment matches the [build guide](README.md).
+decode CUDA graphs. All GPUs report PCIe Gen2 x16. The topology has four
+symmetric PIX pairs, with four cards per CPU/NUMA node. The software
+environment matches the [build guide](README.md).
 
 These are one-repeat baseline samples, including first-use effects.
 Exact timings and check outcomes are in the

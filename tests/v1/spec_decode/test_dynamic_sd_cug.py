@@ -16,6 +16,9 @@ from vllm.config import (
     VllmConfig,
 )
 from vllm.v1.worker.gpu import cudagraph_utils as gpu_cudagraph_utils
+from vllm.v1.worker.gpu.spec_decode.autoregressive.cudagraph_utils import (
+    SpeculatorCudaGraphManager,
+)
 from vllm.v1.worker.utils import get_uniform_decode_token_count
 
 pytestmark = pytest.mark.cpu_test
@@ -82,6 +85,34 @@ def _create_vllm_config_for_dsd(
     vllm_config.speculative_config = speculative_config
 
     return vllm_config
+
+
+@pytest.mark.parametrize("batched_draft_count", [0, 2, 3])
+def test_dynamic_sd_draft_decode_keeps_one_query_per_request(
+    monkeypatch, batched_draft_count
+):
+    """The target's draft-count schedule must not change a draft step's shape."""
+    monkeypatch.setattr(
+        gpu_cudagraph_utils,
+        "get_pp_group",
+        lambda: SimpleNamespace(is_first_rank=True, is_last_rank=True),
+    )
+    config = _create_vllm_config_for_dsd(
+        max_num_seqs=16,
+        max_spec_tokens=4,
+        cudagraph_mode="FULL_DECODE_ONLY",
+        num_spec_per_batch_size=[(1, 1, 4), (2, 16, batched_draft_count)],
+    )
+    manager = SpeculatorCudaGraphManager(
+        config,
+        torch.device("cpu"),
+        CUDAGraphMode.FULL_DECODE_ONLY,
+        decode_query_len=1,
+    )
+    descriptors = manager._capture_descs[CUDAGraphMode.FULL]
+    assert descriptors
+    assert all(desc.uniform_token_count == 1 for desc in descriptors)
+    assert all(1 <= desc.num_reqs == desc.num_tokens <= 16 for desc in descriptors)
 
 
 def test_dynamic_sd_full_cudagraph_covers_all_uniform_decode_shapes(monkeypatch):
