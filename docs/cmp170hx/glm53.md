@@ -441,6 +441,41 @@ reduction does not qualify this partition as a replacement for the
 `12,10,10,10,9,9,9,9` full-context recipe above. TP2/PP4 remains preferred for
 generation.
 
+### Draft expert compression measurements
+
+The checkpoint stores its MTP routed experts in BF16. An isolated comparison
+used eight actual draft experts, replicated into 256 physical expert slots,
+with TP2 rank-local dimensions, synthetic routes, and Gaussian activations.
+Each path received three alternating timing samples for batches of one, four,
+eight, and sixteen activation rows. The BF16 baseline used the existing
+Triton expert kernel and its default configuration; no CMP-specific tuning
+file was present.
+
+| Draft expert weights | Storage per TP2 shard | Isolated expert speedup | Output relative L2 error versus BF16 |
+| --- | ---: | ---: | ---: |
+| INT8, group 128 | 4.57 GiB | 1.65–2.06× | 1.35–1.40% |
+| NVFP4, group 16 | 2.53 GiB | 2.14–2.68× | 16.0–17.1% |
+
+The BF16 expert shard occupies 9.0 GiB. Storage totals cover routed-expert
+weights and their scales. Timings cover expert calculations with fixed
+routing; they are not whole-draft or model-serving speedups. Synthetic
+activation error does not measure model quality or draft acceptance.
+
+A private draft-only INT8 conversion prototype also passed engine checks at
+TP1 and TP2. It converted each projection with bounded per-expert temporaries,
+loaded both TP2 shards, captured CUDA graphs, and generated the requested
+output lengths for three sequential and four concurrent requests per layout.
+Sequential input lengths were 32, 4,096, and 7,900 tokens; concurrent requests
+each used 2,048 tokens. The small target and full-sized draft used random
+weights. TP2 accepted zero of 98 proposed draft tokens, so these checks do not
+establish accepted-draft behavior or real-model accuracy.
+
+**Neither compression candidate is qualified for serving.** Full-model
+quality, draft acceptance, and eight-card throughput remain unmeasured.
+The published recipe retains BF16 draft weights. The
+[measurement record](glm53-draft-quantization-20260918.json) includes kernel
+samples, numerical errors, storage, packing checks, and engine-check results.
+
 ### Serving configuration
 
 Preserve the checkpoint's complete quantization configuration when excluding

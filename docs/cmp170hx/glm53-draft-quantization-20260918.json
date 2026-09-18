@@ -1,0 +1,766 @@
+{
+  "measured_at_utc": "2026-09-18T09:50:44.914899+00:00",
+  "production_source_commit": "6fc22ae895c8399a32aff58894f332a019a99992",
+  "model": "local-inference-lab/GLM-5.3-NVFP4",
+  "revision": "b472e4ee53f6a9862da5486c56c6ca21be3dab70",
+  "hardware": "CMP 170HX SM80; isolated kernel measurements on physical GPU0; integration on GPU0 and PIX pair0/1",
+  "serving_qualified": false,
+  "measurement_method": {
+    "torch_seed": 178,
+    "sampled_checkpoint_layer": 78,
+    "sampled_experts": [
+      0,
+      31,
+      63,
+      95,
+      127,
+      159,
+      191,
+      255
+    ],
+    "physical_expert_slots": 256,
+    "samples_replicated_across_slots": true,
+    "tensor_parallel_shard": "rank0 of TP2",
+    "hidden_size": 6144,
+    "rank_local_intermediate_size": 1024,
+    "top_k": 8,
+    "activation_rows": [
+      1,
+      4,
+      8,
+      16
+    ],
+    "activation_and_routing_inputs": "Gaussian activations and synthetic routes, identical between quantization probes.",
+    "timing": "Three alternating samples per path, using Triton do_bench_cudagraph with rep=20ms and its ten graph replays per sample.",
+    "timed_scope": "Routed expert calculation with fixed routing. Router, attention, LM head, speculative verification and pipeline costs are outside this measurement.",
+    "bf16_baseline": "Existing Triton fused_experts with default configuration; no device-specific tuning file was present.",
+    "int8": "Symmetric group128 INT8 weights with BF16 scales and activations, using existing Marlin reference quantization and execution.",
+    "nvfp4": "Group16 FP4 weights with FP8 block scales and one FP32 global scale per expert/fused projection, using software reference quantization and Marlin execution."
+  },
+  "kernel_probes": {
+    "int8": {
+      "model_revision": "b472e4ee53f6a9862da5486c56c6ca21be3dab70",
+      "sampled_mtp_experts": [
+        0,
+        31,
+        63,
+        95,
+        127,
+        159,
+        191,
+        255
+      ],
+      "tensor_parallel_shard": "rank0 of TP2",
+      "quantization": "INT8 weight-only, symmetric group128, BF16 scales and activations; rank-local aligned groups.",
+      "device_pci_bus_id": "0000:1A:00.0",
+      "limitations": [
+        "Eight actual draft-expert samples are replicated into 256 physical expert slots.",
+        "Gaussian activations and synthetic routes; this is not draft acceptance, model quality, or serving throughput.",
+        "No checkpoint or serving code modified; no quantized draft deployed."
+      ],
+      "weight_errors": [
+        {
+          "expert": 0,
+          "gate_up": {
+            "relative_l2": 0.007186313159763813,
+            "max_abs": 0.0009765625,
+            "relative_max": 0.00561797758564353,
+            "cosine": 0.9999741315841675
+          },
+          "down": {
+            "relative_l2": 0.007282782346010208,
+            "max_abs": 0.0045166015625,
+            "relative_max": 0.003987068776041269,
+            "cosine": 0.9999735355377197
+          }
+        },
+        {
+          "expert": 31,
+          "gate_up": {
+            "relative_l2": 0.007203001994639635,
+            "max_abs": 0.0009765625,
+            "relative_max": 0.0059523810632526875,
+            "cosine": 0.9999741315841675
+          },
+          "down": {
+            "relative_l2": 0.007308491040021181,
+            "max_abs": 0.00390625,
+            "relative_max": 0.004651162773370743,
+            "cosine": 0.9999732971191406
+          }
+        },
+        {
+          "expert": 63,
+          "gate_up": {
+            "relative_l2": 0.007195627316832542,
+            "max_abs": 0.0009765625,
+            "relative_max": 0.006756756920367479,
+            "cosine": 0.999974250793457
+          },
+          "down": {
+            "relative_l2": 0.007263938896358013,
+            "max_abs": 0.0029296875,
+            "relative_max": 0.004120879340916872,
+            "cosine": 0.9999736547470093
+          }
+        },
+        {
+          "expert": 95,
+          "gate_up": {
+            "relative_l2": 0.0071837035939097404,
+            "max_abs": 0.0009765625,
+            "relative_max": 0.005988024175167084,
+            "cosine": 0.9999741911888123
+          },
+          "down": {
+            "relative_l2": 0.00726332888007164,
+            "max_abs": 0.001953125,
+            "relative_max": 0.003968254197388887,
+            "cosine": 0.9999735951423645
+          }
+        },
+        {
+          "expert": 127,
+          "gate_up": {
+            "relative_l2": 0.007198544684797525,
+            "max_abs": 0.0009765625,
+            "relative_max": 0.0045045046135783195,
+            "cosine": 0.9999741911888123
+          },
+          "down": {
+            "relative_l2": 0.0073903766460716724,
+            "max_abs": 0.00439453125,
+            "relative_max": 0.003989361692219973,
+            "cosine": 0.9999727606773376
+          }
+        },
+        {
+          "expert": 159,
+          "gate_up": {
+            "relative_l2": 0.0071770488284528255,
+            "max_abs": 0.0009765625,
+            "relative_max": 0.0047846888191998005,
+            "cosine": 0.9999741315841675
+          },
+          "down": {
+            "relative_l2": 0.0073150391690433025,
+            "max_abs": 0.0048828125,
+            "relative_max": 0.004166666883975267,
+            "cosine": 0.9999732971191406
+          }
+        },
+        {
+          "expert": 191,
+          "gate_up": {
+            "relative_l2": 0.007205532863736153,
+            "max_abs": 0.0009765625,
+            "relative_max": 0.004347825888544321,
+            "cosine": 0.9999741315841675
+          },
+          "down": {
+            "relative_l2": 0.00737568037584424,
+            "max_abs": 0.0048828125,
+            "relative_max": 0.004310344811528921,
+            "cosine": 0.9999728202819824
+          }
+        },
+        {
+          "expert": 255,
+          "gate_up": {
+            "relative_l2": 0.00720061594620347,
+            "max_abs": 0.0009765625,
+            "relative_max": 0.006211180239915848,
+            "cosine": 0.9999740123748779
+          },
+          "down": {
+            "relative_l2": 0.007273552007973194,
+            "max_abs": 0.001953125,
+            "relative_max": 0.004310344811528921,
+            "cosine": 0.9999735355377197
+          }
+        }
+      ],
+      "cases": [
+        {
+          "m": 1,
+          "unique_experts": 8,
+          "quantization_output_error": {
+            "relative_l2": 0.014026753604412079,
+            "max_abs": 0.0234375,
+            "relative_max": 0.009677419438958168,
+            "cosine": 0.9999018907546997
+          },
+          "marlin_vs_dequantized_error": {
+            "relative_l2": 0.003253237111493945,
+            "max_abs": 0.0078125,
+            "relative_max": 0.0032051282469183207,
+            "cosine": 0.9999947547912598
+          },
+          "samples_us": {
+            "bf16": [
+              250.53396060548982,
+              199.50591882069904,
+              199.63562806447345
+            ],
+            "int8": [
+              125.50854298376268,
+              121.00812835693358,
+              121.11790161132812
+            ]
+          },
+          "bf16_us": 199.63562806447345,
+          "int8_us": 121.11790161132812,
+          "speedup": 1.6482751551055734
+        },
+        {
+          "m": 4,
+          "unique_experts": 32,
+          "quantization_output_error": {
+            "relative_l2": 0.013515036553144455,
+            "max_abs": 0.03125,
+            "relative_max": 0.006369426846504211,
+            "cosine": 0.9999086260795593
+          },
+          "marlin_vs_dequantized_error": {
+            "relative_l2": 0.0035905183758586645,
+            "max_abs": 0.0078125,
+            "relative_max": 0.0016025641234591603,
+            "cosine": 0.9999936819076538
+          },
+          "samples_us": {
+            "bf16": [
+              737.3311996459961,
+              737.3390637911283,
+              737.2642370370718
+            ],
+            "int8": [
+              413.97052115582403,
+              414.7308998919548,
+              415.05770176015
+            ]
+          },
+          "bf16_us": 737.3311996459961,
+          "int8_us": 414.7308998919548,
+          "speedup": 1.7778545071951108
+        },
+        {
+          "m": 8,
+          "unique_experts": 56,
+          "quantization_output_error": {
+            "relative_l2": 0.013998668640851974,
+            "max_abs": 0.0810546875,
+            "relative_max": 0.024939903989434242,
+            "cosine": 0.999902069568634
+          },
+          "marlin_vs_dequantized_error": {
+            "relative_l2": 0.003442903747782111,
+            "max_abs": 0.01171875,
+            "relative_max": 0.0036231884732842445,
+            "cosine": 0.9999940395355225
+          },
+          "samples_us": {
+            "bf16": [
+              1450.5511357234075,
+              1453.1111497145432,
+              1450.2281922560471
+            ],
+            "int8": [
+              704.1462898254395,
+              703.8793087005615,
+              704.7351019723075
+            ]
+          },
+          "bf16_us": 1450.5511357234075,
+          "int8_us": 704.1462898254395,
+          "speedup": 2.0600138872889673
+        },
+        {
+          "m": 16,
+          "unique_experts": 97,
+          "quantization_output_error": {
+            "relative_l2": 0.013887053355574608,
+            "max_abs": 0.09375,
+            "relative_max": 0.020270269364118576,
+            "cosine": 0.999903678894043
+          },
+          "marlin_vs_dequantized_error": {
+            "relative_l2": 0.003461634973064065,
+            "max_abs": 0.015625,
+            "relative_max": 0.0033783784601837397,
+            "cosine": 0.9999940395355225
+          },
+          "samples_us": {
+            "bf16": [
+              2199.2448329925537,
+              2206.003189086914,
+              2199.5406468709307
+            ],
+            "int8": [
+              1201.0112166404724,
+              1206.3488125801086,
+              1200.2687811851501
+            ]
+          },
+          "bf16_us": 2199.5406468709307,
+          "int8_us": 1201.0112166404724,
+          "speedup": 1.8314072478220427
+        }
+      ],
+      "bf16_shard_expert_bytes": 9663676416,
+      "int8_shard_expert_bytes": 4907335680,
+      "completed": true
+    },
+    "nvfp4": {
+      "model_revision": "b472e4ee53f6a9862da5486c56c6ca21be3dab70",
+      "sampled_mtp_experts": [
+        0,
+        31,
+        63,
+        95,
+        127,
+        159,
+        191,
+        255
+      ],
+      "tensor_parallel_shard": "rank0 of TP2",
+      "global_scale": "Per expert and fused projection, computed before TP slicing.",
+      "device_pci_bus_id": "0000:1A:00.0",
+      "limitations": [
+        "Eight actual draft-expert samples are replicated into 256 physical expert slots.",
+        "Gaussian activations and synthetic routes; this is not draft acceptance, model quality, or serving throughput.",
+        "No checkpoint or serving code modified; no quantized draft deployed."
+      ],
+      "weight_errors": [
+        {
+          "expert": 0,
+          "gate_up": {
+            "relative_l2": 0.0952143743634224,
+            "max_abs": 0.0205078125,
+            "relative_max": 0.11797752976417542,
+            "cosine": 0.9954649209976196
+          },
+          "down": {
+            "relative_l2": 0.09511261433362961,
+            "max_abs": 0.045654296875,
+            "relative_max": 0.04030172526836395,
+            "cosine": 0.9954781532287598
+          }
+        },
+        {
+          "expert": 31,
+          "gate_up": {
+            "relative_l2": 0.09509945660829544,
+            "max_abs": 0.02099609375,
+            "relative_max": 0.127976194024086,
+            "cosine": 0.9954760670661926
+          },
+          "down": {
+            "relative_l2": 0.09495752304792404,
+            "max_abs": 0.05078125,
+            "relative_max": 0.060465116053819656,
+            "cosine": 0.9954921007156372
+          }
+        },
+        {
+          "expert": 63,
+          "gate_up": {
+            "relative_l2": 0.09542793035507202,
+            "max_abs": 0.01806640625,
+            "relative_max": 0.125,
+            "cosine": 0.9954475164413452
+          },
+          "down": {
+            "relative_l2": 0.09475890547037125,
+            "max_abs": 0.0322265625,
+            "relative_max": 0.04532967135310173,
+            "cosine": 0.9955076575279236
+          }
+        },
+        {
+          "expert": 95,
+          "gate_up": {
+            "relative_l2": 0.09513704478740692,
+            "max_abs": 0.02099609375,
+            "relative_max": 0.128742516040802,
+            "cosine": 0.9954816102981567
+          },
+          "down": {
+            "relative_l2": 0.09509624540805817,
+            "max_abs": 0.04296875,
+            "relative_max": 0.0873015895485878,
+            "cosine": 0.995478630065918
+          }
+        },
+        {
+          "expert": 127,
+          "gate_up": {
+            "relative_l2": 0.09528988599777222,
+            "max_abs": 0.021484375,
+            "relative_max": 0.09909909963607788,
+            "cosine": 0.9954606294631958
+          },
+          "down": {
+            "relative_l2": 0.0949033871293068,
+            "max_abs": 0.064453125,
+            "relative_max": 0.058510638773441315,
+            "cosine": 0.9955002665519714
+          }
+        },
+        {
+          "expert": 159,
+          "gate_up": {
+            "relative_l2": 0.09506820887327194,
+            "max_abs": 0.01708984375,
+            "relative_max": 0.08373206108808517,
+            "cosine": 0.9954830408096313
+          },
+          "down": {
+            "relative_l2": 0.09489874541759491,
+            "max_abs": 0.0537109375,
+            "relative_max": 0.04583333432674408,
+            "cosine": 0.9954962730407715
+          }
+        },
+        {
+          "expert": 191,
+          "gate_up": {
+            "relative_l2": 0.0953885093331337,
+            "max_abs": 0.0234375,
+            "relative_max": 0.104347825050354,
+            "cosine": 0.9954515695571899
+          },
+          "down": {
+            "relative_l2": 0.09510017931461334,
+            "max_abs": 0.10546875,
+            "relative_max": 0.09310344606637955,
+            "cosine": 0.9954797625541687
+          }
+        },
+        {
+          "expert": 255,
+          "gate_up": {
+            "relative_l2": 0.09507536143064499,
+            "max_abs": 0.021484375,
+            "relative_max": 0.13664595782756805,
+            "cosine": 0.9954880475997925
+          },
+          "down": {
+            "relative_l2": 0.09504346549510956,
+            "max_abs": 0.029296875,
+            "relative_max": 0.06465516984462738,
+            "cosine": 0.9954884052276611
+          }
+        }
+      ],
+      "cases": [
+        {
+          "m": 1,
+          "unique_experts": 8,
+          "quantization_output_error": {
+            "relative_l2": 0.17080232501029968,
+            "max_abs": 0.2626953125,
+            "relative_max": 0.10846774280071259,
+            "cosine": 0.9858760237693787
+          },
+          "marlin_vs_dequantized_error": {
+            "relative_l2": 0.005120632238686085,
+            "max_abs": 0.015625,
+            "relative_max": 0.006410256493836641,
+            "cosine": 0.9999869465827942
+          },
+          "samples_us": {
+            "bf16": [
+              204.05671514313798,
+              198.3252963081735,
+              198.59892579375722
+            ],
+            "nvfp4": [
+              92.65618815141566,
+              91.98857484040437,
+              92.87378928240608
+            ]
+          },
+          "bf16_us": 198.59892579375722,
+          "nvfp4_us": 92.65618815141566,
+          "speedup": 2.1433962453669415
+        },
+        {
+          "m": 4,
+          "unique_experts": 32,
+          "quantization_output_error": {
+            "relative_l2": 0.16003106534481049,
+            "max_abs": 0.6875,
+            "relative_max": 0.14012739062309265,
+            "cosine": 0.9871646165847778
+          },
+          "marlin_vs_dequantized_error": {
+            "relative_l2": 0.005598397925496101,
+            "max_abs": 0.03125,
+            "relative_max": 0.006410256493836641,
+            "cosine": 0.9999843239784241
+          },
+          "samples_us": {
+            "bf16": [
+              739.8596836970403,
+              739.1901603111853,
+              740.1905279893142
+            ],
+            "nvfp4": [
+              313.08139370333765,
+              313.205260615195,
+              313.4668795267741
+            ]
+          },
+          "bf16_us": 739.8596836970403,
+          "nvfp4_us": 313.205260615195,
+          "speedup": 2.3622198498320697
+        },
+        {
+          "m": 8,
+          "unique_experts": 56,
+          "quantization_output_error": {
+            "relative_l2": 0.16740885376930237,
+            "max_abs": 0.453125,
+            "relative_max": 0.13942307233810425,
+            "cosine": 0.9860502481460571
+          },
+          "marlin_vs_dequantized_error": {
+            "relative_l2": 0.005685046780854464,
+            "max_abs": 0.015625,
+            "relative_max": 0.0043668122962117195,
+            "cosine": 0.9999842047691345
+          },
+          "samples_us": {
+            "bf16": [
+              1450.30695108267,
+              1450.771713256836,
+              1450.2754504864033
+            ],
+            "nvfp4": [
+              540.9308486514622,
+              542.085689968533,
+              542.1494783673968
+            ]
+          },
+          "bf16_us": 1450.30695108267,
+          "nvfp4_us": 542.085689968533,
+          "speedup": 2.6754201004030516
+        },
+        {
+          "m": 16,
+          "unique_experts": 97,
+          "quantization_output_error": {
+            "relative_l2": 0.1673179566860199,
+            "max_abs": 0.703125,
+            "relative_max": 0.15202702581882477,
+            "cosine": 0.9860942363739014
+          },
+          "marlin_vs_dequantized_error": {
+            "relative_l2": 0.005489085800945759,
+            "max_abs": 0.03125,
+            "relative_max": 0.007352941203862429,
+            "cosine": 0.9999852180480957
+          },
+          "samples_us": {
+            "bf16": [
+              2200.974210103353,
+              2196.3548448350693,
+              2196.1500803629556
+            ],
+            "nvfp4": [
+              923.6723763602121,
+              922.3411650884718,
+              920.6637700398763
+            ]
+          },
+          "bf16_us": 2196.3548448350693,
+          "nvfp4_us": 922.3411650884718,
+          "speedup": 2.381282466802176
+        }
+      ],
+      "bf16_shard_expert_bytes": 9663676416,
+      "nvfp4_shard_expert_bytes": 2717911040,
+      "completed": true
+    }
+  },
+  "bounded_int8_packing_checks": {
+    "passed": true,
+    "cases": [
+      {
+        "n": 256,
+        "k": 128,
+        "packed_equal": true,
+        "scales_equal": true
+      },
+      {
+        "n": 2048,
+        "k": 6144,
+        "packed_equal": true,
+        "scales_equal": true
+      },
+      {
+        "n": 6144,
+        "k": 1024,
+        "packed_equal": true,
+        "scales_equal": true
+      },
+      {
+        "zero_weight": true,
+        "scales_finite": true,
+        "packed_zero_bias": true
+      }
+    ]
+  },
+  "experimental_int8_engine_integration": {
+    "weights": "Random weights; four target layers with eight target experts, plus a full-sized 256-expert draft layer.",
+    "draft_layer_prefix": "model.layers.4.mlp.experts",
+    "draft_tokens": 2,
+    "kv_dtype": "bfloat16",
+    "context_limit": 8192,
+    "prefill_chunk_tokens": 512,
+    "cudagraph_sizes": [
+      3,
+      6,
+      12
+    ],
+    "tests": [
+      {
+        "tp_size": 1,
+        "cases": [
+          {
+            "mode": "sequential",
+            "input_tokens": 32,
+            "output_tokens": 8,
+            "passed": true
+          },
+          {
+            "mode": "sequential",
+            "input_tokens": 4096,
+            "output_tokens": 8,
+            "passed": true
+          },
+          {
+            "mode": "sequential",
+            "input_tokens": 7900,
+            "output_tokens": 8,
+            "passed": true
+          },
+          {
+            "mode": "concurrent",
+            "input_tokens": 2048,
+            "output_tokens": 8,
+            "passed": true
+          },
+          {
+            "mode": "concurrent",
+            "input_tokens": 2048,
+            "output_tokens": 8,
+            "passed": true
+          },
+          {
+            "mode": "concurrent",
+            "input_tokens": 2048,
+            "output_tokens": 8,
+            "passed": true
+          },
+          {
+            "mode": "concurrent",
+            "input_tokens": 2048,
+            "output_tokens": 8,
+            "passed": true
+          }
+        ],
+        "conversions": [
+          {
+            "layer_name": "model.layers.4.mlp.experts",
+            "device": "cuda:0",
+            "tp_size": 1,
+            "expert_bytes_before": 19327352832,
+            "expert_bytes_after": 9814671360,
+            "conversion_s": 0.9228350250050426,
+            "quantization": "INT8 weight-only, group128, BF16 activation/scales, Marlin"
+          }
+        ]
+      },
+      {
+        "tp_size": 2,
+        "cases": [
+          {
+            "mode": "sequential",
+            "input_tokens": 32,
+            "output_tokens": 8,
+            "passed": true
+          },
+          {
+            "mode": "sequential",
+            "input_tokens": 4096,
+            "output_tokens": 8,
+            "passed": true
+          },
+          {
+            "mode": "sequential",
+            "input_tokens": 7900,
+            "output_tokens": 8,
+            "passed": true
+          },
+          {
+            "mode": "concurrent",
+            "input_tokens": 2048,
+            "output_tokens": 8,
+            "passed": true
+          },
+          {
+            "mode": "concurrent",
+            "input_tokens": 2048,
+            "output_tokens": 8,
+            "passed": true
+          },
+          {
+            "mode": "concurrent",
+            "input_tokens": 2048,
+            "output_tokens": 8,
+            "passed": true
+          },
+          {
+            "mode": "concurrent",
+            "input_tokens": 2048,
+            "output_tokens": 8,
+            "passed": true
+          }
+        ],
+        "conversions": [
+          {
+            "layer_name": "model.layers.4.mlp.experts",
+            "device": "cuda:0",
+            "tp_size": 2,
+            "expert_bytes_before": 9663676416,
+            "expert_bytes_after": 4907335680,
+            "conversion_s": 0.5683118519955315,
+            "quantization": "INT8 weight-only, group128, BF16 activation/scales, Marlin"
+          },
+          {
+            "layer_name": "model.layers.4.mlp.experts",
+            "device": "cuda:1",
+            "tp_size": 2,
+            "expert_bytes_before": 9663676416,
+            "expert_bytes_after": 4907335680,
+            "conversion_s": 0.5650040309992619,
+            "quantization": "INT8 weight-only, group128, BF16 activation/scales, Marlin"
+          }
+        ]
+      }
+    ],
+    "tp2_speculative_counters": {
+      "accepted_tokens": 0,
+      "drafted_tokens": 98
+    }
+  },
+  "limitations": [
+    "The INT8 load-time converter is a private experimental prototype and is not enabled in the published serving recipe.",
+    "These are isolated expert-kernel speedups, not whole-draft or model-serving speedups.",
+    "Expert storage totals include quantized routed-expert weights and their scales.",
+    "Synthetic activation error is not model accuracy or draft acceptance.",
+    "Random-weight engine checks establish loading, conversion, graph execution, and requested output lengths. TP2 accepted no proposed draft tokens, so accepted-draft behavior is not established.",
+    "Full-model quality, draft acceptance, and eight-card throughput remain unmeasured for both compression candidates."
+  ]
+}
