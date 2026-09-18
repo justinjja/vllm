@@ -108,6 +108,7 @@ def test_cuda_dispatch_prefers_pcie_ipc_before_existing_flashinfer(monkeypatch):
     communicator = cuda_communicator.CudaCommunicator.__new__(
         cuda_communicator.CudaCommunicator
     )
+    communicator.cmp_pair_tree = None
     communicator.pynccl_comm = Mock(world_size=4)
     communicator.qr_comm = None
     communicator.fi_pcie_ipc_ar_comm = Mock()

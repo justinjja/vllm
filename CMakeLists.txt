@@ -223,6 +223,7 @@ if(VLLM_GPU_LANG STREQUAL "CUDA")
   # needs PTX, add `+PTX` to that kernel's component-specific arch list below.
   #
   clear_cuda_gencode_flags(CUDA_ARCH_FLAGS)
+  add_subdirectory(csrc/cmp_collectives)
   warn_if_ptx_arch_requested("${CUDA_ARCH_FLAGS}")
   extract_unique_cuda_archs_ascending(CUDA_ARCHS "${CUDA_ARCH_FLAGS}")
   message(STATUS "CUDA target architectures: ${CUDA_ARCHS}")

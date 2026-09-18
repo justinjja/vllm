@@ -165,8 +165,8 @@ throughput, prefill, and context requirements.
 
 The [measurement record](glm53-pair-tree-20260918.json) contains configurations,
 samples, and limitations. The standalone implementation and benchmark are
-included for reproduction; production communicator integration remains
-unqualified. The normal serving recipe does not enable this prototype.
+included for reproduction. The optional serving integration is evaluated
+separately below; the normal serving recipe does not enable this prototype.
 
 ```bash
 nvcc -O3 -std=c++17 -arch=sm_80 -shared -Xcompiler=-fPIC \
@@ -179,6 +179,64 @@ uv run --python .venv/bin/python benchmarks/kernels/benchmark_cmp_pair_tree.py \
 
 These commands assume the eight-card device ordering and qualified PIX pairs
 described above, with no other GPU workload running.
+
+### Optional pair-tree backend
+
+The serving communicator now has an opt-in implementation of the symmetric
+pair tree. It resolves configured physical GPU pairs independently of process
+rank order and uses the same algorithm on both CPU groups. Its separate SM80
+library uses 64-bit sequence counters and closes imported IPC handles on every
+rank before freeing the owning allocations. Startup checks actual transfers;
+a missing library or failed IPC import disables the backend for the whole TP
+group. A CUDA execution fault still terminates the worker.
+
+The backend accepts BF16 tensors with 6,144 columns and at most six rows.
+Larger reductions use the existing dispatch path. It requires serialized
+execution, disables itself with microbatch overlap or batch invariance, and
+is off by default. The normal TP2/PP4 recipe remains unchanged.
+
+The native regression tests passed on both four-GPU groups with scrambled
+process ranks, different input layouts across ranks, changing graph inputs,
+repeated construction/destruction, and sequence counters crossing 2^32.
+Injected missing-library and partial IPC-import failures also fell back
+collectively and released their allocations.
+
+These checks kept all eight GPUs visible in their normal order. Reversing
+`CUDA_VISIBLE_DEVICES` failed during CUDA initialization, before the backend
+was constructed, so that visibility configuration is unqualified. This
+software failure does not establish any physical connectivity difference.
+
+Build only this optional library from an existing source installation:
+
+```bash
+cmake -S csrc/cmp_collectives -B build/cmp-pair-tree \
+  -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
+  -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD"
+cmake --build build/cmp-pair-tree --target _cmp_pair_tree
+cmake --install build/cmp-pair-tree --component _cmp_pair_tree
+```
+
+For the qualified physical ordering, the additional configuration keys are:
+
+```json
+{
+  "cmp_pair_tree_max_rows": 6,
+  "cmp_pair_tree_groups": [[0, 1, 2, 3], [4, 5, 6, 7]]
+}
+```
+
+Each group lists two adjacent PIX pairs in physical GPU order. Merge these
+keys into the existing `--additional-config` object for a TP4/PP2 trial.
+
+The integrated backend started and captured the main/draft model graphs on
+all eight GPUs with TP4/PP2, two MTP drafts, BF16 KV, and a 65,536-token limit.
+It passed 20/20 sequential objective answers and 19/20 at concurrency four,
+plus reasoning/tools and all eight retrieval checks. The concurrent failure
+lowercased `CoMPuTe` as `computer`. That error has appeared in other tested
+configurations, but these results do not establish its cause. The failed
+objective gate withheld the serving benchmark; the earlier prototype's
+timings are not a throughput claim for this integration. It remains
+experimental. See the [runtime evaluation](glm53-pair-tree-runtime-20260918.json).
 
 ### Software FP8 conversion
 

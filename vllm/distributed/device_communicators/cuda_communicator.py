@@ -79,6 +79,10 @@ class CudaCommunicator(DeviceCommunicatorBase):
         self.use_aiter_allreduce = use_aiter_allreduce
 
         # lazy import to avoid documentation build error
+        from vllm.distributed.device_communicators.cmp_pair_tree import (
+            CmpPairTreeAllReduce,
+            pair_tree_config,
+        )
         from vllm.distributed.device_communicators.custom_all_reduce import (
             CustomAllreduce,
         )
@@ -109,7 +113,32 @@ class CudaCommunicator(DeviceCommunicatorBase):
         self.fi_ar_comm: FlashInferAllReduce | None = None
         self.fi_pcie_ipc_ar_comm: FlashInferPcieIpcAllReduce | None = None
         self.aiter_ar_comm: AiterCustomAllreduce | None = None
+        self.cmp_pair_tree: CmpPairTreeAllReduce | None = None
         self.use_aiter_ag_rs: bool = False
+
+        if use_custom_allreduce and self.world_size == 4 and current_platform.is_cuda():
+            from vllm.config import get_current_vllm_config_or_none
+
+            config = get_current_vllm_config_or_none()
+            if config is not None and isinstance(config.additional_config, dict):
+                max_rows, groups = pair_tree_config(config.additional_config)
+                if max_rows:
+                    model = config.model_config
+                    if (
+                        envs.VLLM_BATCH_INVARIANT
+                        or config.parallel_config.use_ubatching
+                        or model is None
+                        or model.get_hidden_size() != 6144
+                        or model.dtype != torch.bfloat16
+                    ):
+                        logger.warning(
+                            "CMP pair-tree requires BF16 hidden size 6144, "
+                            "serialized execution, and batch invariance disabled"
+                        )
+                    else:
+                        self.cmp_pair_tree = CmpPairTreeAllReduce(
+                            self.cpu_group, self.device, groups, max_rows
+                        )
 
         if use_torch_symm_mem and current_platform.is_cuda():
             self.symm_mem_comm = SymmMemCommunicator(
@@ -259,6 +288,7 @@ class CudaCommunicator(DeviceCommunicatorBase):
         depends on the input tensor.
         """
         all_potential_ar_backends = [
+            "CMP_PAIR_TREE",
             "FLASHINFER_PCIE_IPC",
             "FLASHINFER",
             "NCCL_SYMM_MEM",
@@ -269,6 +299,8 @@ class CudaCommunicator(DeviceCommunicatorBase):
             "PYNCCL",
         ]
         enabled_ar_backends: list[str] = []
+        if self.cmp_pair_tree is not None and not self.cmp_pair_tree.disabled:
+            enabled_ar_backends.append("CMP_PAIR_TREE")
         if (
             self.fi_pcie_ipc_ar_comm is not None
             and not self.fi_pcie_ipc_ar_comm.disabled
@@ -325,6 +357,11 @@ class CudaCommunicator(DeviceCommunicatorBase):
         )
 
     def all_reduce(self, input_):
+        cmp_pair_tree = self.cmp_pair_tree
+        if cmp_pair_tree is not None and cmp_pair_tree.should_use(input_):
+            out = cmp_pair_tree.all_reduce(input_)
+            assert out is not None
+            return out
         fi_ar_comm = self.fi_ar_comm
         use_fi_ar = (
             fi_ar_comm is not None
@@ -651,6 +688,9 @@ class CudaCommunicator(DeviceCommunicatorBase):
             raise ValueError("No PyNCCL communicator found")
 
     def destroy(self):
+        if self.cmp_pair_tree is not None:
+            self.cmp_pair_tree.destroy()
+            self.cmp_pair_tree = None
         if self.pynccl_comm is not None:
             self.pynccl_comm.destroy()
             self.pynccl_comm = None

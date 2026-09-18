@@ -678,6 +678,7 @@ class GroupCoordinator:
         # so we don't abstract it into the base class
         maybe_ca_context = nullcontext()
         maybe_fi_pcie_ipc_context: AbstractContextManager[Any] = nullcontext()
+        maybe_cmp_pair_tree_context: AbstractContextManager[Any] = nullcontext()
         maybe_aiter_ar_context = nullcontext()
         from vllm.distributed.device_communicators.cuda_communicator import (
             CudaCommunicator,
@@ -695,6 +696,9 @@ class GroupCoordinator:
             if ca_comm is not None:
                 maybe_ca_context = ca_comm.capture()  # type: ignore
             if isinstance(self.device_communicator, CudaCommunicator):
+                cmp_pair_tree = self.device_communicator.cmp_pair_tree
+                if cmp_pair_tree is not None:
+                    maybe_cmp_pair_tree_context = cmp_pair_tree.capture()
                 fi_pcie_ipc_ar_comm = self.device_communicator.fi_pcie_ipc_ar_comm
                 if fi_pcie_ipc_ar_comm is not None:
                     maybe_fi_pcie_ipc_context = fi_pcie_ipc_ar_comm.capture()
@@ -714,6 +718,7 @@ class GroupCoordinator:
             torch.cuda.stream(stream),
             maybe_ca_context,
             maybe_fi_pcie_ipc_context,
+            maybe_cmp_pair_tree_context,
             maybe_aiter_ar_context,
         ):
             yield graph_capture_context
