@@ -6,6 +6,9 @@ KV paths pass kernel and engine integration checks. TP2/PP4 with BF16 KV and
 two MTP drafts remains preferred for generation. A separate PP8/FP8 profile
 passes fresh and cached retrieval from 1,046,659 input tokens, although its
 fresh prefill is slow; see the [full-context measurements](#full-context-pp8-profile).
+Subsequent cached-context crashes also affected the BF16 profile; the
+[context-sharding trial and recovery controls](#context-sharding-trial) retain
+those failures alongside the earlier successful measurements.
 
 ## Implementation and provenance
 
@@ -470,6 +473,76 @@ fresh measurements and both failed cached checks. The 20.3–21.9% fresh latency
 reduction does not qualify this partition as a replacement for the
 `12,10,10,10,9,9,9,9` full-context recipe above. TP2/PP4 remains preferred for
 generation.
+
+### Context-sharding trial
+
+A private SM80 prototype split the KV cache across each TP2 pair and combined
+partial sparse-attention outputs using their log-sum-exp normalizers. Its
+attention, indexer, and workspace checks passed 170 cases, with seven skipped.
+A small random-weight engine also passed sequential and concurrent generation,
+fresh and cached 194K inputs, and an initially empty shard. These checks
+establish implementation plumbing, not full-model quality or performance.
+
+The full GLM trial used TP2/PP4, DCP2, partition `21,19,19,19`, FP8 KV,
+predecoded indexer keys, a 1,024-token prefill budget, and no MTP drafts.
+It allocated **1,419,392 cache tokens** and admitted the 1,048,576-token
+context setting. Objective answers scored 19/20, repeating the known
+`compute` → `computer` failure. Reasoning, tools, and all eight concurrent
+retrieval checks passed.
+
+Fresh retrieval returned all three records from the same 1,046,659-token
+document used by the PP8 reference. First-token latency was **1,252.55 s**,
+versus **892.51 s** for predecoded PP8: approximately 40% slower. The short
+answer generated at 25.99 tokens/s after prefill; this is not a matched
+steady-generation comparison.
+
+**The prototype is not qualified.** Its cached request failed during decode.
+The scheduler had recorded 58 output tokens when rank 5 on `b2:00.0` reported
+an unspecified CUDA launch failure. Driver logs contained Xid 45 channel
+cleanup events and Xid 154 reboot-required status on all eight GPUs, followed
+by a global UVM error. No completed cached answer or latency was recorded;
+the subsequent sequential objectives and generation benchmark were withheld.
+The cause remains unresolved, and these events do not establish a physical
+topology difference or isolate DCP as the cause.
+
+The original driver was unloaded without force, `b2` received a PCI
+function-level reset while unbound, and the original driver was reloaded.
+All eight CUDA allocation/kernel/reduction checks passed. Driver parameters,
+installed module hashes, and boot configuration remained unchanged, and no
+reboot was needed.
+
+The unchanged public BF16/MTP2 reference then passed 20/20 objective answers,
+reasoning/tools, and 8/8 concurrent retrieval checks, but failed both long
+checks. Its fresh request returned the correct JSON only in reasoning, with
+empty final content. Cached generation crashed on `b2` with Xid 31, an MMU
+virtual-read fault, after 13 recorded output tokens. This recurrence is not
+specific to the private DCP implementation; the underlying cause is unresolved.
+
+All eight GPUs subsequently passed repeated full-word local-memory checks
+covering 67,623,976,960 bytes per card, leaving 128 MiB of free memory unused.
+Each completed 546–583 pattern passes in at least 60 seconds, with zero
+mismatches and successful deliberate-error detection. All eight directed PIX
+links also passed full-word reads across 64,448 MiB of retained allocations
+per owner, including deliberate-error detection. These expand the earlier
+local and sampled-peer coverage. They do not establish correctness of every
+multiprocess CUDA IPC mapping or exclude all intermittent faults.
+
+With `NCCL_P2P_DISABLE=1` and `--disable-custom-all-reduce`, the same public
+BF16/MTP2 model passed 20/20 objective answers, reasoning/tools, 8/8 concurrent
+retrieval, fresh 262K retrieval, and four consecutive cached requests. All
+five long-context responses returned the three records in final content.
+Fresh first-token latency was 161.57 s; cached latencies were 1.45–1.54 s.
+No new GPU fault occurred during this control, which was left serving with
+268,608 cache tokens.
+
+This control changes both communication paths and allocation layout. It does
+not isolate the failing component or establish a permanent fix. No matched
+generation benchmark or throughput gain is claimed. To reproduce this
+diagnostic on the BF16/MTP2 recipe below, set `NCCL_P2P_DISABLE=1` in the
+environment and add `--disable-custom-all-reduce` to the serving command.
+
+The [trial record](glm53-context-sharding-trial-20260918.json) preserves both
+failed model configurations, memory checks, and the transport control.
 
 ### Draft expert compression measurements
 
