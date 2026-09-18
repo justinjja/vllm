@@ -642,6 +642,32 @@ and failure details. Generation uses 512 input and 512 output tokens with
 the same corpus and prompts in both configurations. The benchmark forces
 output length; quality checks are separate.
 
+### Pipeline-stage swap trial
+
+The two PIX pairs attached to the second CPU were swapped between pipeline
+stages using `--device-ids 0,1,2,3,6,7,4,5`. CUDA enumeration remained in its
+original order. This preserved TP pair connectivity and CPU grouping while
+moving physical `b2` from PP2/TP1 to PP3/TP1. Its former model stage moved
+to the `da`/`db` pair. Worker PCI assignments were verified directly; model
+weights, kernels, partition, transport, and 269,056-token cache capacity
+were unchanged.
+
+The run passed 20/20 objective answers, reasoning/tools, 8/8 concurrent
+retrieval, and fresh retrieval of all three records from 260,224 input
+tokens. Fresh first-token latency was 150.25 s. The first cached request
+then stalled after 34 logged output tokens. Physical `b2` reported Xid 119
+(GSP RPC timeout) and Xid 1 (GSP kernel panic). No completed cached answer
+or generation benchmark was obtained.
+
+The recurrence on the same physical card in a different model stage weakens
+attribution to its former layer assignment. It does **not** distinguish a
+driver/firmware defect from a physical card defect. The symmetric topology
+is unchanged, and this configuration is not qualified.
+
+Four middle-stage workers also logged allocator retries during fresh prefill;
+that request subsequently passed. The [trial record](glm53-pair-swap-trial-20260918.json)
+retains these observations, the successful checks, and the cached failure.
+
 ### Draft expert compression measurements
 
 The checkpoint stores its MTP routed experts in BF16. An isolated comparison

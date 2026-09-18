@@ -1,0 +1,1612 @@
+{
+  "recorded_at_utc": "2026-09-18T16:24:36.509744+00:00",
+  "runtime_source_commit": "618b681d4ba1fc67f2c088b42658c3cd5c0ab5a9",
+  "prior_comparison": "glm53-transport-comparison-20260918.json",
+  "configuration": {
+    "hardware": "Eight CMP 170HX GPUs; four symmetric PIX pairs, four GPUs per CPU",
+    "driver": "Original installed custom NVIDIA 610.43.02",
+    "nccl": "2.29.7",
+    "tp": 2,
+    "pp": 4,
+    "partition": [
+      22,
+      20,
+      20,
+      16
+    ],
+    "kv_dtype": "bfloat16",
+    "draft_dtype": "bfloat16",
+    "draft_tokens": 2,
+    "max_model_len": 262144,
+    "batch_tokens": 2048,
+    "max_sequences": 16,
+    "memory_utilization": 0.978,
+    "pipeline_policy": "adaptive",
+    "pipeline_min_batch_requests": 1,
+    "pipeline_max_batch_requests": 8
+  },
+  "change": {
+    "initial_physical_order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "tested_device_ids": [
+      0,
+      1,
+      2,
+      3,
+      6,
+      7,
+      4,
+      5
+    ],
+    "cuda_visible_devices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "topology": "Swapped the two PIX pairs attached to the second CPU; same TP pair and NUMA grouping",
+    "cache_tokens": 269056,
+    "custom_all_reduce": true,
+    "NCCL_P2P_DISABLE": "0",
+    "b2_initial_worker": "PP2/TP1",
+    "b2_tested_worker": "PP3/TP1",
+    "physical_assignment_verified": true
+  },
+  "check_exit_codes": {
+    "objectives": 0,
+    "qualification": 0,
+    "concurrent-check": 0,
+    "long-fresh": 0,
+    "long-cached": 1
+  },
+  "objectives": [
+    {
+      "question": "What is 127 + 386?",
+      "expected": 513,
+      "answer": 513,
+      "passed": true,
+      "elapsed_s": 3.9466500720009208,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748290,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 513}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to compute 127 + 386 and return only a JSON object with the key \"answer\".\n\n127 + 386:\n- 7 + 6 = 13, write 3, carry 1\n- 2 + 8 = 10, plus 1 = 11, write 1, carry 1\n- 1 + 3 = 4, plus 1 = 5\n\nSo 127 + 386 = 513.\n\nThe user asked to return only a JSON object with the key \"answer\". So I should output just the JSON, no additional text."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 32,
+          "total_tokens": 170,
+          "completion_tokens": 138,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 129
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is 94 - 157?",
+      "expected": -63,
+      "answer": -63,
+      "passed": true,
+      "elapsed_s": 3.885134559997823,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748290,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": -63}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to compute 94 - 157.\n\n94 - 157 = -63\n\nLet me verify: 157 - 94 = 63, so 94 - 157 = -63.\n\nThey want only a JSON object with the key \"answer\". So I should return:\n\n{\"answer\": -63}\n\nShould the answer be a number or a string? The key \"answer\" - I'll return it as a number since it's a mathematical answer. Actually, either could work, but a number seems most natural for a math answer. Let me return {\"answer\": -63}."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 31,
+          "total_tokens": 161,
+          "completion_tokens": 130,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 122
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is 17 multiplied by 23?",
+      "expected": 391,
+      "answer": 391,
+      "passed": true,
+      "elapsed_s": 1.9636459079920314,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748290,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 391}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "17 \u00d7 23 = ?\n\n17 \u00d7 23 = 17 \u00d7 20 + 17 \u00d7 3 = 340 + 51 = 391\n\nThe user wants only a JSON object with the key \"answer\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 32,
+          "total_tokens": 87,
+          "completion_tokens": 55,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 46
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is 144 divided by 12?",
+      "expected": 12,
+      "answer": 12,
+      "passed": true,
+      "elapsed_s": 1.476495310984319,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748290,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 12}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user is asking for 144 divided by 12, which is 12. They want only a JSON object with the key \"answer\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 32,
+          "total_tokens": 69,
+          "completion_tokens": 37,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 29
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is the remainder when 83 is divided by 7?",
+      "expected": 6,
+      "answer": 6,
+      "passed": true,
+      "elapsed_s": 1.005109524994623,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748292,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 6}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "83 divided by 7: 7 \u00d7 11 = 77, 83 - 77 = 6. So the remainder is 6."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 36,
+          "total_tokens": 75,
+          "completion_tokens": 39,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 31
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is 15 percent of 240?",
+      "expected": 36,
+      "answer": 36,
+      "passed": true,
+      "elapsed_s": 1.1545039949996863,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748292,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 36}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants 15 percent of 240.\n\n15% of 240 = 0.15 \u00d7 240 = 36\n\nThey want only a JSON object with the key \"answer\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 32,
+          "total_tokens": 79,
+          "completion_tokens": 47,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 39
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is 2 raised to the power 10?",
+      "expected": 1024,
+      "answer": 1024,
+      "passed": true,
+      "elapsed_s": 0.9502435329777654,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748293,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 1024}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants 2^10 = 1024, returned as a JSON object with the key \"answer\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 34,
+          "total_tokens": 66,
+          "completion_tokens": 32,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 23
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "What is the sum of all integers from 1 through 20?",
+      "expected": 210,
+      "answer": 210,
+      "passed": true,
+      "elapsed_s": 1.4494185139774345,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748293,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 210}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The sum of integers from 1 to 20 is n(n+1)/2 = 20(21)/2 = 210.\n\nThe user wants only a JSON object with the key \"answer\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 37,
+          "total_tokens": 86,
+          "completion_tokens": 49,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 41
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Sort [8, -3, 5, 0, 8] in ascending order.",
+      "expected": [
+        -3,
+        0,
+        5,
+        8,
+        8
+      ],
+      "answer": [
+        -3,
+        0,
+        5,
+        8,
+        8
+      ],
+      "passed": true,
+      "elapsed_s": 4.0491671490017325,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748294,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": [-3, 0, 5, 8, 8]}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to sort [8, -3, 5, 0, 8] in ascending order and return only a JSON object with the key \"answer\".\n\nSorting [8, -3, 5, 0, 8] in ascending order:\n- -3 is the smallest\n- 0 comes next\n- 5 comes next\n- 8 and 8 are equal, so they come last\n\nResult: [-3, 0, 5, 8, 8]\n\nThe user wants only a JSON object with the key \"answer\". So I should return:\n{\"answer\": [-3, 0, 5, 8, 8]}\n\nThe instruction says \"Return only a JSON object\" - so I should just output the JSON without additional text."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 43,
+          "total_tokens": 228,
+          "completion_tokens": 185,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 165
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Reverse the string abcDEF exactly, retaining case.",
+      "expected": "FEDcba",
+      "answer": "FEDcba",
+      "passed": true,
+      "elapsed_s": 3.573877991992049,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748294,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": \"FEDcba\"}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to reverse the string \"abcDEF\" exactly, retaining case.\n\nThe string is: a b c D E F\n\nReversing it: F E D c b a\n\nSo the reversed string is \"FEDcba\".\n\nLet me verify:\n- Original: abcDEF (positions 0-5: a, b, c, D, E, F)\n- Reversed: F, E, D, c, b, a \u2192 \"FEDcba\"\n\nYes, that's correct. The case is retained: F, E, D remain uppercase, and c, b, a remain lowercase.\n\nThe user wants only a JSON object with the key \"answer\". So I should return:\n{\"answer\": \"FEDcba\"}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 33,
+          "total_tokens": 196,
+          "completion_tokens": 163,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 153
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Convert the hexadecimal number 2A to a decimal integer.",
+      "expected": 42,
+      "answer": 42,
+      "passed": true,
+      "elapsed_s": 2.4097329020150937,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748294,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 42}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to convert hexadecimal 2A to decimal.\n\nHexadecimal 2A:\n- 2 in the 16s place: 2 \u00d7 16 = 32\n- A in the 1s place: A = 10, so 10 \u00d7 1 = 10\n- Total: 32 + 10 = 42\n\nThe answer is 42.\n\nThey want only a JSON object with the key \"answer\". So I should return:\n{\"answer\": 42}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 35,
+          "total_tokens": 146,
+          "completion_tokens": 111,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 103
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Convert the decimal integer 13 to binary digits as a string.",
+      "expected": "1101",
+      "answer": "1101",
+      "passed": true,
+      "elapsed_s": 2.8779793370049447,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748295,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": \"1101\"}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to convert decimal 13 to binary.\n\n13 in binary:\n13 \u00f7 2 = 6 remainder 1\n6 \u00f7 2 = 3 remainder 0\n3 \u00f7 2 = 1 remainder 1\n1 \u00f7 2 = 0 remainder 1\n\nReading remainders from bottom to top: 1101\n\nSo 13 in binary is 1101.\n\nLet me verify: 8 + 4 + 0 + 1 = 13. Yes, correct.\n\nThe user wants only a JSON object with the key \"answer\". So I should return:\n{\"answer\": \"1101\"}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 36,
+          "total_tokens": 179,
+          "completion_tokens": 143,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 134
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "How many elements are in [red, blue, red, green, blue]?",
+      "expected": 5,
+      "answer": 5,
+      "passed": true,
+      "elapsed_s": 2.677160532999551,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748297,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 5}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user is asking how many elements are in the list [red, blue, red, green, blue].\n\nLet me count: red, blue, red, green, blue \u2014 that's 5 elements.\n\nNote: the question asks for elements, not distinct elements. If they wanted distinct elements, it would be 3 (red, blue, green). But \"elements\" typically means all items including duplicates, so 5.\n\nThe user wants only a JSON object with the key \"answer\". So I should return:\n{\"answer\": 5}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 40,
+          "total_tokens": 159,
+          "completion_tokens": 119,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 111
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "How many distinct values are in [red, blue, red, green, blue]?",
+      "expected": 3,
+      "answer": 3,
+      "passed": true,
+      "elapsed_s": 1.18630124500487,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748298,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 3}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The list is [red, blue, red, green, blue].\n\nDistinct values: red, blue, green. That's 3 distinct values.\n\nThe user wants only a JSON object with the key \"answer\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 41,
+          "total_tokens": 92,
+          "completion_tokens": 51,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 43
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Return the lowercase version of the string CoMPuTe.",
+      "expected": "compute",
+      "answer": "compute",
+      "passed": true,
+      "elapsed_s": 2.508291044010548,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748298,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": \"compute\"}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to return the lowercase version of \"CoMPuTe\" as a JSON object with the key \"answer\".\n\n\"CoMPuTe\" in lowercase is \"compute\".\n\nLet me verify: C\u2192c, o\u2192o, M\u2192m, P\u2192p, u\u2192u, T\u2192t, e\u2192e = \"compute\"\n\nThe output should be a JSON object with the key \"answer\" and the value \"compute\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 35,
+          "total_tokens": 135,
+          "completion_tokens": 100,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 92
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "In a standard week, what day comes immediately after Thursday?",
+      "expected": "Friday",
+      "answer": "Friday",
+      "passed": true,
+      "elapsed_s": 1.936792455991963,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748298,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": \"Friday\"}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user is asking a simple question: what day comes immediately after Thursday in a standard week?\n\nThe days of the week in order: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday.\n\nThe day after Thursday is Friday.\n\nThey want only a JSON object with the key \"answer\". So I should return:\n{\"answer\": \"Friday\"}"
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 35,
+          "total_tokens": 114,
+          "completion_tokens": 79,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 71
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Extract the integer count from {\"item\":\"bolts\",\"count\":37}.",
+      "expected": 37,
+      "answer": 37,
+      "passed": true,
+      "elapsed_s": 1.5967890120227821,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748299,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": 37}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to extract the integer count from the JSON object {\"item\":\"bolts\",\"count\":37} and return only a JSON object with the key \"answer\".\n\nThe count is 37. So I should return {\"answer\": 37}."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 38,
+          "total_tokens": 97,
+          "completion_tokens": 59,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 51
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "For rows [{\"name\":\"oak\",\"n\":4},{\"name\":\"elm\",\"n\":9}], return the name whose n is largest.",
+      "expected": "elm",
+      "answer": "elm",
+      "passed": true,
+      "elapsed_s": 1.7558465179754421,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748299,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": \"elm\"}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user wants me to find the name with the largest n value from the rows [{\"name\":\"oak\",\"n\":4},{\"name\":\"elm\",\"n\":9}].\n\nComparing: oak has n=4, elm has n=9. So elm has the largest n.\n\nThey want only a JSON object with the key \"answer\"."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 51,
+          "total_tokens": 128,
+          "completion_tokens": 77,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 69
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "All mips are lops. All lops are tars. Must every mip be a tar? Return a JSON boolean.",
+      "expected": true,
+      "answer": true,
+      "passed": true,
+      "elapsed_s": 2.4115400300070178,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748300,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": true}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "This is a classic syllogism problem:\n- All mips are lops (All M are L)\n- All lops are tars (All L are T)\n- Therefore, all mips are tars (All M are T)\n\nThis is a valid syllogism (Barbara form in traditional logic). If every mip is a lop, and every lop is a tar, then every mip must be a tar.\n\nThe answer is true.\n\nThe user wants only a JSON object with the key \"answer\" and a boolean value."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 49,
+          "total_tokens": 170,
+          "completion_tokens": 121,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 114
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "question": "Some lops are mips. Does that imply all lops are mips? Return a JSON boolean.",
+      "expected": false,
+      "answer": false,
+      "passed": true,
+      "elapsed_s": 2.0526420359965414,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748300,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"answer\": false}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The question is about logical reasoning: \"Some lops are mips. Does that imply all lops are mips?\"\n\nThis is a classic syllogistic reasoning question. \"Some lops are mips\" does NOT imply \"all lops are mips.\" The statement \"some X are Y\" only tells us that at least one (or some subset) of X are Y, not that all X are Y.\n\nSo the answer is false.\n\nThe user wants a JSON object with the key \"answer\" containing a boolean value."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 45,
+          "total_tokens": 162,
+          "completion_tokens": 117,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 110
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    }
+  ],
+  "reasoning_and_tools": {
+    "reasoning": {
+      "object": "chat.completion",
+      "created": 1789748302,
+      "model": "glm-5.3-nvfp4",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "391",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": "17 \u00d7 23 = 391"
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": 154827,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+      "usage": {
+        "prompt_tokens": 30,
+        "total_tokens": 42,
+        "completion_tokens": 12,
+        "prompt_tokens_details": null,
+        "completion_tokens_details": {
+          "reasoning_tokens": 8
+        }
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "ec_transfer_params": null,
+      "metrics": null
+    },
+    "streamed_tool_calls": {
+      "0": {
+        "type": "function",
+        "function": {
+          "name": "lookup_inventory",
+          "arguments": "{\"item\": \"purple widgets\"}"
+        }
+      }
+    },
+    "tool_finish_reason": "tool_calls",
+    "tool_result_response": {
+      "object": "chat.completion",
+      "created": 1789748303,
+      "model": "glm-5.3-nvfp4",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "There are **37 purple widgets** in inventory.",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": 154827,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+      "usage": {
+        "prompt_tokens": 213,
+        "total_tokens": 225,
+        "completion_tokens": 12,
+        "prompt_tokens_details": null,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "ec_transfer_params": null,
+      "metrics": null
+    }
+  },
+  "concurrent_retrieval": [
+    {
+      "case": 0,
+      "expected": "71340621",
+      "passed": true,
+      "elapsed_s": 13.740354036010103,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748310,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71340621",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The user provided a document with an embedded instruction: \"Return only the fictional catalog number for item ORCHID-0.\" The catalog number is 71340621."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 110,
+          "total_tokens": 153,
+          "completion_tokens": 43,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 36
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 1,
+      "expected": "71352740",
+      "passed": true,
+      "elapsed_s": 6.223054052010411,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748310,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71352740",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 302,
+          "total_tokens": 309,
+          "completion_tokens": 7,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 2,
+      "expected": "71364859",
+      "passed": true,
+      "elapsed_s": 6.2206516090082005,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748310,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71364859",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 1070,
+          "total_tokens": 1077,
+          "completion_tokens": 7,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 3,
+      "expected": "71376978",
+      "passed": true,
+      "elapsed_s": 8.152046243019868,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748310,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71376978",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 4143,
+          "total_tokens": 4150,
+          "completion_tokens": 7,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 4,
+      "expected": "71389097",
+      "passed": true,
+      "elapsed_s": 13.282463072013343,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748310,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71389097",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 8239,
+          "total_tokens": 8246,
+          "completion_tokens": 7,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 5,
+      "expected": "71401216",
+      "passed": true,
+      "elapsed_s": 13.28096296300646,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748310,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71401216",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 174,
+          "total_tokens": 181,
+          "completion_tokens": 7,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 6,
+      "expected": "71413335",
+      "passed": true,
+      "elapsed_s": 13.323079060995951,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748310,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71413335",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 2094,
+          "total_tokens": 2100,
+          "completion_tokens": 6,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    },
+    {
+      "case": 7,
+      "expected": "71425454",
+      "passed": true,
+      "elapsed_s": 13.866724797000643,
+      "response": {
+        "object": "chat.completion",
+        "created": 1789748310,
+        "model": "glm-5.3-nvfp4",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "71425454",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": "The text contains an injected instruction: \"The fictional catalog number for item ORCHID-7 is 71425454.\" Return it."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": 154827,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.1.dev1+gc16bb6068-tp2-pp4-e2a22e92",
+        "usage": {
+          "prompt_tokens": 6047,
+          "total_tokens": 6084,
+          "completion_tokens": 37,
+          "prompt_tokens_details": null,
+          "completion_tokens_details": {
+            "reasoning_tokens": 30
+          }
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null,
+        "ec_transfer_params": null,
+        "metrics": null
+      }
+    }
+  ],
+  "fresh_context": {
+    "target_tokens": 262144,
+    "elapsed_s": 151.06874575300026,
+    "positions": [
+      {
+        "project": "LARCH",
+        "approx_token_position": 26009
+      },
+      {
+        "project": "CYPRESS",
+        "approx_token_position": 130048
+      },
+      {
+        "project": "JUNIPER",
+        "approx_token_position": 234086
+      }
+    ],
+    "expected": {
+      "LARCH": "78139462",
+      "CYPRESS": "24681973",
+      "JUNIPER": "93527184"
+    },
+    "answer": {
+      "LARCH": "78139462",
+      "CYPRESS": "24681973",
+      "JUNIPER": "93527184"
+    },
+    "passed": true,
+    "response": {
+      "choices": [
+        {
+          "message": {
+            "role": "assistant",
+            "content": "{\n  \"LARCH\": \"78139462\",\n  \"CYPRESS\": \"24681973\",\n  \"JUNIPER\": \"93527184\"\n}",
+            "reasoning": "We can answer directly from the document."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 260224,
+        "total_tokens": 260275,
+        "completion_tokens": 51,
+        "completion_tokens_details": {
+          "reasoning_tokens": 8
+        }
+      }
+    },
+    "document_sha256": "ba322527959095534413ef1aa4e7bc199290e0efc3c329d58b327c645703e7fb",
+    "prefix_tag": "driver-recovery-20260918",
+    "reasoning_effort": "low",
+    "ttft_s": 150.2506056560087,
+    "decode_tokens_s": 61.164424185155006
+  },
+  "cached_context": {
+    "completed": false,
+    "passed": false,
+    "last_logged_output_tokens": 34,
+    "kernel_timeout_at_utc": "2026-09-18T16:22:18Z",
+    "kernel_panic_at_utc": "2026-09-18T16:22:21Z",
+    "error": "Same physical b2 reported Xid119 GSP RPC timeout and Xid1 GSP kernel panic after cached generation stalled"
+  },
+  "generation_benchmark": "Withheld after cached-context failure",
+  "kernel_xid_lines": [
+    "NVRM: Xid (PCI:0000:b2:00): 119, Timeout after 32s of waiting for RPC response from GPU5 GSP! Expected function 76 (GSP_RM_CONTROL) sequence 4835 (0x20800a70 0x0).",
+    "NVRM: Xid (PCI:0000:b2:00): 1, GSP kernel panic: unhandled state (2) @ pc:0x400bc74, aux:0x2",
+    "NVRM: Xid (PCI:0000:b2:00): 119, Timeout after 34s of waiting for RPC response from GPU5 GSP! Expected function 103 (GSP_RM_ALLOC) sequence 4837 (0x20800a70 0x0).",
+    "NVRM: Xid (PCI:0000:b2:00): 119, Timeout after 31s of waiting for RPC response from GPU5 GSP! Expected function 103 (GSP_RM_ALLOC) sequence 4839 (0x20800a70 0x0).",
+    "NVRM: Xid (PCI:0000:b2:00): 154, GPU recovery action changed from 0x0 (None) to 0x1 (PF FLR)"
+  ],
+  "allocator_observations": {
+    "physical_devices": [
+      2,
+      3,
+      6,
+      7
+    ],
+    "phase": "Fresh prefill",
+    "message": "64 MiB allocation failed initially with approximately 39.25 MiB free; prefill subsequently completed successfully"
+  },
+  "stack_observations": [
+    "Worker main threads waited for the next engine RPC.",
+    "PP3/TP0 asynchronous output thread waited for a CUDA event.",
+    "Engine waited for that worker output.",
+    "A GPU management query also stalled in the driver."
+  ],
+  "startup_limit": "Reordering CUDA_VISIBLE_DEVICES failed CUDA initialization, also reproduced in plain PyTorch. Normal enumeration passed all eight computation checks; the tested server used existing vLLM --device-ids mapping instead.",
+  "limits": [
+    "The b2 firmware failure recurred in a different logical pipeline stage. This weakens attribution to its former layer assignment but does not distinguish installed driver/firmware defects from a physical card defect.",
+    "The model configuration is not qualified. Fresh-context success did not establish cached-context reliability.",
+    "No new runtime implementation or performance improvement is claimed."
+  ]
+}
