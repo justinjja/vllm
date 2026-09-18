@@ -6,8 +6,6 @@ The qualified configuration uses eight 64-GiB cards with TP2/PP4.
 
 ## Progress ledger
 
-Keep this ledger directly below the CMP 170HX note. Add dated entries for
-each meaningful change, with validation results and any remaining limits.
 Performance entries below were measured on the local eight-GPU system.
 
 | Date (UTC) | Progress | Validation / result |

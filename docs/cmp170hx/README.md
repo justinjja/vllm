@@ -147,11 +147,3 @@ uv run --no-project --python .venv/bin/python -m pytest \
   tests/v1/core/test_scheduler.py \
   -k 'prompt_length_selects or short_and_long_prefills' -q
 ```
-
-## Updating the ledger
-
-Keep dated entries at the top of the main README, directly below the CMP 170HX
-note, newest first. Record the change, test or benchmark evidence, hardware
-and configuration differences, and unresolved limits. Distinguish new runs
-from historical measurements. Preserve the September 17 source manifest and
-qualification as the baseline when publishing later changes.
