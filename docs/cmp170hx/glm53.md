@@ -421,13 +421,23 @@ were correct; total latency was 707.32 s with 196 output tokens. Startup
 allocated 1,053,440 KV tokens, and 20/20 objective checks, reasoning/tools
 with continuation, and 8/8 concurrent retrieval checks passed.
 
-**This partition is not qualified.** The subsequent cached request failed
+**This partition is not qualified.** The first cached request failed
 during generation with an unspecified CUDA launch failure. The driver logged
-Xid 32 and 31, and the engine shut down. The root cause is unresolved; this
-does not establish a physical connectivity difference. The
+Xid 32 and 31, and the engine shut down.
+
+An unchanged repeat passed the short checks again and retrieved all three
+records from the same full-context prompt: fresh first-token latency was
+711.24 s and total latency was 718.53 s. Its cached request stalled after a
+GSP firmware crash. The driver logged Xid 119 and 154; the server was stopped
+and the waiting client was explicitly terminated. No completed cached
+measurement or final answer was recorded. Application cleanup did not restore
+the affected card to CUDA enumeration; no driver reset or reload was performed.
+
+The root causes are unresolved, and the two failures have different
+signatures. Neither establishes a physical connectivity difference. The
 [trial record](glm53-balanced-prefill-trial-20260918.json) retains the successful
-fresh measurement and the failed cached check. The 21.9% fresh latency
-reduction is a single trial result, not a validated replacement for the
+fresh measurements and both failed cached checks. The 20.3–21.9% fresh latency
+reduction does not qualify this partition as a replacement for the
 `12,10,10,10,9,9,9,9` full-context recipe above. TP2/PP4 remains preferred for
 generation.
 
