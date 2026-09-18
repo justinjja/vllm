@@ -104,6 +104,36 @@ def _can_p2p(rank: int, world_size: int) -> bool:
 from vllm.distributed.utils import is_weak_contiguous  # noqa: E402
 
 
+def _pcie_mesh_limit(additional, physical_ids, capability, fully_connected):
+    limit = (
+        additional.get("cmp_pcie_allreduce_max_bytes", 0)
+        if isinstance(additional, dict)
+        else 0
+    )
+    if not limit:
+        return 0
+    if type(limit) is not int or not 16 <= limit <= 256 * 1024:
+        raise ValueError("cmp_pcie_allreduce_max_bytes must be between 16 and 262144")
+    devices = additional.get("cmp_pcie_allreduce_devices")
+    if not isinstance(devices, list) or len(devices) != 4:
+        raise ValueError("cmp_pcie_allreduce_devices must name four qualified GPUs")
+    allowed_ids = {
+        current_platform.device_control_id_to_physical_device_id(str(device))
+        for device in devices
+    }
+    if len(allowed_ids) != 4:
+        raise ValueError("cmp_pcie_allreduce_devices must name four distinct GPUs")
+    return (
+        limit
+        if len(physical_ids) == 4
+        and capability is not None
+        and capability.to_int() == 80
+        and not fully_connected
+        and set(physical_ids) == allowed_ids
+        else 0
+    )
+
+
 class CustomAllreduce:
     _SUPPORTED_WORLD_SIZES = [2, 4, 6, 8, 16]
     _DEFAULT_ALL_GATHER_MAX_SIZE = 2 * 1024 * 1024
@@ -220,6 +250,7 @@ class CustomAllreduce:
                 )
         # device.index is a visible ordinal, not a logical local ID.
         fully_connected = False
+        self.pcie_mesh = False
         if same_node:
             physical_device_id = (
                 current_platform.visible_device_id_to_physical_device_id(device.index)
@@ -233,7 +264,23 @@ class CustomAllreduce:
             physical_device_ids = [t.item() for t in gather_list]
             assert current_platform.is_cuda_alike()
             fully_connected = current_platform.is_fully_connected(physical_device_ids)
-        if same_node and world_size > 2 and not fully_connected:
+            from vllm.config import get_current_vllm_config_or_none
+
+            config = get_current_vllm_config_or_none()
+            pcie_limit = _pcie_mesh_limit(
+                config.additional_config if config is not None else None,
+                physical_device_ids,
+                device_capability,
+                fully_connected,
+            )
+            if pcie_limit:
+                self.pcie_mesh = True
+                max_size = min(max_size, pcie_limit)
+                logger.info(
+                    "Enabling qualified four-rank SM80 PCIe all-reduce below %d bytes",
+                    max_size,
+                )
+        if same_node and world_size > 2 and not fully_connected and not self.pcie_mesh:
             logger.warning(
                 "Custom allreduce is disabled because it's not supported on"
                 " more than two PCIe-only GPUs. To silence this warning, "
@@ -298,7 +345,7 @@ class CustomAllreduce:
         self.world_size = world_size
         self.fully_connected = fully_connected
         self._ptr = ops.init_custom_ar(
-            self.meta_ptrs, self.rank_data, rank, self.fully_connected
+            self.meta_ptrs, self.rank_data, rank, self.fully_connected or self.pcie_mesh
         )
         ops.register_buffer(self._ptr, self.buffer_ptrs)
         self._init_mnnvl_buffer(
@@ -415,7 +462,7 @@ class CustomAllreduce:
             return False
         # for 4 or more non NVLink-capable GPUs, custom allreduce provides
         # little performance improvement over NCCL.
-        if self.world_size == 2 or self.fully_connected:
+        if self.world_size == 2 or self.fully_connected or self.pcie_mesh:
             return inp_size < self.max_size
         return False
 

@@ -414,6 +414,7 @@ def build_attn_metadata(
     ubatch_idx: int = 0,
     fast_prefill: FastPrefillBatchMetadata | None = None,
     req_idx: np.ndarray | None = None,
+    block_tables_cpu: Sequence[torch.Tensor] | None = None,
 ) -> dict[str, Any]:
     seq_lens = seq_lens[:num_reqs]
     if dcp_local_seq_lens is not None:
@@ -463,6 +464,9 @@ def build_attn_metadata(
             num_actual_tokens=num_tokens,
             max_query_len=max_query_len,
             block_table_tensor=block_table,
+            block_table_cpu=(
+                block_tables_cpu[i][:num_reqs] if block_tables_cpu is not None else None
+            ),
             slot_mapping=slot_mapping,
             causal=group_causal,
             dcp_local_seq_lens=dcp_local_seq_lens,

@@ -1051,6 +1051,8 @@ class FusedMoEParallelConfig:
     use_ep: bool  # whether to use EP or not
     all2all_backend: str  # all2all backend for MoE communication
     enable_eplb: bool  # whether to enable expert load balancing
+    shared_expert_replicas: int = 1
+    hybrid_pair_reduce: bool = False
 
     @property
     def is_sequence_parallel(self) -> bool:
@@ -1209,6 +1211,42 @@ class FusedMoEParallelConfig:
             - Comment: There are 2 engine instances and the experts are split
                 between the 4 devices.
         """
+        from vllm.distributed.cmp_hybrid import get_cmp_hybrid_layout
+
+        hybrid = get_cmp_hybrid_layout()
+        if hybrid is not None:
+            from vllm.distributed import get_ep_group
+
+            if (tp_size_, dp_size_, pcp_size_, sp_size_) != (
+                hybrid.dense_tp_size,
+                1,
+                1,
+                1,
+            ):
+                raise ValueError(
+                    f"CMP hybrid experts require TP{hybrid.dense_tp_size} "
+                    "without DP, PCP or SP"
+                )
+            ep_group = get_ep_group()
+            if ep_group.world_size != 8:
+                raise ValueError("CMP hybrid routed reduction requires eight ranks")
+            return FusedMoEParallelConfig(
+                tp_size=hybrid.dense_tp_size,
+                tp_rank=get_tensor_model_parallel_rank(),
+                ep_size=hybrid.expert_ep_size,
+                ep_rank=ep_group.rank_in_group // hybrid.dense_tp_size,
+                dp_size=1,
+                dp_rank=0,
+                pcp_size=1,
+                pcp_rank=0,
+                sp_size=1,
+                use_ep=True,
+                all2all_backend=vllm_parallel_config.all2all_backend,
+                enable_eplb=False,
+                shared_expert_replicas=hybrid.expert_ep_size,
+                hybrid_pair_reduce=hybrid.small_pair_reduce,
+            )
+
         use_ep = (
             dp_size_ * pcp_size_ * tp_size_ > 1
             and vllm_parallel_config.enable_expert_parallel

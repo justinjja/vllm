@@ -632,6 +632,9 @@ class DeepseekV32IndexerMetadata:
 
     decode: DeepSeekV32IndexerDecodeMetadata | None = None
     prefill: DeepseekV32IndexerPrefillMetadata | None = None
+    block_table_cpu: torch.Tensor | None = None
+    cache_block_size: int | None = None
+    write_blocks_cpu: torch.Tensor | None = None
 
 
 def compute_kpool_tail_slot_mapping(
@@ -752,6 +755,8 @@ def _supports_native_decode(next_n: int) -> bool:
     instead of flattening to one single-token row per query, which re-reads
     the KV tile once per row.
     """
+    if current_platform.is_cuda() and current_platform.is_device_capability(80):
+        return True
     if not (current_platform.is_cuda() and has_deep_gemm()):
         return next_n in (1, 2)
     if current_platform.is_device_capability_family(100):
@@ -1207,6 +1212,7 @@ class DeepseekV32IndexerMetadataBuilder(AttentionMetadataBuilder):
         compressed_slot_mapping = slot_mapping
         compressed_seq_lens = seq_lens
         indexer_block_table = block_table
+        indexer_block_table_cpu = common_attn_metadata.block_table_cpu
         if self.compress_ratio > 1:
             kernel_block_size = self.kernel_block_size
             if (
@@ -1216,6 +1222,10 @@ class DeepseekV32IndexerMetadataBuilder(AttentionMetadataBuilder):
             ):
                 factor = self.kv_cache_spec.block_size // kernel_block_size
                 indexer_block_table = (block_table[:, ::factor] // factor).contiguous()
+                if indexer_block_table_cpu is not None:
+                    indexer_block_table_cpu = (
+                        indexer_block_table_cpu[:, ::factor] // factor
+                    ).contiguous()
             padded_num_tokens = num_tokens
             if self.pcp_world_size > 1:
                 padded_num_tokens = slot_mapping.shape[0] // self.pcp_world_size
@@ -1497,9 +1507,13 @@ class DeepseekV32IndexerMetadataBuilder(AttentionMetadataBuilder):
             if seq_lens.dim() == 1:
                 seq_lens = seq_lens.unsqueeze(-1)
 
-            # DeepGEMM is required for the paged MQA logits on CUDA devices
+            # SM80 uses a static Triton grid without DeepGEMM scheduling metadata.
             schedule_metadata = self.scheduler_metadata_buffer
-            if current_platform.is_cuda() and has_deep_gemm():
+            if (
+                current_platform.is_cuda()
+                and not current_platform.is_device_capability(80)
+                and has_deep_gemm()
+            ):
                 metadata = get_paged_mqa_logits_metadata(
                     seq_lens,
                     self.kv_cache_spec.num_states,
@@ -1522,6 +1536,10 @@ class DeepseekV32IndexerMetadataBuilder(AttentionMetadataBuilder):
                 write_max_decode_len=max_decode_len,
             )
 
+        from vllm.models.deepseek_v41.common.pipeline_transfer import (
+            prefill_write_blocks,
+        )
+
         attn_metadata = DeepseekV32IndexerMetadata(
             seq_lens=common_attn_metadata.seq_lens,
             max_seq_len=common_attn_metadata.max_seq_len,
@@ -1532,6 +1550,15 @@ class DeepseekV32IndexerMetadataBuilder(AttentionMetadataBuilder):
             num_prefill_tokens=num_prefill_tokens,
             prefill=prefill_metadata,
             decode=decode_metadata,
+            block_table_cpu=indexer_block_table_cpu,
+            cache_block_size=int(self.kv_cache_spec.num_states),
+            write_blocks_cpu=prefill_write_blocks(
+                indexer_block_table_cpu,
+                query_start_loc_cpu,
+                common_attn_metadata.seq_lens_cpu_upper_bound,
+                self.kv_cache_spec.block_size,
+                self.decode_threshold,
+            ),
         )
 
         return attn_metadata

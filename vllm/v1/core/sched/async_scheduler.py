@@ -15,6 +15,65 @@ class AsyncScheduler(Scheduler):
         # reusable read-only placeholder list for speculative decoding.
         self._spec_token_placeholders: list[int] = [-1] * self.num_spec_tokens
         self.pp_size = self.parallel_config.pipeline_parallel_size
+        additional_config = self.vllm_config.additional_config
+        batch_limit = (
+            additional_config.get("pipeline_max_batch_requests")
+            if isinstance(additional_config, dict)
+            else None
+        )
+        batch_policy = (
+            additional_config.get("pipeline_batch_policy", "fixed")
+            if isinstance(additional_config, dict)
+            else "fixed"
+        )
+        if batch_policy not in ("fixed", "adaptive"):
+            raise ValueError("pipeline_batch_policy must be fixed or adaptive")
+        if batch_policy == "adaptive" and batch_limit is None:
+            raise ValueError(
+                "Adaptive PP batching requires pipeline_max_batch_requests"
+            )
+        self._adaptive_pipeline_batch_limit = (
+            batch_limit if batch_policy == "adaptive" else None
+        )
+        self._adaptive_pipeline_batch_minimum = (
+            additional_config.get("pipeline_min_batch_requests", 1)
+            if isinstance(additional_config, dict)
+            else 1
+        )
+        if batch_policy == "adaptive" and (
+            type(self._adaptive_pipeline_batch_minimum) is not int
+            or batch_limit is None
+            or not 1 <= self._adaptive_pipeline_batch_minimum <= batch_limit
+        ):
+            raise ValueError(
+                "pipeline_min_batch_requests must be an integer between 1 and "
+                "pipeline_max_batch_requests"
+            )
+        if batch_limit is not None:
+            if (
+                type(batch_limit) is not int
+                or not 1 <= batch_limit <= self.max_num_running_reqs
+                or self.pp_size <= 1
+                or not self.use_v2_model_runner
+            ):
+                raise ValueError(
+                    "pipeline_max_batch_requests requires V2 async PP and an integer "
+                    "between 1 and max_num_seqs"
+                )
+            self.max_num_scheduled_reqs = batch_limit
+
+    def schedule(self, throttle_prefills: bool = False) -> SchedulerOutput:
+        if self._adaptive_pipeline_batch_limit is not None:
+            demand = min(self.max_num_running_reqs, self.get_num_unfinished_requests())
+            # Spread the active requests over the pipeline's recurrence slots.
+            self.max_num_scheduled_reqs = min(
+                self._adaptive_pipeline_batch_limit,
+                max(
+                    self._adaptive_pipeline_batch_minimum,
+                    (demand + self.pp_size - 1) // self.pp_size,
+                ),
+            )
+        return super().schedule(throttle_prefills)
 
     def _update_after_schedule(self, scheduler_output: SchedulerOutput) -> None:
         super()._update_after_schedule(scheduler_output)

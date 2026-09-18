@@ -139,6 +139,9 @@ class DeepseekV4FlashMLAMetadata(AttentionMetadata):
     req_id_per_token: torch.Tensor
     block_size: int
     topk_tokens: int
+    block_table_cpu: torch.Tensor | None = None
+    cache_block_size: int | None = None
+    write_blocks_cpu: torch.Tensor | None = None
 
 
 class DeepseekV4SparseMLAMetadataBuilder(
@@ -188,6 +191,8 @@ class DeepseekV4SparseMLAMetadataBuilder(
         common_attn_metadata: CommonAttentionMetadata,
         fast_build: bool = False,
     ) -> DeepseekV4FlashMLAMetadata:
+        from .common.pipeline_transfer import prefill_write_blocks
+
         cm = common_attn_metadata
         req_id_per_token = cm.token_to_req_indices(self.req_id_per_token_buffer)
 
@@ -214,6 +219,19 @@ class DeepseekV4SparseMLAMetadataBuilder(
             req_id_per_token=req_id_per_token,
             block_size=self.kv_cache_spec.block_size,
             topk_tokens=self.topk_tokens,
+            cache_block_size=int(self.kv_cache_spec.num_states),
+            write_blocks_cpu=prefill_write_blocks(
+                cm.block_table_cpu,
+                cm.query_start_loc_cpu,
+                cm.seq_lens_cpu_upper_bound,
+                self.kv_cache_spec.block_size,
+                self.reorder_batch_threshold or 1,
+            ),
+            block_table_cpu=(
+                cm.block_table_cpu.clamp(min=0)
+                if self.compress_ratio > 1 and cm.block_table_cpu is not None
+                else cm.block_table_cpu
+            ),
         )
 
 

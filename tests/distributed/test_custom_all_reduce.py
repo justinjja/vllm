@@ -11,6 +11,7 @@ import torch.distributed as dist
 from vllm.distributed.communication_op import tensor_model_parallel_all_reduce  # noqa
 from vllm.distributed.device_communicators import custom_all_reduce as car
 from vllm.distributed.parallel_state import get_tp_group, graph_capture
+from vllm.platforms.interface import DeviceCapability
 
 from ..utils import (
     ensure_model_parallel_initialized,
@@ -45,6 +46,46 @@ def test_custom_allreduce_filters_dtype(
     communicator._ptr = 0
 
     assert communicator.should_custom_ar(torch.empty(16, dtype=dtype)) is expected
+
+
+@pytest.mark.parametrize("pcie_mesh", [False, True])
+@pytest.mark.parametrize("numel", [5120, 4 * 5120, 65536])
+def test_pcie_allreduce_keeps_large_messages_on_fallback(pcie_mesh, numel):
+    """Only an opted-in mesh may reduce small PCIe tensors with the IPC kernel."""
+    communicator = car.CustomAllreduce.__new__(car.CustomAllreduce)
+    communicator.disabled = False
+    communicator.world_size = 4
+    communicator.fully_connected = False
+    communicator.pcie_mesh = pcie_mesh
+    communicator.max_size = 256 * 1024
+    communicator._ptr = 0
+    tensor = torch.empty(numel, dtype=torch.float32)
+    assert communicator.should_custom_ar(tensor) == (
+        pcie_mesh and tensor.nbytes < communicator.max_size
+    )
+
+
+@pytest.mark.parametrize(
+    "devices,capability,expected",
+    [
+        ([0, 1, 2, 3], DeviceCapability(8, 0), 262144),
+        ([4, 5, 6, 7], DeviceCapability(8, 0), 0),
+        (list(range(8)), DeviceCapability(8, 0), 0),
+        ([0, 1, 2, 3], DeviceCapability(9, 0), 0),
+    ],
+)
+def test_pcie_allreduce_rejects_unqualified_socket_and_world(
+    monkeypatch, devices, capability, expected
+):
+    """A tested four-GPU IPC group must not enable the other socket or TP8."""
+    monkeypatch.setattr(
+        car.current_platform, "device_control_id_to_physical_device_id", int
+    )
+    additional = {
+        "cmp_pcie_allreduce_max_bytes": 262144,
+        "cmp_pcie_allreduce_devices": [0, 1, 2, 3],
+    }
+    assert car._pcie_mesh_limit(additional, devices, capability, False) == expected
 
 
 @pytest.mark.parametrize(

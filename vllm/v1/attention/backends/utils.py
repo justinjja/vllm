@@ -277,10 +277,20 @@ def resolve_kv_cache_layout(
     assert supported_layouts and all(supported_layouts), (
         "No worker reported supported KV cache layouts."
     )
-    assert all(names == supported_layouts[0] for names in supported_layouts[1:]), (
+    # A worker none of whose backends declares layouts reports the default
+    # preference (see get_supported_kv_cache_layouts). With pipeline
+    # parallelism such a rank is legitimate: a DeepSeek V4.1 stage made only
+    # of CSA consumer layers owns no KV or indexer cache, so it has no
+    # preference to voice. Let the ranks that do declare layouts decide, and
+    # require agreement only among them.
+    default_names = _layout_names(_DEFAULT_LAYOUT_PREFERENCE)
+    declared = [
+        names for names in supported_layouts if names != default_names
+    ] or supported_layouts
+    assert all(names == declared[0] for names in declared[1:]), (
         f"Workers disagree on supported KV cache layouts: {supported_layouts}."
     )
-    candidates = [_layout_from_name(name) for name in supported_layouts[0]]
+    candidates = [_layout_from_name(name) for name in declared[0]]
 
     # A block-compact layout means the block is densely packed in memory, so any mix of
     # specs can re-interpret HNC with different sizes as long as the total number of

@@ -52,6 +52,17 @@ class DeepseekV4FlashMLAAttention(DeepseekV4Attention):
     backend_cls = DeepseekV4FlashMLABackend
     swa_backend_cls = DeepseekSparseSWAFlashMLABackend
 
+    def _sparse_prefill(self, q, kv, indices, sm_scale, attn_sink, topk_length, out):
+        flash_mla_sparse_fwd(
+            q=q,
+            kv=kv,
+            indices=indices,
+            sm_scale=sm_scale,
+            attn_sink=attn_sink,
+            topk_length=topk_length,
+            out=out,
+        )
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._einsum_recipe, self._tma_aligned_scales = compute_fp8_einsum_recipe(
@@ -376,7 +387,7 @@ class DeepseekV4FlashMLAAttention(DeepseekV4Attention):
                 ),
                 max_image_tokens=self.max_image_tokens,
             )
-            flash_mla_sparse_fwd(
+            self._sparse_prefill(
                 q=q[query_start:query_end],
                 kv=kv.view(-1, 1, q.shape[-1]),
                 indices=combined_indices.unsqueeze(1),

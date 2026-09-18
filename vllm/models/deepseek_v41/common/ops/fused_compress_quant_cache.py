@@ -6,6 +6,7 @@ import torch
 
 from vllm.platforms import current_platform
 from vllm.triton_utils import tl, triton
+from vllm.triton_utils.fp8_compat import encode_fp8
 
 if current_platform.is_rocm():
     from vllm.platforms.rocm import _ON_GFX950
@@ -283,7 +284,7 @@ def rope_quant_insert(
         latent,
         positions,
         cos_sin_cache,
-        kv_cache,
+        kv_cache.view(torch.uint8) if store_fp8 else kv_cache,
         slot_mapping,
         fp8_scale if store_fp8 else None,
         COS_STRIDE=cos_sin_cache.stride(0),
@@ -327,8 +328,7 @@ def _rope_quant_insert_kernel(
     amax = tl.maximum(tl.max(tl.abs(quant), 1), 1e-4)
     exponent = tl.ceil(tl.log2(amax * (1.0 / 448.0)))
     scaled = quant * tl.reshape(tl.exp2(-exponent), (8, 1))
-    fp8 = tl.clamp(scaled, -448.0, 448.0).to(tl.float8e4nv)
-    packed = tl.reshape(fp8.to(tl.uint8, bitcast=True), (512,))
+    packed = tl.reshape(encode_fp8(tl.clamp(scaled, -448.0, 448.0)), (512,))
     tl.store(values + d, packed, d < 448)
     s = tl.arange(0, 8)
     max_encoded: tl.constexpr = 254.0 if SANITIZE_CACHE_NANS else 255.0
@@ -394,8 +394,8 @@ def _rope_quant_insert_mxfp8_kernel(
     amax = tl.maximum(tl.max(tl.abs(quant), 1), 1e-4)
     exponent = tl.ceil(tl.log2(amax * (1.0 / 448.0)))
     scaled = quant * tl.reshape(tl.exp2(-exponent), (16, 1))
-    fp8 = tl.clamp(scaled, -448.0, 448.0).to(tl.float8e4nv)
-    tl.store(values + d, tl.reshape(fp8.to(tl.uint8, bitcast=True), (512,)))
+    packed = tl.reshape(encode_fp8(tl.clamp(scaled, -448.0, 448.0)), (512,))
+    tl.store(values + d, packed)
 
     max_encoded: tl.constexpr = 254.0 if SANITIZE_CACHE_NANS else 255.0
     encoded = tl.minimum(tl.maximum(exponent + 127.0, 0.0), max_encoded)
@@ -442,6 +442,9 @@ def _rope_plain_insert_kernel(
     )
     if STORE_FP8:
         scaled = row.to(tl.float32) * (1.0 / tl.load(fp8_scale))
-        tl.store(dst + d, tl.clamp(scaled, -448.0, 448.0).to(tl.float8e4nv))
+        tl.store(
+            dst.to(tl.pointer_type(tl.uint8)) + d,
+            encode_fp8(tl.clamp(scaled, -448.0, 448.0)),
+        )
     else:
         tl.store(dst + d, row)

@@ -15,6 +15,12 @@ from vllm.model_executor.layers.quantization.utils.quant_utils import (
     scaled_quantize,
 )
 from vllm.platforms import current_platform
+from vllm.triton_utils import tl, triton
+from vllm.triton_utils.fp8_compat import (
+    _encode_e4m3_software,
+    decode_fp8,
+    encode_fp8,
+)
 from vllm.utils.torch_utils import set_random_seed
 
 DTYPES = [torch.bfloat16, torch.float]
@@ -22,6 +28,75 @@ HIDDEN_SIZES = [17, 1024, 1025, 1026, 5137, 8193]
 NUM_TOKENS = [1, 7, 4096]
 SCALE_UBS = [True, False]
 SEEDS = [0]
+
+
+@triton.jit
+def _encode_e4m3_test_kernel(X, Y, Z, N: tl.constexpr):
+    i = tl.program_id(0) * 256 + tl.arange(0, 256)
+    x = tl.load(X + i, i < N, other=0)
+    tl.store(Y + i, _encode_e4m3_software(x), i < N)
+    tl.store(Z + i, encode_fp8(x), i < N)
+
+
+@pytest.mark.skipif(not current_platform.is_cuda(), reason="CUDA FP8 conversion")
+def test_e4m3_software_rounding_and_saturation():
+    """Check ties and adjacent FP32 values, all BF16 values, and raw FP32 bits."""
+    finite = torch.arange(127, dtype=torch.uint8).view(torch.float8_e4m3fn).float()
+    midpoints = (finite[:-1] + finite[1:]) / 2
+    near = torch.cat(
+        [
+            midpoints,
+            torch.nextafter(midpoints, torch.full_like(midpoints, float("inf"))),
+            torch.nextafter(midpoints, torch.full_like(midpoints, -float("inf"))),
+        ]
+    )
+    generator = torch.Generator().manual_seed(170)
+    random_bits = torch.randint(
+        -(2**31), 2**31, (65536,), generator=generator, dtype=torch.int32
+    )
+    all_bf16 = torch.arange(65536, dtype=torch.int32).to(torch.int16)
+    x_cpu = torch.cat(
+        [
+            finite,
+            -finite,
+            near,
+            -near,
+            all_bf16.view(torch.bfloat16).float(),
+            random_bits.view(torch.float32),
+        ]
+    )
+    expected = x_cpu.clamp(-448, 448).to(torch.float8_e4m3fn).view(torch.uint8)
+    x = x_cpu.cuda()
+    software = torch.empty_like(x, dtype=torch.uint8)
+    dispatched = torch.empty_like(software)
+    _encode_e4m3_test_kernel[(triton.cdiv(x.numel(), 256),)](
+        x, software, dispatched, x.numel()
+    )
+    finite_mask = ~x_cpu.isnan()
+    for actual in (software.cpu(), dispatched.cpu()):
+        torch.testing.assert_close(
+            actual[finite_mask], expected[finite_mask], rtol=0, atol=0
+        )
+        assert ((actual[~finite_mask] & 127) == 127).all()
+
+
+@triton.jit
+def _decode_e4m3_test_kernel(X, Y):
+    i = tl.arange(0, 256)
+    tl.store(Y + i, decode_fp8(tl.load(X + i)))
+
+
+@pytest.mark.skipif(not current_platform.is_cuda(), reason="CUDA FP8 conversion")
+def test_e4m3_byte_decode_preserves_values_and_zero_sign():
+    bits = torch.arange(256, device="cuda", dtype=torch.uint8)
+    expected = bits.cpu().view(torch.float8_e4m3fn).float()
+    actual = torch.empty(256, device="cuda", dtype=torch.float32)
+    _decode_e4m3_test_kernel[(1,)](bits, actual)
+    actual = actual.cpu()
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0, equal_nan=True)
+    torch.testing.assert_close(
+        torch.signbit(actual[expected == 0]), torch.signbit(expected[expected == 0])
+    )
 
 
 def opcheck_fp8_quant(

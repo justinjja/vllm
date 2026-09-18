@@ -77,6 +77,8 @@ from vllm.v1.worker.ubatching import dbo_current_ubatch_id
 
 from ..common.engram import EngramLayout, NgramHashState
 from ..common.mm_preprocess import IMAGE_SENTINEL_BASE_ID, image_sentinel_mask
+from ..common.pipeline import get_sharing_dependencies, validate_local_sharing
+from ..common.pipeline_sharing import PipelineSharing
 from .engram import Engram, gather_engram_hashes
 from .ops.mega_mhc import mhc_shifted_post_pre
 
@@ -112,6 +114,18 @@ class DeepseekV4MoE(DeepseekV4MoEBase):
             num_hash_layers=0,
             image_sentinel_lo=IMAGE_SENTINEL_BASE_ID,
         )
+        from vllm.distributed.cmp_hybrid import get_cmp_hybrid_layout
+
+        if get_cmp_hybrid_layout(vllm_config) is not None:
+            if self.use_mega_moe:
+                raise ValueError("CMP hybrid requires the fused Marlin expert backend")
+            moe_config = self.experts.moe_config
+            self.n_local_physical_experts = moe_config.num_local_experts
+            self.n_local_experts = self.n_local_physical_experts
+            self.experts_start_idx = moe_config.ep_rank * self.n_local_experts
+            self.experts_end_idx = self.experts_start_idx + self.n_local_experts
+            self.physical_expert_start = self.experts_start_idx
+            self.physical_expert_end = self.experts_end_idx
 
 
 def _select_dsv4_attn_cls(vllm_config: VllmConfig) -> type[DeepseekV4Attention]:
@@ -124,6 +138,14 @@ def _select_dsv4_attn_cls(vllm_config: VllmConfig) -> type[DeepseekV4Attention]:
     """
     backend = vllm_config.attention_config.backend
     device_capability = current_platform.get_device_capability()
+    if backend == AttentionBackendEnum.TRITON_MLA_SPARSE_DSV41 or (
+        backend is None
+        and device_capability is not None
+        and device_capability.to_int() == 80
+    ):
+        from .ampere import DeepseekV41AmpereAttention
+
+        return DeepseekV41AmpereAttention
     if backend in (
         AttentionBackendEnum.FLASHINFER_MLA_SPARSE,
         AttentionBackendEnum.FLASHINFER_MLA_SPARSE_SM120,
@@ -359,6 +381,14 @@ class DeepseekV4DecoderLayer(nn.Module):
                 )
             else:
                 residual = x
+                if self.engram is not None and engram_hashes is not None:
+                    # A PP boundary has already reconstructed the hc stream.
+                    # Inject Engram just as in the ordinary inter-layer path.
+                    residual = self.engram(
+                        residual,
+                        engram_hashes[:, self.engram.layer_hash_index],
+                        engram_mask,
+                    )
                 post_mix, res_mix, x, attn_pre = mhc_pre_delayed_tilelang(
                     residual,
                     self.hc_attn_fn,
@@ -453,11 +483,38 @@ class DeepseekV4DecoderLayer(nn.Module):
 
 
 class DeepseekV4Model(nn.Module, EagleModelMixin):
+    supports_aux_hidden_states_over_pp = True
+
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
         super().__init__()
 
         config = vllm_config.model_config.hf_config
         quant_config = vllm_config.quant_config
+        from vllm.distributed.utils import get_pp_indices
+
+        pp_size = get_pp_group().world_size
+        stage_ranges = [
+            get_pp_indices(config.num_hidden_layers, rank, pp_size)
+            for rank in range(pp_size)
+        ]
+        self.sharing_dependencies = get_sharing_dependencies(config, stage_ranges)
+        additional_config = vllm_config.additional_config
+        if not isinstance(additional_config, dict):
+            additional_config = {}
+        self.pipeline_sharing: PipelineSharing | None = None
+        self.pipeline_payload_keys: frozenset[str] = frozenset()
+        if additional_config.get("deepseek_v41_pp_sharing", False):
+            self.pipeline_sharing = PipelineSharing(
+                vllm_config,
+                prefix,
+                get_pp_group().rank_in_group,
+                self.sharing_dependencies,
+                _select_dsv4_attn_cls(vllm_config),
+                additional_config.get("deepseek_v41_pp_share_max_bytes", 512 * 1024**2),
+            )
+            self.pipeline_payload_keys = self.pipeline_sharing.payload_keys
+        else:
+            validate_local_sharing(self.sharing_dependencies)
         self.config = config
         self.quant_config = quant_config
         self.parallel_config = vllm_config.parallel_config
@@ -481,10 +538,10 @@ class DeepseekV4Model(nn.Module, EagleModelMixin):
         # the default stream.
         aux_stream_list = [torch.cuda.Stream() for _ in range(3)]
 
-        # Reserved topk indices buffer for all Indexer layers to reuse.
-        self.topk_indices_buffer = torch.empty(
-            vllm_config.scheduler_config.max_num_batched_tokens,
-            config.index_topk,
+        # Pipeline warmup can run consumers without the remote index producer.
+        self.topk_indices_buffer = torch.full(
+            (vllm_config.scheduler_config.max_num_batched_tokens, config.index_topk),
+            -1,
             dtype=torch.int32,
         )
 
@@ -495,15 +552,22 @@ class DeepseekV4Model(nn.Module, EagleModelMixin):
         candidate_source_layer = getattr(config, "candidate_source_layer_id", -1)
         candidate_topk_blocks = getattr(config, "candidate_topk_blocks", 0)
         if candidate_source_layer >= 0 and candidate_topk_blocks > 0:
-            self.candidate_block_buffer = torch.empty(
-                vllm_config.scheduler_config.max_num_batched_tokens,
-                candidate_topk_blocks,
+            self.candidate_block_buffer = torch.full(
+                (
+                    vllm_config.scheduler_config.max_num_batched_tokens,
+                    candidate_topk_blocks,
+                ),
+                -1,
                 dtype=torch.int32,
             )
         else:
             self.candidate_block_buffer = None
 
-        if get_pp_group().is_first_rank:
+        spec = vllm_config.speculative_config
+        needs_draft_embed = (
+            get_pp_group().is_last_rank and spec is not None and spec.use_dspark()
+        )
+        if get_pp_group().is_first_rank or needs_draft_embed:
             self.embed_tokens = VocabParallelEmbedding(
                 config.vocab_size,
                 config.hidden_size,
@@ -617,6 +681,30 @@ class DeepseekV4Model(nn.Module, EagleModelMixin):
             assert intermediate_tensors is not None
             hidden_states = intermediate_tensors["hidden_states"]
 
+        pipeline_metadata = None
+        if (
+            self.pipeline_sharing is not None
+            and not self.pipeline_sharing.runner_mode
+            and is_forward_context_available()
+        ):
+            context = get_forward_context()
+            if context.attn_metadata is not None and not context.additional_kwargs.get(
+                "is_dummy_run", False
+            ):
+                if not isinstance(context.attn_metadata, dict):
+                    raise ValueError(
+                        "Pipeline sharing requires unsliced attention metadata"
+                    )
+                pipeline_metadata = context.attn_metadata
+                if not get_pp_group().is_first_rank:
+                    assert intermediate_tensors is not None
+                    self.pipeline_sharing.receive(
+                        intermediate_tensors.tensors,
+                        self.topk_indices_buffer,
+                        self.candidate_block_buffer,
+                        positions.shape[0],
+                    )
+
         if self.use_mega_moe:
             input_ids = input_ids.to(torch.int64)
 
@@ -696,6 +784,7 @@ class DeepseekV4Model(nn.Module, EagleModelMixin):
         if not get_pp_group().is_first_rank:
             assert intermediate_tensors is not None
             pre_mix = intermediate_tensors["pre_mix"]
+        remote_aux = self.collect_remote_aux_hidden_states(intermediate_tensors)
         # Every layer's post runs inside the next layer's fused pre, so aux
         # hidden states are read back from there instead of recomputed.
         aux_hidden_by_layer: dict[int, torch.Tensor] = {}
@@ -738,9 +827,25 @@ class DeepseekV4Model(nn.Module, EagleModelMixin):
         ]
 
         if not get_pp_group().is_last_rank:
-            return IntermediateTensors(
-                {"hidden_states": hidden_states, "pre_mix": pre_mix}
-            )
+            tensors = {
+                "hidden_states": hidden_states,
+                "pre_mix": pre_mix,
+                **self.pack_local_aux_hidden_states(aux_hidden_states),
+            }
+            if (
+                self.pipeline_sharing is not None
+                and not self.pipeline_sharing.runner_mode
+                and pipeline_metadata is not None
+            ):
+                tensors.update(
+                    self.pipeline_sharing.send(
+                        pipeline_metadata,
+                        self.topk_indices_buffer,
+                        self.candidate_block_buffer,
+                        full_num_tokens,
+                    )
+                )
+            return IntermediateTensors(tensors)
 
         # MTP needs full HC states; otherwise collapse and normalize locally
         # before gathering to reduce communication.
@@ -760,6 +865,7 @@ class DeepseekV4Model(nn.Module, EagleModelMixin):
         if self.use_sequence_parallel and self._mtp_hidden_buffer is None:
             # Without MTP, gather only the collapsed and normalized hidden states.
             hidden_states = sp_all_gather(hidden_states)[:full_num_tokens]
+        aux_hidden_states = remote_aux + aux_hidden_states
         if len(aux_hidden_states) > 0:
             return hidden_states, aux_hidden_states
         return hidden_states
@@ -797,6 +903,9 @@ class DeepseekV4Model(nn.Module, EagleModelMixin):
         )
 
         for name, loaded_weight in weights:
+            # Skip remote layers before the large per-expert name-mapping scan.
+            if is_pp_missing_parameter(name, self):
+                continue
             if name.startswith(("vision.", "aligner.", "image_")):
                 # Vision weights are loaded by the outer multimodal wrapper.
                 logger.warning_once("Skipping non-text weight: %s", name)
@@ -1107,6 +1216,7 @@ class DeepseekV41LLMForCausalLM(
         self.make_empty_intermediate_tensors = (  # type: ignore[method-assign]
             self.model.make_empty_intermediate_tensors
         )
+        self.pipeline_payload_keys = self.model.pipeline_payload_keys
 
         self.set_moe_parameters()
 

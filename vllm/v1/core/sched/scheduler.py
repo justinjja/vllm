@@ -122,12 +122,32 @@ class Scheduler(SchedulerInterface):
 
         # Scheduling constraints.
         self.max_num_running_reqs = self.scheduler_config.max_num_seqs
+        self.max_num_scheduled_reqs = self.max_num_running_reqs
         self.max_num_scheduled_tokens = (
             self.scheduler_config.max_num_scheduled_tokens
             if self.scheduler_config.max_num_scheduled_tokens is not None
             else self.scheduler_config.max_num_batched_tokens
         )
         self.max_model_len = vllm_config.model_config.max_model_len
+        extra_config = vllm_config.additional_config
+        if not isinstance(extra_config, dict):
+            extra_config = {}
+        self.short_prefill_prompt_tokens = int(
+            extra_config.get("cmp_short_prefill_prompt_tokens", 0)
+        )
+        self.short_prefill_chunk_tokens = int(
+            extra_config.get("cmp_short_prefill_chunk_tokens", 0)
+        )
+        if (
+            self.short_prefill_prompt_tokens or self.short_prefill_chunk_tokens
+        ) and not (
+            self.scheduler_config.enable_chunked_prefill
+            and self.short_prefill_chunk_tokens > 0
+            and self.short_prefill_chunk_tokens
+            <= self.scheduler_config.max_num_batched_tokens
+            and self.short_prefill_prompt_tokens >= self.short_prefill_chunk_tokens
+        ):
+            raise ValueError("Invalid short-prompt prefill chunk limits")
         self.enable_kv_cache_events = (
             self.kv_events_config is not None
             and self.kv_events_config.enable_kv_cache_events
@@ -546,6 +566,20 @@ class Scheduler(SchedulerInterface):
             num_new_tokens -= self.num_prefill_lookahead - remaining
         return max(num_new_tokens, 0)
 
+    def _prefill_chunk_threshold(self, request: Request) -> int:
+        """Keep small chunks for short prompts without restricting long prefills."""
+        threshold = self.scheduler_config.long_prefill_token_threshold
+        if (
+            self.short_prefill_chunk_tokens
+            and request.num_prompt_tokens <= self.short_prefill_prompt_tokens
+        ):
+            return (
+                min(threshold, self.short_prefill_chunk_tokens)
+                if threshold > 0
+                else self.short_prefill_chunk_tokens
+            )
+        return threshold
+
     def schedule(self, throttle_prefills: bool = False) -> SchedulerOutput:
         self.current_step += 1
         # NOTE(woosuk) on the scheduling algorithm:
@@ -598,6 +632,8 @@ class Scheduler(SchedulerInterface):
         # First, schedule the RUNNING requests.
         req_index = 0
         while req_index < len(self.running) and token_budget > 0:
+            if len(num_scheduled_tokens) >= self.max_num_scheduled_reqs:
+                break
             request = self.running[req_index]
             if input_budget <= draft_slots:
                 break
@@ -646,8 +682,9 @@ class Scheduler(SchedulerInterface):
                 + request.num_output_placeholders
                 - request.num_computed_tokens
             )
-            if 0 < self.scheduler_config.long_prefill_token_threshold < num_new_tokens:
-                num_new_tokens = self.scheduler_config.long_prefill_token_threshold
+            threshold = self._prefill_chunk_threshold(request)
+            if 0 < threshold < num_new_tokens:
+                num_new_tokens = threshold
             num_new_tokens = min(
                 num_new_tokens, token_budget, input_budget - draft_slots
             )
@@ -844,6 +881,8 @@ class Scheduler(SchedulerInterface):
             step_skipped_waiting = create_request_queue(self.policy)
 
             while (self.waiting or self.skipped_waiting) and token_budget > 0:
+                if len(num_scheduled_tokens) >= self.max_num_scheduled_reqs:
+                    break
                 if input_budget <= draft_slots:
                     break
                 # Paused streaming sessions (WAITING_FOR_STREAMING_REQ) are not
@@ -1051,7 +1090,7 @@ class Scheduler(SchedulerInterface):
                             num_new_tokens = padded_num_tokens
                             pad_spec_decode = True
 
-                    threshold = self.scheduler_config.long_prefill_token_threshold
+                    threshold = self._prefill_chunk_threshold(request)
                     if 0 < threshold < num_new_tokens:
                         num_new_tokens = threshold
 

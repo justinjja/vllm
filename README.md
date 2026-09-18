@@ -1,3 +1,34 @@
+# vLLM for NVIDIA CMP 170HX GPUs
+
+**This is an optimized build of vLLM for NVIDIA CMP 170HX GPUs**, with
+Ampere SM80 kernels and serving improvements for DeepSeek V4.1 Flash.
+The qualified configuration uses eight 64-GiB cards with TP2/PP4.
+
+## Progress ledger
+
+Keep this ledger directly below the CMP 170HX note. Add dated entries for
+each meaningful change, with validation results and any remaining limits.
+Performance entries below were measured on the local eight-GPU system.
+
+| Date (UTC) | Progress | Validation / result |
+| --- | --- | --- |
+| 2026-09-18 | Published the qualified September 17 source, regression tests, kernel benchmarks, and portable serving recipe on the public fork. | Verified 79 imported files against the frozen manifest; runtime source unchanged. Updated one test to use the required accelerator API. 84 targeted cases passed; based on upstream `c16bb6068f70878fb8a2f7c4d6cda95cd03a778b`. |
+| 2026-09-17 | Added incremental pipeline cache transfers, candidate-only indexer scoring, TP query sharding, and adaptive prefill chunks. | 1,040,109 input tokens processed in 314.17 s versus 1,024.62 s: **3.26× faster**, with all three retrieval records correct. |
+| 2026-09-17 | Qualified the 1,048,576-token context configuration with TP2/PP4 and three DSpark draft tokens. | Warmed generation **118.25 tokens/s**; 30K prefill **5.78 s**. Complete GUI loops: 112.15 single-response tokens/s and 757.63 aggregate tokens/s at concurrency 20. |
+| 2026-09-17 | Completed compatibility-reference, cached/mixed retrieval, and scheduler qualification. | 20/20 objective answers; 20/27 exact generations; 146/149 fixed-history token choices; six cached/mixed retrieval checks passed. Output differences are documented. |
+| 2026-09-16 | Built SM80 support: software FP8 conversion, Ampere sparse attention/indexer kernels, pipeline sharing, and scheduler/worker fixes. | Source build and 158 targeted kernel, quantization, cache, and scheduling tests passed in the local qualification. |
+
+The **200 generation tokens/s target remains unmet**. The configured KV capacity
+is approximately 1.15M tokens, prioritizing one full-context response. These
+measurements do not establish universal output equivalence or performance on
+other hardware. The reference was a local SM80 compatibility implementation.
+
+See the [build and serving guide](docs/cmp170hx/README.md),
+[qualification record](docs/cmp170hx/qualification-20260917.json), and
+[source manifest](docs/cmp170hx/source-manifest-20260917.json).
+
+---
+
 <!-- markdownlint-disable MD001 MD041 -->
 <p align="center">
   <picture>

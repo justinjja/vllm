@@ -33,6 +33,7 @@ from vllm.model_executor.warmup.jit_warmup_triton_helper import (
 )
 from vllm.platforms import current_platform
 from vllm.triton_utils import tl, triton
+from vllm.triton_utils.fp8_compat import decode_fp8, encode_fp8
 from vllm.utils.import_utils import has_cutedsl
 from vllm.utils.math_utils import next_power_of_2
 
@@ -146,11 +147,7 @@ def quantize_and_insert_k_kernel(
             x_clamped = tl.clamp(x_scaled, -fp8_max, fp8_max)
 
             # Convert to fp8 (FNUZ on gfx942, OCP elsewhere), then bitcast to uint8.
-            if use_fnuz:
-                x_fp8 = x_clamped.to(tl.float8e4b8)
-            else:
-                x_fp8 = x_clamped.to(tl.float8e4nv)
-            x_uint8 = x_fp8.to(tl.uint8, bitcast=True)
+            x_uint8 = encode_fp8(x_clamped, use_fnuz)
 
             # Store as uint8 (1 byte each)
             tl.store(token_fp8_ptr + offsets, x_uint8, mask=mask)
@@ -223,13 +220,8 @@ def _quantize_and_insert_k_mxfp8_kernel(
     scaled = tl.clamp(
         tiles * tl.reshape(tl.exp2(-exponent), (scale_dim, 1)), -fp8_max, fp8_max
     )
-    if use_fnuz:  # noqa: SIM108
-        fp8 = scaled.to(tl.float8e4b8)
-    else:
-        fp8 = scaled.to(tl.float8e4nv)
-    tl.store(
-        token_data_ptr + d, tl.reshape(fp8.to(tl.uint8, bitcast=True), (head_dim,))
-    )
+    packed = tl.reshape(encode_fp8(scaled, use_fnuz), (head_dim,))
+    tl.store(token_data_ptr + d, packed)
 
     # UE8M0 encoding: stored_value = exponent + 127 (bias).
     encoded = tl.minimum(tl.maximum(exponent + 127.0, 0.0), 255.0)
@@ -399,14 +391,7 @@ def _dequantize_and_gather_k_kernel(
                 # Load quantized fp8 values (stored as uint8)
                 x_uint8 = tl.load(token_fp8_ptr + offsets, mask=mask, other=0)
 
-                # Bitcast uint8 back to fp8 (FNUZ on gfx942, OCP elsewhere).
-                if use_fnuz:
-                    x_fp8 = x_uint8.to(tl.float8e4b8, bitcast=True)
-                else:
-                    x_fp8 = x_uint8.to(tl.float8e4nv, bitcast=True)
-
-                # Convert fp8 to float32 for computation
-                x_float = x_fp8.to(tl.float32)
+                x_float = decode_fp8(x_uint8, use_fnuz)
 
                 # Load and decode UE8M0 scale
                 # UE8M0: scale = 2^(stored_value - 127)
@@ -481,11 +466,7 @@ def _dequantize_and_gather_k_mxfp8_kernel(
         )
 
         x_uint8 = tl.load(token_data_ptr + d)
-        if use_fnuz:
-            x_fp8 = x_uint8.to(tl.float8e4b8, bitcast=True)
-        else:
-            x_fp8 = x_uint8.to(tl.float8e4nv, bitcast=True)
-        tiles = tl.reshape(x_fp8.to(tl.float32), (scale_dim, quant_block))
+        tiles = tl.reshape(decode_fp8(x_uint8, use_fnuz), (scale_dim, quant_block))
 
         # UE8M0: scale = 2^(stored_value - 127).
         encoded = tl.load(token_scale_ptr + s)
@@ -588,7 +569,7 @@ def dequantize_and_gather_k_cache(
     ``current_platform.is_fp8_fnuz()`` for ``swa_k_cache`` (C++ encoder
     writes FNUZ on gfx942 and OCP on gfx950).
     """
-    if has_cutedsl():
+    if has_cutedsl() and current_platform.has_device_capability(90):
         # lazily import, otherwise some tests fail due to CUDA driver init failure.
         from vllm.models.deepseek_v4.nvidia.ops.dequant_gather_k_cutedsl import (
             _DEQUANT_GATHER_K_CACHE_CUTEDSL_KERNEL,

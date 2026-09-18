@@ -556,6 +556,7 @@ def _make_embedding(cpu_offload, rows=4096, dim=256, block=32):
     layer = ParallelEngramEmbedding.__new__(ParallelEngramEmbedding)
     torch.nn.Module.__init__(layer)
     layer.dim, layer.block_size, layer.tp_size = dim, block, 1
+    layer._hybrid_etp_group = None
     layer.dp_size = 1
     layer.n_hash_cols = layer.part_n_hash_cols = 24
     layer.head_start = 0

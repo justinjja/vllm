@@ -440,7 +440,7 @@ class PipelinedEngine:
         self._next_token = 1000
 
     def _schedule(self) -> bool:
-        scheduler_output = self.scheduler.schedule()
+        scheduler_output = self.scheduler.schedule(throttle_prefills=False)
         self.step_idx += 1
         # Snapshot what NewRequestData serializes at schedule time (both new
         # and resumed requests for the V2 runner).
@@ -550,6 +550,67 @@ def _create_async_pp_scheduler(
     return scheduler
 
 
+@pytest.mark.parametrize("num_spec", [0, 3])
+@pytest.mark.parametrize(
+    "pp_size,batch_limit,num_requests,adaptive,minimum,counts",
+    [
+        (7, 3, 20, False, 1, [3] * 6 + [2]),
+        (3, 7, 20, False, 1, [7, 7, 6]),
+        (4, 6, 4, True, 1, [1] * 4),
+        (4, 6, 16, True, 1, [4] * 4),
+        (4, 6, 24, True, 1, [6] * 4),
+        (4, 6, 4, True, 3, [3, 1, 0, 0]),
+        (4, 6, 16, True, 3, [4] * 4),
+        (4, 6, 24, True, 3, [6] * 4),
+    ],
+)
+def test_pipeline_batch_limit_fills_stages_without_reducing_admission(
+    num_spec, pp_size, batch_limit, num_requests, adaptive, minimum, counts
+):
+    """A simultaneous burst must fill PP slots, not become one large cohort."""
+    scheduler = _create_async_pp_scheduler(num_spec, pp_size=pp_size, num_blocks=1000)
+    scheduler.max_num_running_reqs = max(20, num_requests)
+    scheduler.max_num_scheduled_reqs = batch_limit
+    if adaptive:
+        scheduler._adaptive_pipeline_batch_limit = batch_limit
+        scheduler._adaptive_pipeline_batch_minimum = minimum
+    requests = create_requests(num_requests=num_requests, num_tokens=10, max_tokens=100)
+    for request in requests:
+        scheduler.add_request(request)
+
+    outputs = [scheduler.schedule() for _ in range(pp_size)]
+    assert [len(out.num_scheduled_tokens) for out in outputs] == counts
+    assert len(scheduler.running) == num_requests
+    ids = [rid for out in outputs for rid in out.num_scheduled_tokens]
+    assert len(set(ids)) == num_requests
+
+    for out in outputs:
+        scheduler.update_from_output(out, _make_model_runner_output(out))
+    # RUNNING requests obey the same cap and retain their PP recurrence cadence.
+    decodes = [scheduler.schedule() for _ in range(pp_size)]
+    assert [list(out.num_scheduled_tokens) for out in decodes] == [
+        list(out.num_scheduled_tokens) for out in outputs
+    ]
+    assert all(
+        count == num_spec + 1
+        for out in decodes
+        for count in out.num_scheduled_tokens.values()
+    )
+
+
+@pytest.mark.parametrize("adaptive", [False, True])
+def test_pipeline_batch_limit_keeps_full_prefill_token_budget(adaptive):
+    """Request microbatching must not turn long prefills into tiny token chunks."""
+    scheduler = _create_async_pp_scheduler(0, pp_size=7, num_blocks=1000)
+    scheduler.max_num_scheduled_reqs = 3
+    if adaptive:
+        scheduler._adaptive_pipeline_batch_limit = 3
+    (request,) = create_requests(num_requests=1, num_tokens=1000, max_tokens=20)
+    scheduler.add_request(request)
+    output = scheduler.schedule()
+    assert output.num_scheduled_tokens == {request.request_id: 512}
+
+
 def _assert_ordered_subset(delivered: list[int], emitted: list[int]) -> None:
     """Delivered tokens must be an order-preserving subset of the emitted
     tokens with no duplicates (tokens are globally unique)."""
@@ -573,7 +634,8 @@ def _assert_positions_consistent(req, engine: PipelinedEngine) -> None:
 
 
 @pytest.mark.parametrize("num_spec", [0, 3])
-def test_kv_pressure_preemption_with_inflight_output(num_spec: int):
+@pytest.mark.parametrize("adaptive", [False, True])
+def test_kv_pressure_preemption_with_inflight_output(num_spec: int, adaptive: bool):
     """KV-pressure preemption of requests with in-flight async output.
 
     PP=3 + async scheduling (batch queue of 4), a block pool small enough
@@ -590,6 +652,8 @@ def test_kv_pressure_preemption_with_inflight_output(num_spec: int):
     """
     max_tokens = 24
     scheduler = _create_async_pp_scheduler(num_spec)
+    if adaptive:
+        scheduler._adaptive_pipeline_batch_limit = 6
     requests = create_requests(
         num_requests=8, num_tokens=8, max_tokens=max_tokens, ignore_eos=True
     )

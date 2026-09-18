@@ -509,7 +509,14 @@ class MoERunner(MoERunnerInterface):
             and (self.moe_config.tp_size > 1 or self.moe_config.ep_size > 1)
             and not output_is_reduced
         ):
-            states = tensor_model_parallel_all_reduce(states)
+            if self.moe_config.moe_parallel_config.shared_expert_replicas > 1:
+                from vllm.distributed.cmp_hybrid import hybrid_expert_all_reduce
+
+                states = hybrid_expert_all_reduce(
+                    states, self.moe_config.moe_parallel_config.hybrid_pair_reduce
+                )
+            else:
+                states = tensor_model_parallel_all_reduce(states)
 
         return states[..., :trunc_size] if trunc_size is not None else states
 
@@ -779,7 +786,22 @@ class MoERunner(MoERunnerInterface):
         # Apply output transform (e.g. latent -> full dim)
         fused_output = self.apply_routed_output_transform(fused_output)
 
-        if shared_output is not None:
+        replicas = self.moe_config.moe_parallel_config.shared_expert_replicas
+        output_dtype = fused_output.dtype
+        if replicas > 1:
+            from vllm.distributed.cmp_hybrid import combine_replicated_experts
+
+            if (
+                fused_output_is_reduced
+                or self.routed_output_transform is not None
+                or self.moe_config.skip_final_all_reduce
+                or self.moe_config.is_sequence_parallel
+            ):
+                raise ValueError(
+                    "CMP hybrid experts require one final output reduction"
+                )
+            result = combine_replicated_experts(fused_output, shared_output, replicas)
+        elif shared_output is not None:
             result = shared_output + fused_output
         else:
             result = fused_output
@@ -787,6 +809,8 @@ class MoERunner(MoERunnerInterface):
         result = self._maybe_reduce_final_output(
             result, og_hidden_dim_post_xform, fused_output_is_reduced
         )
+        if replicas > 1:
+            result = result.to(output_dtype)
 
         return self._maybe_add_zero_expert_output(result)
 

@@ -216,6 +216,7 @@ class DefaultModelState(ModelState):
             seq_lens=input_batch.seq_lens,
             max_seq_len=max_seq_len,
             block_tables=block_tables,
+            block_tables_cpu=input_batch.block_tables_cpu,
             slot_mappings=slot_mappings,
             kv_cache_config=kv_cache_config,
             seq_lens_cpu_upper_bound=seq_lens_cpu_upper_bound,

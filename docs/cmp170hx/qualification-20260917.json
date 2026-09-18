@@ -1,0 +1,160 @@
+{
+  "label": "longcontext-final-20260917",
+  "status": "qualified",
+  "reference": {
+    "objective_checks_passed": 20,
+    "objective_checks": 20,
+    "exact_generations": 20,
+    "generations": 27,
+    "teacher_argmax_matches": 146,
+    "teacher_steps": 149,
+    "inherited_reference_failures": []
+  },
+  "long_context": {
+    "input_tokens": 1040109,
+    "elapsed_s": 314.1658316569956,
+    "baseline_elapsed_s": 1024.6246152579988,
+    "speedup": 3.261413279266722,
+    "retrieval_passed": true,
+    "note": "Fresh prose and nonces, three records at different depths; times include the short answer. Baseline used the parent before the decode-only padding optimization, with the same 1M context, 4-GiB budget and 0.80 memory setting."
+  },
+  "gui": {
+    "single_tokens_s": [
+      117.51320086499415,
+      111.43064807048678,
+      112.15311305254772
+    ],
+    "median_single_tokens_s": 112.15311305254772,
+    "prefill_s": [
+      6.091120022746651,
+      6.080923293272235,
+      6.048281056990405
+    ],
+    "median_prefill_s": 6.080923293272235,
+    "concurrent_tokens_s": [
+      774.5621476682383,
+      757.6261171689566,
+      731.1194329300955
+    ]
+  },
+  "gui_warmed": {
+    "single_tokens_s": [
+      115.45268867297938,
+      118.32402105346604,
+      118.25496870660314
+    ],
+    "median_single_tokens_s": 118.25496870660314,
+    "prefill_s": [
+      5.78041161338156,
+      5.756781118695088,
+      5.79032926770158
+    ],
+    "median_prefill_s": 5.78041161338156,
+    "note": "Separate three-loop run without concurrency, matching the earlier warmed baseline protocol. All full GUI runs retained."
+  },
+  "prefix_cache_checks": 6,
+  "kv_cache_capacity_tokens": 1151443,
+  "kv_capacity_note": "Final startup reported 1.10x concurrency at the full 1,048,576-token context. Larger prefill buffers reduce KV capacity relative to the 1,024-token configuration.",
+  "validation_notes": [
+    "Candidate-score FP32 bit patterns match the dense reference.",
+    "Native top-k selected sets match; native output ordering is nondeterministic.",
+    "Candidate test first run passed 100 cases and failed 8 due to an ordered-top-k assertion. The corrected 8 cases then passed.",
+    "Two-GPU TP test covers eight shape/head/candidate combinations.",
+    "Eleven CPU scheduler tests cover prompt-length chunk selection, mixed batches, async scheduling, prefix caching and decode transition.",
+    "Finite prompt checks do not establish universal output equivalence."
+  ],
+  "target_200_tokens_s_achieved": false,
+  "provenance": {
+    "measured_date": "2026-09-17",
+    "published_date": "2026-09-18",
+    "upstream_commit": "c16bb6068f70878fb8a2f7c4d6cda95cd03a778b",
+    "source_manifest": "source-manifest-20260917.json",
+    "original_local_qualification_sha256": "4bf123fca0ff828a4b26be2985b34c192c15ec17f05103a813b19ca9827a6802",
+    "note": "Selected fields from the existing local qualification record; host paths, device UUIDs and raw prompts omitted. These are historical measurements, not a new full-model benchmark on publication day."
+  },
+  "hardware": {
+    "gpus": "8 x NVIDIA CMP 170HX, 64 GiB each, SM80",
+    "driver": "610.43.02",
+    "torch": "2.13.0+cu130",
+    "triton": "3.7.1",
+    "python": "3.12",
+    "cuda_toolkit": "13.0",
+    "topology": "TP2/PP4; PCIe pairs 0/1, 2/3 on NUMA 0; 4/5, 6/7 on NUMA 1; rank order 0,1,4,5,6,7,2,3",
+    "clock_policy": "Physical GPUs 4 and 5 capped at 1200 MHz; other six automatic. Memory 1728 MHz; GPU power limits 250 W; CPU performance governor."
+  },
+  "checkpoint": {
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+    "revision": "dba1be0a40aa45a94ad051997016db3960a90277"
+  },
+  "semantic_review": {
+    "label": "longcontext-final-20260917",
+    "decision": "eligible",
+    "comparison_sha256": "70ba9ecaea1fb80db827ab90451ca3171f8eef074d33af2c0a18e4c1b1625fd6",
+    "reviewed_generation_cases": [
+      2,
+      3,
+      5,
+      16,
+      17,
+      18,
+      21
+    ],
+    "notes": {
+      "2": "Both functions produce the requested Fibonacci prefix for nonnegative n. Negative-input behavior was unspecified. Candidate adds a working generator; later usage examples are token-capped.",
+      "3": "Both provide correct two-sentence explanations based on stronger scattering of shorter blue wavelengths.",
+      "5": "Both derive and return 3/8. Only the wording of favorable outcomes differs.",
+      "16": "The main GROUP BY query and complete distinct-order / left-join variants match. Headings and commentary differ; later optional text is token-capped.",
+      "17": "Both pass the specified palindrome checks. Candidate removes all whitespace instead of only literal spaces and lowercases per character. General Unicode equivalence is not claimed; tested function blocks are complete.",
+      "18": "Same list/tuple distinction with reordered wording. Both retain the compatibility reference overgeneralizations about tuple hashability and speed; these are not claimed fixed.",
+      "21": "Both explain plants using sunlight, water and air to make food and release oxygen, in two age-appropriate sentences."
+    },
+    "objective_checks_passed": 20,
+    "objective_checks": 20,
+    "exact_generations": 20,
+    "generations": 27,
+    "fixed_history": {
+      "matched": 146,
+      "total": 149,
+      "differences": [
+        {
+          "case": 2,
+          "position": 73,
+          "reference_margin": 0.375,
+          "reference_token": 5191,
+          "candidate_token": 361,
+          "decoded_choices": [
+            "    \n",
+            "   "
+          ],
+          "note": "Whitespace alternatives; both have identical top logprob in candidate."
+        },
+        {
+          "case": 11,
+          "position": 8,
+          "reference_margin": 0.5,
+          "reference_token": 2143,
+          "candidate_token": 14,
+          "decoded_choices": [
+            "  \n",
+            ","
+          ],
+          "note": "Formatting separator after a fraction; both have identical top logprob in candidate. Complete generated answer matches reference exactly."
+        },
+        {
+          "case": 15,
+          "position": 1,
+          "reference_margin": 0.5,
+          "reference_token": 18209,
+          "candidate_token": 484,
+          "decoded_choices": [
+            "ocs",
+            "oc"
+          ],
+          "note": "Previously observed reversal-history difference. Both have identical top logprob in candidate. Complete generated reversal matches reference and passes the objective check."
+        }
+      ]
+    },
+    "inherited_reference_failures": [],
+    "limits": "This is a finite compatibility screen, supported by independent kernel/distributed comparisons and long-context retrieval. It does not establish universal model accuracy, exact generations for arbitrary prompts, or identical outputs across batch shapes."
+  }
+}

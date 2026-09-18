@@ -76,6 +76,7 @@ def create_scheduler(
     kv_cache_spec: KVCacheSpec | None = None,
     per_request_spec_decode_metrics: str = "none",
     scheduling_policy: SchedulerPolicy = "fcfs",
+    additional_config: dict | None = None,
 ) -> Scheduler | AsyncScheduler:
     """Create scheduler under test.
 
@@ -176,6 +177,7 @@ def create_scheduler(
     )
 
     vllm_config = VllmConfig(
+        additional_config=additional_config or {},
         scheduler_config=scheduler_config,
         model_config=model_config,
         cache_config=cache_config,

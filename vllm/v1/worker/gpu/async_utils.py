@@ -122,6 +122,7 @@ class AsyncOutput(AsyncModelRunnerOutput):
         copy_stream: torch.cuda.Stream,
         check_ep_fault: bool = False,
         routed_experts: RoutedExpertsTensors | None = None,
+        cu_num_logits: torch.Tensor | None = None,
     ):
         # NOTE(woosuk): We must retain references to the GPU tensors,
         # as the copy operations are performed on a different CUDA stream than
@@ -133,6 +134,11 @@ class AsyncOutput(AsyncModelRunnerOutput):
         # Blocking (sleep) event to avoid busy-polling the CUDA driver lock.
         self.copy_event = torch.cuda.Event(blocking=True)
         self._has_fault: torch.Tensor | None = None
+        self._cu_num_logits_gpu = (
+            cu_num_logits.clone()
+            if sampler_output.num_nans is not None and cu_num_logits is not None
+            else None
+        )
 
         with stream(copy_stream, main_stream):
             copy_stream.wait_stream(main_stream)
@@ -144,8 +150,11 @@ class AsyncOutput(AsyncModelRunnerOutput):
                     sampler_output.logprobs_tensors.to_cpu_nonblocking()
                 )
             self.num_nans: np.ndarray | None = None
+            self.cu_num_logits: np.ndarray | None = None
             if sampler_output.num_nans is not None:
                 self.num_nans = async_copy_to_np(sampler_output.num_nans)
+                if self._cu_num_logits_gpu is not None:
+                    self.cu_num_logits = async_copy_to_np(self._cu_num_logits_gpu)
             self.num_sampled_tokens_np = async_copy_to_np(num_sampled_tokens)
             self.sampling_mask_tensors: SamplingMaskTensors | None = None
             if sampler_output.sampling_mask_tensors is not None:
@@ -183,8 +192,11 @@ class AsyncOutput(AsyncModelRunnerOutput):
             )
 
         if self.num_nans is not None:
+            counts = self.num_nans
+            if self.cu_num_logits is not None:
+                counts = np.add.reduceat(counts, self.cu_num_logits[:-1])
             self.model_runner_output.num_nans_in_logits = dict(
-                zip(self.model_runner_output.req_ids, self.num_nans.tolist())
+                zip(self.model_runner_output.req_ids, counts.tolist(), strict=True)
             )
             if envs.VLLM_RAISE_ON_LOGIT_NANS:
                 raise_if_nan_logits(self.model_runner_output.num_nans_in_logits)

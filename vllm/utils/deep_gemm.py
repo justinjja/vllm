@@ -268,6 +268,13 @@ def _lazy_init() -> None:
     ):
         return
 
+    if current_platform.is_cuda() and current_platform.is_device_capability(80):
+        from vllm.model_executor.kernels.attention.dsa import ampere_mqa
+
+        _fp8_fp4_mqa_logits_impl = ampere_mqa.mqa_logits
+        _fp8_fp4_paged_mqa_logits_impl = ampere_mqa.paged_mqa_logits
+        return
+
     if not has_deep_gemm():
         return
 

@@ -27,6 +27,7 @@ class BlockTables:
         cp_rank: int = 0,
         cp_interleave: int = 1,
         slot_mapping_enabled: list[bool] | None = None,
+        track_cpu: bool = False,
     ):
         self.block_sizes = block_sizes
         self.kernel_block_sizes = kernel_block_sizes
@@ -74,6 +75,11 @@ class BlockTables:
         self.input_block_tables: list[torch.Tensor] = [
             torch.zeros_like(b.gpu) for b in self.block_tables
         ]
+        self.block_tables_cpu = (
+            [torch.full(b.gpu.shape, -1, dtype=torch.int32) for b in self.block_tables]
+            if track_cpu
+            else None
+        )
 
         self.slot_mappings = torch.zeros(
             self.num_kv_cache_groups,
@@ -130,7 +136,29 @@ class BlockTables:
                     f"row capacity ({end} > {row_capacity})"
                 )
             self.block_tables[i].stage_write(req_index, start, block_ids)
+            if self.block_tables_cpu is not None:
+                row = self.block_tables_cpu[i][req_index]
+                if overwrite:
+                    row.fill_(-1)
+                row[start:end] = torch.tensor(block_ids, dtype=torch.int32)
             self.num_blocks.np[i, req_index] = end
+
+    def gather_cpu_block_tables(
+        self, req_indices: Iterable[int], num_reqs_padded: int
+    ) -> tuple[torch.Tensor, ...] | None:
+        """Snapshot scheduler-owned IDs without synchronizing the model stream."""
+        if self.block_tables_cpu is None:
+            return None
+        indices = list(req_indices)
+        result = []
+        for table in self.block_tables_cpu:
+            gathered = torch.full(
+                (num_reqs_padded, table.shape[1]), -1, dtype=torch.int32
+            )
+            if indices:
+                gathered[: len(indices)] = table[indices]
+            result.append(gathered)
+        return tuple(result)
 
     def apply_staged_writes(self) -> None:
         if self.num_kv_cache_groups == 0:
@@ -340,14 +368,14 @@ def _compute_slot_mappings_kernel(
             mapping_enabled, local_positions // kernel_block_size, 0
         )
         block_offsets = local_positions % kernel_block_size
+        in_range = block_indices < block_table_stride
         block_numbers = tl.load(
             block_table_ptr + req_state_idx * block_table_stride + block_indices,
-            mask=is_local,
+            mask=is_local & in_range,
             other=0,
         )
         slot_ids = block_numbers * kernel_block_size + block_offsets
-        if CP_SIZE != 1:
-            slot_ids = tl.where(is_local, slot_ids, PAD_ID)
+        slot_ids = tl.where(is_local & in_range, slot_ids, PAD_ID)
 
         slot_ids = tl.where(mapping_enabled, slot_ids, PAD_ID)
         tl.store(slot_mapping_ptr + offset, slot_ids, mask=offset < end_idx)

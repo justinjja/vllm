@@ -14,6 +14,7 @@ from vllm.model_executor.warmup.jit_warmup_triton_helper import (
 )
 from vllm.platforms import current_platform
 from vllm.triton_utils import tl, triton
+from vllm.triton_utils.fp8_compat import encode_fp8
 from vllm.utils.import_utils import has_cutedsl
 
 # MXFP4: 32 elements per block, packed 2 nibbles per byte, ue8m0 block scale.
@@ -165,25 +166,24 @@ class FusedIndexerQRopeQuantTritonKernel(
 
         # Store quantized values to index_q_fp8. FNUZ (e4m3fnuz) on gfx942, OCP
         # (e4m3fn) elsewhere -- matches the K cache.
-        fp8_dtype = tl.float8e4b8 if USE_FNUZ else tl.float8e4nv
         fp8_base_ptr = (
-            index_q_fp8_ptr
+            index_q_fp8_ptr.to(tl.pointer_type(tl.uint8))
             + tok_idx * index_q_fp8_stride0
             + head_idx * index_q_fp8_stride1
         )
         if INDEX_Q_NOPE_DIM > 0:
             tl.store(
                 fp8_base_ptr + nope_offset,
-                tl.div_rn(x_nope, index_q_scale).to(fp8_dtype),
+                encode_fp8(tl.div_rn(x_nope, index_q_scale), USE_FNUZ),
             )
         fp8_rot_base = fp8_base_ptr + INDEX_Q_NOPE_DIM
         tl.store(
             fp8_rot_base + half_offset * 2,
-            tl.div_rn(r_even, index_q_scale).to(fp8_dtype),
+            encode_fp8(tl.div_rn(r_even, index_q_scale), USE_FNUZ),
         )
         tl.store(
             fp8_rot_base + half_offset * 2 + 1,
-            tl.div_rn(r_odd, index_q_scale).to(fp8_dtype),
+            encode_fp8(tl.div_rn(r_odd, index_q_scale), USE_FNUZ),
         )
 
         # FP8 weight-fold contract:
@@ -261,7 +261,7 @@ class FusedIndexerQRopeQuantTritonKernel(
             index_weights_softmax_scale=1.0,
             index_weights_head_scale=1.0,
             index_q_fp8=TritonWarmupTensor(
-                current_platform.fp8_dtype(),
+                torch.uint8,
                 shape=(1, compile_key.num_heads, compile_key.index_q_head_dim),
                 strides=(q_stride0, compile_key.index_q_head_dim, 1),
             ),
@@ -671,7 +671,7 @@ def fused_indexer_q_rope_quant(
     use_fnuz = fp8_dtype == torch.float8_e4m3fnuz
     fp8_max = 224.0 if use_fnuz else 448.0
     index_q_fp8 = torch.empty_like(index_q, dtype=fp8_dtype)
-    if has_cutedsl():
+    if has_cutedsl() and current_platform.has_device_capability(90):
         # lazily import, otherwise some tests fail due to CUDA driver init failure.
         from vllm.models.deepseek_v4.nvidia.ops.fused_indexer_q_cutedsl import (
             _INDEXER_Q_FP8_KERNEL,
@@ -719,7 +719,7 @@ def fused_indexer_q_rope_quant(
             index_weights,
             index_weights_softmax_scale,
             index_weights_head_scale,
-            index_q_fp8,
+            index_q_fp8.view(torch.uint8),
             index_weights_out,
             fp8_max=fp8_max,
             use_fnuz=use_fnuz,

@@ -377,6 +377,10 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             tasks.extend(PoolingRunner.get_supported_tasks(self.model))
         return tuple(tasks)
 
+    @property
+    def pipeline_payload_keys(self) -> frozenset[str]:
+        return getattr(self.model, "pipeline_payload_keys", frozenset())
+
     def load_model(self, load_dummy_weights: bool = False, *args, **kwargs) -> None:
         time_before_load = time.perf_counter()
         if load_dummy_weights:
@@ -660,6 +664,12 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             device=self.device,
             kernel_block_sizes=self.kernel_block_sizes,
             slot_mapping_enabled=slot_mapping_enabled,
+            track_cpu=bool(
+                isinstance(self.vllm_config.additional_config, dict)
+                and self.vllm_config.additional_config.get(
+                    "deepseek_v41_pp_runner_sharing", False
+                )
+            ),
             cp_size=self.dcp_size,
             cp_rank=self.dcp_rank,
             cp_interleave=self.cp_interleave,
@@ -1309,7 +1319,10 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             # combine_sampled_and_draft_tokens places a request's logits rows
             # at [query_end - num_logits, query_end). Fewer query rows than
             # that would silently select the preceding request's hidden states.
-            assert (num_scheduled_tokens_np >= num_logits).all()
+            assert (num_scheduled_tokens_np >= num_logits).all(), (
+                f"scheduled={num_scheduled_tokens_np.tolist()}, "
+                f"logits={num_logits.tolist()}, requests={req_ids}"
+            )
             cu_num_logits_np = np.empty(num_reqs + 1, dtype=np.int32)
             cu_num_logits_np[0] = 0
             np.cumsum(num_logits, out=cu_num_logits_np[1:])
@@ -1706,6 +1719,9 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             input_batch = self.prepare_inputs(
                 scheduler_output, batch_req_state, batch_desc
             )
+            input_batch.block_tables_cpu = self.block_tables.gather_cpu_block_tables(
+                input_batch.idx_mapping_np, input_batch.num_reqs_after_padding
+            )
             block_tables, slot_mappings = self.prepare_attn(input_batch)
             # Mamba "align" pre-copy: migrate recurrent state across block
             # boundaries before the forward. Runs only on real batches, and
@@ -1855,11 +1871,17 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         }
         if not self.is_first_pp_rank:
             # Update for non-first PP ranks.
-            model_inputs["input_ids"] = None
+            if not requires_raw_input_tokens(self.model):
+                model_inputs["input_ids"] = None
             model_inputs["inputs_embeds"] = None
 
             # Prepare the intermediate tensors.
             assert intermediate_tensors is not None
+            prepare_pipeline = getattr(self.model, "prepare_pipeline_inputs", None)
+            if prepare_pipeline is not None and not dummy_run:
+                intermediate_tensors = prepare_pipeline(
+                    intermediate_tensors, input_batch.num_tokens_after_padding
+                )
             assert self.intermediate_tensors is not None
             n = input_batch.num_tokens_after_padding
             new_tensors = {
@@ -1939,6 +1961,11 @@ class GPUModelRunner(LoRAModelRunnerMixin):
                     # Eager (NONE): call the raw model directly.
                     model_output = self.model(**model_inputs)
 
+        finish_pipeline = getattr(self.model, "finish_pipeline_outputs", None)
+        if finish_pipeline is not None and not dummy_run:
+            model_output = finish_pipeline(
+                model_output, input_batch.num_tokens_after_padding, attn_metadata
+            )
         self.kv_connector.finish_forward()
 
         if self.is_last_pp_rank:
@@ -2079,6 +2106,11 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             copy_stream=self.output_copy_stream,
             check_ep_fault=self.check_ep_fault,
             routed_experts=routed_experts,
+            # Sharded sampling already reduces counts per request. Replicated
+            # sampling returns one count per logits row, including draft rows.
+            cu_num_logits=(
+                input_batch.cu_num_logits if self.batch_sharder is None else None
+            ),
         )
 
         mm_inputs: tuple[list[torch.Tensor], torch.Tensor] | None = None

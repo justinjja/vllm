@@ -663,6 +663,58 @@ def test_no_mm_input_chunking():
         )
 
 
+@pytest.mark.parametrize("async_scheduling", [True, False])
+@pytest.mark.parametrize("prompt_tokens,chunk_tokens", [(256, 64), (257, 128)])
+@pytest.mark.parametrize("enable_prefix_caching", [True, False])
+def test_prompt_length_selects_prefill_chunk_without_limiting_context(
+    async_scheduling, prompt_tokens, chunk_tokens, enable_prefix_caching
+):
+    scheduler = create_scheduler(
+        max_num_batched_tokens=128,
+        max_model_len=1024,
+        async_scheduling=async_scheduling,
+        enable_prefix_caching=enable_prefix_caching,
+        additional_config={
+            "cmp_short_prefill_prompt_tokens": 256,
+            "cmp_short_prefill_chunk_tokens": 64,
+        },
+    )
+    request = create_requests(num_requests=1, num_tokens=prompt_tokens)[0]
+    scheduler.add_request(request)
+    remaining = prompt_tokens
+    while remaining:
+        scheduled = scheduler.schedule()
+        count = min(remaining, chunk_tokens)
+        assert scheduled.num_scheduled_tokens == {request.request_id: count}
+        remaining -= count
+        output = make_output(scheduler)
+        if remaining:
+            output.sampled_token_ids = [[]]
+        scheduler.update_from_output(scheduled, output)
+    assert scheduler.schedule().num_scheduled_tokens == {request.request_id: 1}
+
+
+def test_short_and_long_prefills_share_the_batch_budget():
+    scheduler = create_scheduler(
+        max_num_batched_tokens=128,
+        max_model_len=1024,
+        additional_config={
+            "cmp_short_prefill_prompt_tokens": 256,
+            "cmp_short_prefill_chunk_tokens": 64,
+        },
+    )
+    short = create_requests(num_requests=1, num_tokens=256, req_ids=["short"])[0]
+    long = create_requests(num_requests=1, num_tokens=512, req_ids=["long"])[0]
+    scheduler.add_request(short)
+    scheduler.add_request(long)
+    for _ in range(2):
+        scheduled = scheduler.schedule()
+        assert scheduled.num_scheduled_tokens == {"short": 64, "long": 64}
+        output = make_output(scheduler)
+        output.sampled_token_ids = [[], []]
+        scheduler.update_from_output(scheduled, output)
+
+
 @pytest.mark.parametrize("enable_prefix_caching", [True, False])
 def test_schedule_concurrent_partial_requests(enable_prefix_caching: bool):
     """Test scheduling behavior with concurrent partial requests.

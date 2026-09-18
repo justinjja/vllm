@@ -147,7 +147,7 @@ def _reference(
     ],
 )
 @pytest.mark.parametrize("use_cutedsl", [False, True])
-@pytest.mark.parametrize("n_head", [32, 64])
+@pytest.mark.parametrize("n_head", [16, 32, 64])
 @torch.inference_mode()
 def test_fused_indexer_q_rope_quant_matches_unfused(
     num_tokens, cache_dtype, use_fp4, use_cutedsl, n_head
@@ -228,7 +228,49 @@ def test_fused_indexer_q_rope_quant_matches_unfused(
     )
 
 
-@pytest.mark.skipif(not has_cutedsl(), reason="cutedsl (cutlass) not installed")
+@pytest.mark.skipif(
+    not current_platform.is_device_capability(80), reason="SM80 FP8 warmup"
+)
+def test_ampere_indexer_query_warmup_and_graph_replay():
+    """Warmup must use byte pointers; replay must consume updated Q and weights."""
+    from vllm.models.deepseek_v4.common.ops.fused_indexer_q import (
+        _FUSED_INDEXER_Q_ROPE_QUANT_TRITON_KERNEL as kernel,
+    )
+
+    key = kernel.dispatch(
+        dtype=torch.bfloat16, num_heads=16, head_dim=128, rope_dim=64, use_fnuz=False
+    )
+    kernel.compile(key)
+    torch.manual_seed(170)
+    q = torch.randn(7, 16, HEAD_DIM, device="cuda", dtype=torch.bfloat16)
+    weights = torch.randn(7, 16, device="cuda", dtype=torch.bfloat16)
+    positions = torch.arange(7, device="cuda")
+    cos_sin = torch.randn(32, ROPE_DIM, device="cuda")
+
+    def run():
+        return fused_indexer_q_rope_quant(positions, q, cos_sin, weights, 0.125, 0.25)
+
+    run()
+    graph = torch.cuda.CUDAGraph()
+    with torch.cuda.graph(graph):
+        actual, actual_weights = run()
+    q.neg_()
+    positions.add_(3)
+    weights.mul_(2)
+    graph.replay()
+    expected, expected_weights = _reference(
+        positions, q, cos_sin, weights, 0.125, 0.25, 16
+    )
+    torch.testing.assert_close(
+        actual.view(torch.uint8), expected.view(torch.uint8), rtol=0, atol=0
+    )
+    torch.testing.assert_close(actual_weights, expected_weights, rtol=0, atol=0)
+
+
+@pytest.mark.skipif(
+    not has_cutedsl() or not current_platform.has_device_capability(90),
+    reason="CuTe FP8 indexer requires SM90+ and cutedsl",
+)
 @pytest.mark.parametrize(
     "use_fp4",
     [

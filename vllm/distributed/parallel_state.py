@@ -1112,16 +1112,10 @@ class GroupCoordinator:
         """Lazily drop self-retained ``isend_tensor_dict`` entries that have
         completed, oldest first (FIFO).
 
-        gloo ``Work.is_completed()`` is unreliable (it can report completion
-        before the background copy of the source buffer finishes), so the
-        metadata handle (``handles[0]``, a gloo-backed ``_RetainedHandle``) is
-        never used as the completion gate. Instead we gate on the tensor-send
-        handles (``handles[1:]``), which run on the device backend where
-        ``is_completed()`` is reliable. Once all tensor sends are done the
-        peer must already have posted the matching tensor recvs — and since
-        the receiver ingests metadata before tensors, the gloo metadata send
-        is then guaranteed complete, so ``wait()`` on it is ~instant and only
-        serves to drop the retained refs.
+        Gloo completion reports do not guarantee source-buffer lifetime. Use
+        tensor completion to avoid blocking on active device transfers, then
+        wait the CPU tensor handles and metadata before releasing their refs.
+        CPU handles have idempotent waits because callers may have waited them.
 
         Metadata-only entries (``handles[1:]`` empty, e.g. an empty
         ``IntermediateTensors``) have no reliable completion signal; drop them
@@ -1133,7 +1127,7 @@ class GroupCoordinator:
             # super().__init__ may not have the attribute yet.
             self._pending_isends = pending = deque()
         while pending:
-            handles, _ = pending[0]
+            handles, tensors = pending[0]
             tensor_handles = handles[1:]
             if not tensor_handles:
                 pending.popleft()
@@ -1142,6 +1136,9 @@ class GroupCoordinator:
                 # The oldest send is still in flight; FIFO ordering means the
                 # rest are no further along, so stop here.
                 break
+            for handle, tensor in zip(tensor_handles, tensors):
+                if tensor.is_cpu:
+                    handle.wait()
             handles[0].wait()
             pending.popleft()
 
@@ -1212,6 +1209,8 @@ class GroupCoordinator:
             )
             if tensor.is_cuda:
                 tensor.record_stream(torch.cuda.current_stream(tensor.device))
+            if tensor.is_cpu:
+                handle = _RetainedHandle([handle], (tensor,))
             handles.append(handle)
             sent_tensors.append(tensor)
 
@@ -1551,6 +1550,12 @@ def get_tp_group() -> GroupCoordinator:
 
 
 _ETP: GroupCoordinator | None = None
+_CMP_REPLICA: GroupCoordinator | None = None
+
+
+def get_cmp_replica_group() -> GroupCoordinator:
+    assert _CMP_REPLICA is not None, "CMP replica group is not initialized"
+    return _CMP_REPLICA
 
 
 def get_etp_group() -> GroupCoordinator:
@@ -2010,6 +2015,9 @@ def initialize_model_parallel(
     from vllm.config import get_current_vllm_config
 
     config = get_current_vllm_config()
+    from vllm.distributed.cmp_hybrid import get_cmp_hybrid_layout
+
+    cmp_hybrid = get_cmp_hybrid_layout(config)
     data_parallel_size = config.parallel_config.data_parallel_size
     enable_elastic_ep = config.parallel_config.enable_elastic_ep
     parallel_config = config.parallel_config
@@ -2065,6 +2073,12 @@ def initialize_model_parallel(
     if enable_elastic_ep:
         group_ranks = local_all_ranks.view(-1, tensor_model_parallel_size).unbind(0)
         group_ranks = [x.tolist() for x in group_ranks]
+    dense_tensor_parallel_size = tensor_model_parallel_size
+    if cmp_hybrid is not None:
+        group_ranks = [
+            g for ranks in group_ranks for g in cmp_hybrid.dense_groups(ranks)
+        ]
+        dense_tensor_parallel_size = cmp_hybrid.dense_tp_size
     # message queue broadcaster is only used in tensor model parallel group
     _TP = init_model_parallel_group(
         group_ranks,
@@ -2081,7 +2095,7 @@ def initialize_model_parallel(
         if config.engram_config is not None
         else tensor_model_parallel_size
     )
-    if engram_tensor_parallel_size == tensor_model_parallel_size:
+    if engram_tensor_parallel_size == dense_tensor_parallel_size:
         _ETP = _TP
     else:
         group_ranks = (
@@ -2203,6 +2217,16 @@ def initialize_model_parallel(
             group_ranks, get_world_group().local_rank, backend, group_name="dp"
         )
 
+    global _CMP_REPLICA
+    assert _CMP_REPLICA is None, "CMP replica group is already initialized"
+    if cmp_hybrid is not None and cmp_hybrid.small_pair_reduce:
+        _CMP_REPLICA = init_model_parallel_group(
+            cmp_hybrid.replica_groups(all_ranks.flatten().tolist()),
+            get_world_group().local_rank,
+            backend,
+            group_name="cmp_replica",
+        )
+
     global _EP
     assert _EP is None, "expert parallel group is already initialized"
     # Don't create EP group for dense models.
@@ -2306,10 +2330,16 @@ def ensure_model_parallel_initialized(
         )
         return
 
-    assert get_tensor_model_parallel_world_size() == tensor_model_parallel_size, (
+    from vllm.distributed.cmp_hybrid import get_cmp_hybrid_layout
+
+    cmp_hybrid = get_cmp_hybrid_layout()
+    expected_tp_size = (
+        cmp_hybrid.dense_tp_size if cmp_hybrid else tensor_model_parallel_size
+    )
+    assert get_tensor_model_parallel_world_size() == expected_tp_size, (
         "tensor parallel group already initialized, but of unexpected size. "
         f"got: {get_tensor_model_parallel_world_size()=} vs. "
-        f"wanted: {tensor_model_parallel_size=}"
+        f"wanted: {expected_tp_size=}"
     )
     pp_world_size = get_pp_group().world_size
     assert pp_world_size == pipeline_model_parallel_size, (
@@ -2369,6 +2399,11 @@ def get_node_count() -> int:
 
 def destroy_model_parallel():
     """Set the groups to none and destroy them."""
+    global _CMP_REPLICA
+    if _CMP_REPLICA:
+        _CMP_REPLICA.destroy()
+    _CMP_REPLICA = None
+
     global _TP, _ETP
 
     if _ETP and _ETP is not _TP:

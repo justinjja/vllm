@@ -23,12 +23,18 @@ def _set_arch(monkeypatch, family: int, *, cuda: bool = True, deep_gemm: bool = 
         "is_device_capability_family",
         lambda capability, device_id=0: capability // 10 == family,
     )
+    monkeypatch.setattr(
+        current_platform,
+        "is_device_capability",
+        lambda capability, device_id=0: capability == family * 10,
+    )
     monkeypatch.setattr(indexer, "has_deep_gemm", lambda: deep_gemm)
 
 
 @pytest.mark.parametrize(
     "family,expected_native",
     [
+        (8, {1, 2, 3, 4, 5, 8}),
         # SM90 gained next_n=4 (MTP=3) via 2-CTA multicast, but never 3.
         (9, {1, 2, 4}),
         # SM100 schedules any next_n with multi-atom tiles.
@@ -58,6 +64,11 @@ def test_native_decode_gate_without_deepgemm(monkeypatch, cuda, deep_gemm):
         False,
         False,
     ]
+
+
+def test_sm80_speculative_rows_do_not_require_deepgemm(monkeypatch):
+    _set_arch(monkeypatch, 8, deep_gemm=False)
+    assert all(indexer._supports_native_decode(n) for n in (1, 2, 3, 4, 5, 6, 8))
 
 
 def test_sm90_next_n_4_halves_the_schedule_slots(monkeypatch):

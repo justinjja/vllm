@@ -118,6 +118,9 @@ class InputBatch:
     # [num_reqs] set only under PCP+DCP (see CommonAttentionMetadata).
     dcp_local_seq_lens_cpu_upper_bound: torch.Tensor | None = None
 
+    # Optional scheduler-owned block IDs for PP shared-cache snapshots.
+    block_tables_cpu: tuple[torch.Tensor, ...] | None = None
+
     @classmethod
     def make_dummy(
         cls,

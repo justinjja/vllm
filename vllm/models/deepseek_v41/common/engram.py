@@ -51,6 +51,7 @@ from vllm.model_executor.layers.linear import ReplicatedLinear
 from vllm.model_executor.layers.quantization import QuantizationConfig
 from vllm.model_executor.utils import set_weight_attrs
 from vllm.triton_utils import tl, triton
+from vllm.triton_utils.fp8_compat import decode_fp8
 
 logger = init_logger(__name__)
 
@@ -637,7 +638,7 @@ def _engram_lookup_kernel(
         scale = (scale.to(tl.int32) << 23).to(tl.float32, bitcast=True)
         tl.store(
             out + rows[:, None] * DIM + cols[None, :],
-            (values.to(tl.float32) * scale).to(tl.bfloat16),
+            (decode_fp8(values) * scale).to(tl.bfloat16),
             mask=valid[:, None],
         )
 
@@ -662,6 +663,14 @@ class ParallelEngramEmbedding(nn.Module):
         self.block_size = block_size
         self.n_hash_cols = len(head_sizes)
         self.tp_size = get_tensor_model_parallel_world_size()
+        self._hybrid_etp_group = None
+        from vllm.distributed.cmp_hybrid import get_cmp_hybrid_layout
+
+        if get_cmp_hybrid_layout() is not None:
+            from vllm.distributed import get_etp_group
+
+            self._hybrid_etp_group = get_etp_group()
+            self.tp_size = self._hybrid_etp_group.world_size
         num_shards, head_rank = self._get_shard_info()
         self.part_n_hash_cols = triton.cdiv(self.n_hash_cols, num_shards)
         # TODO: Support row-wise sharding when there are too few hash heads.
@@ -690,7 +699,14 @@ class ParallelEngramEmbedding(nn.Module):
             )
 
     def _get_shard_info(self) -> tuple[int, int]:
+        if self._hybrid_etp_group is not None:
+            return self.tp_size, self._hybrid_etp_group.rank_in_group
         return self.tp_size, get_tensor_model_parallel_rank()
+
+    def gather_heads(self, rows: torch.Tensor) -> torch.Tensor:
+        if self._hybrid_etp_group is not None:
+            return self._hybrid_etp_group.all_gather(rows, dim=1)
+        return tensor_model_parallel_all_gather(rows, dim=1)
 
     def _allocate_weights(self) -> tuple[torch.Tensor, torch.Tensor]:
         return (
@@ -719,7 +735,7 @@ class ParallelEngramEmbedding(nn.Module):
         tiles = triton.cdiv(rows, 16)
         grid = min(tiles, self._num_sms // 2 if background else self._num_sms)
         _engram_lookup_kernel[(grid,)](
-            weight,
+            weight.view(torch.uint8),
             scales,
             indices,
             out,
@@ -747,7 +763,7 @@ class ParallelEngramEmbedding(nn.Module):
         )
         self.lookup(indices, out)
         if self.tp_size > 1:
-            out = tensor_model_parallel_all_gather(out, dim=1)
+            out = self.gather_heads(out)
         return out[:, : self.n_hash_cols]
 
 
@@ -989,7 +1005,7 @@ class Engram(nn.Module):
                 local_heads * dim,
             )
             return out
-        rows = tensor_model_parallel_all_gather(rows, dim=1)
+        rows = self.embed_tokens.gather_heads(rows)
         return rows[:, : self.embed_tokens.n_hash_cols]
 
     def forward(

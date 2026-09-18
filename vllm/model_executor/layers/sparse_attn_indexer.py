@@ -10,10 +10,19 @@ from vllm import _custom_ops as ops
 from vllm._aiter_ops import rocm_aiter_ops
 from vllm.compilation.breakable_cudagraph import eager_break_during_capture
 from vllm.config import CUDAGraphMode, get_current_vllm_config
-from vllm.distributed import get_dcp_group, get_pcp_group
+from vllm.distributed import get_dcp_group, get_pcp_group, get_tp_group
 from vllm.forward_context import get_forward_context
 from vllm.logger import init_logger
 from vllm.model_executor.custom_op import CustomOp
+from vllm.model_executor.kernels.attention.dsa.ampere_candidate_mqa import (
+    candidate_mqa_logits,
+)
+from vllm.model_executor.kernels.attention.dsa.ampere_mqa import (
+    _dense_tile as _ampere_dense_tile,
+)
+from vllm.model_executor.kernels.attention.dsa.ampere_mqa import (
+    mqa_logits as _ampere_mqa_logits,
+)
 from vllm.model_executor.kernels.attention.dsa.candidate_blocks import (
     apply_candidate_mask as _apply_candidate_mask,
 )
@@ -318,6 +327,72 @@ def kv_cache_as_quant_view(
     return kv_cache.unsqueeze(-2)
 
 
+def ampere_sharded_prefill_topk(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    scales: torch.Tensor,
+    weights: torch.Tensor,
+    starts: torch.Tensor,
+    ends: torch.Tensor,
+    out: torch.Tensor,
+    candidates: torch.Tensor | None,
+    candidate_block_size: int,
+) -> None:
+    """Partition replicated dense-indexer queries; exchange only selected IDs."""
+    group = get_tp_group()
+    rows, heads, _ = q.shape
+    shard_rows = triton.cdiv(rows, group.world_size)
+    begin = group.rank_in_group * shard_rows
+    end = min(rows, begin + shard_rows)
+    count = max(0, end - begin)
+    selected = torch.full(
+        (shard_rows, out.shape[1]), -1, dtype=out.dtype, device=out.device
+    )
+    local_candidates = (
+        torch.full(
+            (shard_rows, candidates.shape[1]),
+            -1,
+            dtype=candidates.dtype,
+            device=candidates.device,
+        )
+        if candidates is not None
+        else None
+    )
+    if count:
+        # Use the unsharded launch's reduction layout to preserve FP32 scores.
+        logits = _ampere_mqa_logits(
+            (q[begin:end], None),
+            (k, scales),
+            weights[begin:end],
+            starts[begin:end],
+            ends[begin:end],
+            tile=_ampere_dense_tile(rows, heads, k.shape[0]),
+        )
+        if local_candidates is not None:
+            _select_candidate_blocks(
+                logits,
+                starts[begin:end],
+                ends[begin:end],
+                local_candidates.shape[1],
+                candidate_block_size,
+                local_candidates[:count],
+            )
+        ops.top_k_per_row_prefill(
+            logits,
+            starts[begin:end],
+            ends[begin:end],
+            selected[:count],
+            count,
+            logits.stride(0),
+            logits.stride(1),
+            out.shape[1],
+        )
+    out.copy_(group.all_gather(selected, dim=0)[:rows])
+    if local_candidates is not None:
+        assert candidates is not None
+        candidates.copy_(group.all_gather(local_candidates, dim=0)[:rows])
+
+
 @eager_break_during_capture
 def sparse_attn_indexer(
     hidden_states: torch.Tensor,
@@ -555,6 +630,35 @@ def sparse_attn_indexer(
                 chunk.token_start : chunk.token_end, :topk_tokens
             ]
 
+            if (
+                not use_fp4_cache
+                and not use_pcp
+                and dcp_world_size == 1
+                and (candidate_blocks is None or candidate_write)
+                and q_slice.shape[0] >= 64
+                and q_slice.shape[1] in (16, 32)
+                and k_quant.shape[0] >= 65536
+                and current_platform.is_cuda()
+                and current_platform.is_device_capability(80)
+                and get_tp_group().world_size > 1
+            ):
+                ampere_sharded_prefill_topk(
+                    q_slice,
+                    k_quant,
+                    k_scale.view(torch.float32).squeeze(-1),
+                    weights[chunk.token_start : chunk.token_end],
+                    cu_seqlen_ks,
+                    cu_seqlen_ke,
+                    topk_indices,
+                    (
+                        candidate_blocks[chunk.token_start : chunk.token_end]
+                        if candidate_blocks is not None and candidate_write
+                        else None
+                    ),
+                    candidate_block_size,
+                )
+                continue
+
             if chunk.local_total_seq_lens == 0 or q_slice.shape[0] == 0:
                 logits = q_slice.new_empty((q_slice.shape[0], 0), dtype=torch.float32)
                 topk_indices.fill_(-1)
@@ -569,7 +673,27 @@ def sparse_attn_indexer(
                     q_slice_cast = q_slice
                     k_quant_cast = k_quant
                     k_scale_cast = k_scale.view(torch.float32).squeeze(-1)
-                if current_platform.is_xpu():
+                candidate_only = (
+                    candidate_blocks is not None
+                    and not candidate_write
+                    and not use_fp4_cache
+                    and k_quant.shape[0] >= 65536
+                    and q_slice.shape[1] in (16, 32)
+                    and current_platform.is_cuda()
+                    and current_platform.is_device_capability(80)
+                )
+                if candidate_only:
+                    assert candidate_blocks is not None
+                    logits = candidate_mqa_logits(
+                        (q_slice_cast, q_scale_slice),
+                        (k_quant_cast, k_scale_cast),
+                        weights[chunk.token_start : chunk.token_end],
+                        cu_seqlen_ks,
+                        cu_seqlen_ke,
+                        candidate_blocks[chunk.token_start : chunk.token_end],
+                        candidate_block_size,
+                    )
+                elif current_platform.is_xpu():
                     if q_scale_slice is not None:
                         raise RuntimeError("XPU fp8_mqa_logits does not support FP4 Q")
                     logits = torch.ops.vllm.xpu_fp8_mqa_logits(
@@ -606,7 +730,7 @@ def sparse_attn_indexer(
                             candidate_block_size,
                             chunk_candidates,
                         )
-                    else:
+                    elif not candidate_only:
                         _apply_candidate_mask(
                             logits,
                             cu_seqlen_ks,
@@ -655,11 +779,8 @@ def sparse_attn_indexer(
             # decode_threshold since we unstrictly split
             # prefill and decode by decode_threshold
             # (currently set to 1 + speculative tokens).
-            # FP8 Q is float8_e4m3fn (pack_seq_triton's fp32 pad path is OK —
-            # downstream context_lens masks stale slots). MXFP4 Q is two
-            # uint8 tensors (values + ue8m0 scales) — use the dedicated uint8
-            # packer with pad_byte=0 so padded slots dequantize to 0 and
-            # can't produce NaN/Inf in the logits kernel.
+            # SM80 packs FP8 as bytes to avoid unsupported native conversions.
+            # MXFP4 also uses the byte packer for values and UE8M0 scales.
             if q_scale is not None:
                 padded_q_quant_decode_tokens = pack_seq_triton(
                     q_quant[:num_decode_tokens], decode_lens, pad_value=0
@@ -667,6 +788,13 @@ def sparse_attn_indexer(
                 padded_q_scale = pack_seq_triton(
                     q_scale[:num_decode_tokens], decode_lens, pad_value=0
                 )
+            elif current_platform.is_device_capability(80):
+                padded_q_quant_decode_tokens = pack_seq_triton(
+                    q_quant[:num_decode_tokens].view(torch.uint8),
+                    decode_lens,
+                    pad_value=0,
+                ).view(q_quant.dtype)
+                padded_q_scale = None
             else:
                 padded_q_quant_decode_tokens = pack_seq_triton(
                     q_quant[:num_decode_tokens], decode_lens
@@ -887,7 +1015,11 @@ class SparseAttnIndexer(CustomOp):
         self.dcp_rank = get_dcp_group().rank_in_group if self.dcp_world_size > 1 else 0
         self.use_pcp = parallel_config.prefill_context_parallel_size > 1
         self._cp_kv_cache_interleave_size: int | None = None
-        if current_platform.is_cuda() and not has_deep_gemm():
+        if (
+            current_platform.is_cuda()
+            and not current_platform.is_device_capability(80)
+            and not has_deep_gemm()
+        ):
             raise RuntimeError(
                 "Sparse Attention Indexer CUDA op requires DeepGEMM support in "
                 "the current vLLM environment."
@@ -899,10 +1031,11 @@ class SparseAttnIndexer(CustomOp):
                 _UNPACK_SEQ_TRITON_KERNEL,
             )
 
-            pack_dtype = torch.uint8 if use_fp4_cache else current_platform.fp8_dtype()
+            byte_pack = use_fp4_cache or current_platform.is_device_capability(80)
+            pack_dtype = torch.uint8 if byte_pack else current_platform.fp8_dtype()
             _PACK_SEQ_TRITON_KERNEL.register_warmup(
                 dtype=pack_dtype,
-                pad_value=0 if use_fp4_cache else -float("inf"),
+                pad_value=0 if byte_pack else -float("inf"),
             )
             _UNPACK_SEQ_TRITON_KERNEL.register_warmup()
 

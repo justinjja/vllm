@@ -176,6 +176,7 @@ class DeepseekV41ForCausalLM(nn.Module, SupportsMultiModal, SupportsPP, Supports
         self.make_empty_intermediate_tensors = (  # type: ignore[method-assign]
             self.language_model.make_empty_intermediate_tensors
         )
+        self.pipeline_payload_keys = self.language_model.pipeline_payload_keys
 
         expert_dtype = getattr(config, "expert_dtype", "fp4")
         self.hf_to_vllm_mapper = _make_deepseek_v4_vl_weights_mapper(
@@ -316,6 +317,49 @@ class DeepseekV41ForCausalLM(nn.Module, SupportsMultiModal, SupportsPP, Supports
 
     def compute_logits(self, hidden_states: torch.Tensor) -> torch.Tensor | None:
         return self.language_model.compute_logits(hidden_states)
+
+    def prepare_pipeline_inputs(self, tensors, num_tokens):
+        """Refresh shared caches before entering the captured model forward."""
+        from vllm.sequence import IntermediateTensors
+
+        model = self.language_model.model
+        sharing = model.pipeline_sharing
+        if sharing is None or not sharing.runner_mode or tensors is None:
+            return tensors
+        sharing.receive(
+            tensors.tensors,
+            model.topk_indices_buffer,
+            model.candidate_block_buffer,
+            num_tokens,
+        )
+        return IntermediateTensors(
+            {
+                key: value
+                for key, value in tensors.items()
+                if key not in sharing.payload_keys
+            }
+        )
+
+    def finish_pipeline_outputs(self, output, num_tokens, metadata=None):
+        """Snapshot current cache blocks after graph replay has completed."""
+        from vllm.forward_context import get_forward_context
+        from vllm.sequence import IntermediateTensors
+
+        model = self.language_model.model
+        sharing = model.pipeline_sharing
+        if sharing is None or not sharing.runner_mode:
+            return output
+        if isinstance(output, IntermediateTensors):
+            if metadata is None:
+                metadata = get_forward_context().attn_metadata
+            payload = sharing.send(
+                metadata,
+                model.topk_indices_buffer,
+                model.candidate_block_buffer,
+                num_tokens,
+            )
+            return IntermediateTensors(output.tensors | payload)
+        return output
 
     def compute_logits_local(self, hidden_states: torch.Tensor) -> torch.Tensor:
         return self.language_model.compute_logits_local(hidden_states)
