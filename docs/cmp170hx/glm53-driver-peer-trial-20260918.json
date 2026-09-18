@@ -1,0 +1,3415 @@
+{
+  "measured_at_utc": "2026-09-18T13:41:38.881192+00:00",
+  "vllm_source_commit": "73b0fd0f9f7db91a87dcd18826b075c50b1d52c7",
+  "hardware": "Eight CMP 170HX GPUs; four symmetric PIX pairs, four GPUs per CPU.",
+  "canonical_pci_buses": [
+    "1a",
+    "1b",
+    "60",
+    "61",
+    "b1",
+    "b2",
+    "da",
+    "db"
+  ],
+  "driver_version": "610.43.02, custom open kernel module",
+  "original_module_sha256": "46dbf46e30a62c51acff32ae619331a86864781c5553915e8b138d0bc8cfb2e1",
+  "candidate_module_sha256": "b65dbe755ff6b2442f9e04bd51781fa4c8c911373856cc04058f6da67a71dcc1",
+  "candidate_patch_sha256": "b0a2d49860974655dfc7358d3ec66bda6e0a8154b675681739626b5f956680dd",
+  "candidate_change": "Expand the final BAR1 fallback from four selected PIX pairs to any two devices in the same existing eight-device allowlist; retain static-BAR1, mailbox, domain, device-type, and loopback constraints.",
+  "same_module_parameters_verified": true,
+  "trial_order": [
+    "candidate_after_device_recovery",
+    "original_fresh_load",
+    "candidate_repeat",
+    "candidate_reversed_visibility",
+    "candidate_large_allocations",
+    "original_rollback"
+  ],
+  "mapping_checks": {
+    "candidate_after_device_recovery": {
+      "summary": {
+        "successful_mappings": 64,
+        "total": 64
+      },
+      "cases": [
+        {
+          "owner": 0,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        }
+      ]
+    },
+    "original_fresh_load": {
+      "summary": {
+        "successful_mappings": 52,
+        "total": 64
+      },
+      "cases": [
+        {
+          "owner": 0,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 7,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 1,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 7,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 2,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 7,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 3,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 7,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 4,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 7,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 5,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 7,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 6,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 0,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 7,
+          "reader": 1,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 7,
+          "reader": 2,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 7,
+          "reader": 3,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 7,
+          "reader": 4,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 7,
+          "reader": 5,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 7,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        }
+      ]
+    },
+    "candidate_repeat": {
+      "summary": {
+        "successful_mappings": 64,
+        "total": 64
+      },
+      "cases": [
+        {
+          "owner": 0,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        }
+      ]
+    },
+    "candidate_reversed_visibility": {
+      "summary": {
+        "successful_mappings": 64,
+        "total": 64
+      },
+      "cases": [
+        {
+          "owner": 0,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        }
+      ]
+    },
+    "original_rollback": {
+      "summary": {
+        "successful_mappings": 52,
+        "total": 64
+      },
+      "cases": [
+        {
+          "owner": 0,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 0,
+          "reader": 7,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 1,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 1,
+          "reader": 7,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 2,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 2,
+          "reader": 7,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 3,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 3,
+          "reader": 7,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 4,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 4,
+          "reader": 7,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 5,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 5,
+          "reader": 7,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 6,
+          "reader": 0,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 1,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 2,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 3,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 4,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 5,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 6,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 0,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 7,
+          "reader": 1,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 7,
+          "reader": 2,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 7,
+          "reader": 3,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 7,
+          "reader": 4,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 7,
+          "reader": 5,
+          "mapping_status": 205,
+          "mapping_message": "mapping of buffer object failed"
+        },
+        {
+          "owner": 7,
+          "reader": 6,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        },
+        {
+          "owner": 7,
+          "reader": 7,
+          "mapping_status": 0,
+          "mapping_message": "no error",
+          "correct": true
+        }
+      ]
+    }
+  },
+  "large_allocation_checks": {
+    "method": "256-MiB allocations totaling 64256 MiB per owner; seed and read one 32-bit word per 64-KiB page. This is sampled integrity, not validation of every byte or a bandwidth benchmark.",
+    "planned_directed_pairs": 56,
+    "completed": 51,
+    "passed": 50,
+    "failed": 1,
+    "unrun": 5,
+    "cases": [
+      {
+        "owner_bdf": "0000:1a:00.0",
+        "reader_bdf": "0000:1b:00.0",
+        "returncode": 0,
+        "elapsed_s": 1.769735520996619,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:29:34.043631+00:00"
+      },
+      {
+        "owner_bdf": "0000:1a:00.0",
+        "reader_bdf": "0000:60:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.6221093039785046,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:29:36.666156+00:00"
+      },
+      {
+        "owner_bdf": "0000:1a:00.0",
+        "reader_bdf": "0000:61:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5717245519917924,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:29:39.238516+00:00"
+      },
+      {
+        "owner_bdf": "0000:1a:00.0",
+        "reader_bdf": "0000:b1:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5716467069869395,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:29:41.810706+00:00"
+      },
+      {
+        "owner_bdf": "0000:1a:00.0",
+        "reader_bdf": "0000:b2:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5716446980077308,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:29:44.382719+00:00"
+      },
+      {
+        "owner_bdf": "0000:1a:00.0",
+        "reader_bdf": "0000:da:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5718489860009868,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:29:46.954936+00:00"
+      },
+      {
+        "owner_bdf": "0000:1a:00.0",
+        "reader_bdf": "0000:db:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5712917749769986,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:29:49.526584+00:00"
+      },
+      {
+        "owner_bdf": "0000:1b:00.0",
+        "reader_bdf": "0000:1a:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.0699184210097883,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:29:51.596877+00:00"
+      },
+      {
+        "owner_bdf": "0000:1b:00.0",
+        "reader_bdf": "0000:60:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.6218711819965392,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:29:54.219106+00:00"
+      },
+      {
+        "owner_bdf": "0000:1b:00.0",
+        "reader_bdf": "0000:61:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5213705750065856,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:29:56.741305+00:00"
+      },
+      {
+        "owner_bdf": "0000:1b:00.0",
+        "reader_bdf": "0000:b1:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5711918189772405,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:29:59.313265+00:00"
+      },
+      {
+        "owner_bdf": "0000:1b:00.0",
+        "reader_bdf": "0000:b2:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.571615732013015,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:01.885238+00:00"
+      },
+      {
+        "owner_bdf": "0000:1b:00.0",
+        "reader_bdf": "0000:da:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5215177010104526,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:04.407141+00:00"
+      },
+      {
+        "owner_bdf": "0000:1b:00.0",
+        "reader_bdf": "0000:db:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5717033699911553,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:06.979300+00:00"
+      },
+      {
+        "owner_bdf": "0000:60:00.0",
+        "reader_bdf": "0000:1a:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.0700581130222417,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:09.050143+00:00"
+      },
+      {
+        "owner_bdf": "0000:60:00.0",
+        "reader_bdf": "0000:1b:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.6216330869938247,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:11.672628+00:00"
+      },
+      {
+        "owner_bdf": "0000:60:00.0",
+        "reader_bdf": "0000:61:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5216453570174053,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:14.194796+00:00"
+      },
+      {
+        "owner_bdf": "0000:60:00.0",
+        "reader_bdf": "0000:b1:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5714285009889863,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:16.766929+00:00"
+      },
+      {
+        "owner_bdf": "0000:60:00.0",
+        "reader_bdf": "0000:b2:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5719460589753,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:19.339307+00:00"
+      },
+      {
+        "owner_bdf": "0000:60:00.0",
+        "reader_bdf": "0000:da:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.571676588995615,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:21.911904+00:00"
+      },
+      {
+        "owner_bdf": "0000:60:00.0",
+        "reader_bdf": "0000:db:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.571556534996489,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:24.483888+00:00"
+      },
+      {
+        "owner_bdf": "0000:61:00.0",
+        "reader_bdf": "0000:1a:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.0698659969784785,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:26.554216+00:00"
+      },
+      {
+        "owner_bdf": "0000:61:00.0",
+        "reader_bdf": "0000:1b:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.6218372379953507,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:29.176480+00:00"
+      },
+      {
+        "owner_bdf": "0000:61:00.0",
+        "reader_bdf": "0000:60:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5213825310056563,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:31.698333+00:00"
+      },
+      {
+        "owner_bdf": "0000:61:00.0",
+        "reader_bdf": "0000:b1:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5713710709824227,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:34.270149+00:00"
+      },
+      {
+        "owner_bdf": "0000:61:00.0",
+        "reader_bdf": "0000:b2:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.57152102998225,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:36.842118+00:00"
+      },
+      {
+        "owner_bdf": "0000:61:00.0",
+        "reader_bdf": "0000:da:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5715578279923648,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:39.414122+00:00"
+      },
+      {
+        "owner_bdf": "0000:61:00.0",
+        "reader_bdf": "0000:db:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.571644023002591,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:41.986363+00:00"
+      },
+      {
+        "owner_bdf": "0000:b1:00.0",
+        "reader_bdf": "0000:1a:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.069695532991318,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:44.056600+00:00"
+      },
+      {
+        "owner_bdf": "0000:b1:00.0",
+        "reader_bdf": "0000:1b:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5719529319903813,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:46.629070+00:00"
+      },
+      {
+        "owner_bdf": "0000:b1:00.0",
+        "reader_bdf": "0000:60:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.571476355980849,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:49.201137+00:00"
+      },
+      {
+        "owner_bdf": "0000:b1:00.0",
+        "reader_bdf": "0000:61:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.57162353998865,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:51.773248+00:00"
+      },
+      {
+        "owner_bdf": "0000:b1:00.0",
+        "reader_bdf": "0000:b2:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5215228379820473,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:54.295270+00:00"
+      },
+      {
+        "owner_bdf": "0000:b1:00.0",
+        "reader_bdf": "0000:da:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.57174813200254,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:56.867505+00:00"
+      },
+      {
+        "owner_bdf": "0000:b1:00.0",
+        "reader_bdf": "0000:db:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.571570617001271,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:30:59.439632+00:00"
+      },
+      {
+        "owner_bdf": "0000:b2:00.0",
+        "reader_bdf": "0000:1a:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.0700162810098846,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:01.510209+00:00"
+      },
+      {
+        "owner_bdf": "0000:b2:00.0",
+        "reader_bdf": "0000:1b:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.621956321003381,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:04.132730+00:00"
+      },
+      {
+        "owner_bdf": "0000:b2:00.0",
+        "reader_bdf": "0000:60:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5216682990139816,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:06.654992+00:00"
+      },
+      {
+        "owner_bdf": "0000:b2:00.0",
+        "reader_bdf": "0000:61:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5720516509900335,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:09.227779+00:00"
+      },
+      {
+        "owner_bdf": "0000:b2:00.0",
+        "reader_bdf": "0000:b1:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.521537811990129,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:11.749904+00:00"
+      },
+      {
+        "owner_bdf": "0000:b2:00.0",
+        "reader_bdf": "0000:da:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5216594470257405,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:14.272097+00:00"
+      },
+      {
+        "owner_bdf": "0000:b2:00.0",
+        "reader_bdf": "0000:db:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5720550950209145,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:16.844684+00:00"
+      },
+      {
+        "owner_bdf": "0000:da:00.0",
+        "reader_bdf": "0000:1a:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.069990792981116,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:18.915255+00:00"
+      },
+      {
+        "owner_bdf": "0000:da:00.0",
+        "reader_bdf": "0000:1b:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.621659479016671,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:21.537556+00:00"
+      },
+      {
+        "owner_bdf": "0000:da:00.0",
+        "reader_bdf": "0000:60:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.6217402659822255,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:24.159952+00:00"
+      },
+      {
+        "owner_bdf": "0000:da:00.0",
+        "reader_bdf": "0000:61:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5716402390098665,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:26.732144+00:00"
+      },
+      {
+        "owner_bdf": "0000:da:00.0",
+        "reader_bdf": "0000:b1:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5714280139945913,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:29.304124+00:00"
+      },
+      {
+        "owner_bdf": "0000:da:00.0",
+        "reader_bdf": "0000:b2:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.571383553004125,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:31.876090+00:00"
+      },
+      {
+        "owner_bdf": "0000:da:00.0",
+        "reader_bdf": "0000:db:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.5713504969899077,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:34.448002+00:00"
+      },
+      {
+        "owner_bdf": "0000:db:00.0",
+        "reader_bdf": "0000:1a:00.0",
+        "returncode": 0,
+        "elapsed_s": 2.0694112869969103,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256",
+        "completed_utc": "2026-09-18T13:31:36.518020+00:00"
+      },
+      {
+        "owner_bdf": "0000:db:00.0",
+        "reader_bdf": "0000:1b:00.0",
+        "returncode": 3,
+        "elapsed_s": 2.5714040549937636,
+        "passed": false,
+        "last_line": "PROBE_DONE index=147 errors=800",
+        "completed_utc": "2026-09-18T13:31:39.090016+00:00"
+      }
+    ],
+    "failed_case_immediate_retry": {
+      "owner_bdf": "0000:db:00.0",
+      "reader_bdf": "0000:1b:00.0",
+      "returncode": 0,
+      "last_line": "PASS chunks=251 probed_mib=64256"
+    },
+    "interpretation": "The incorrect-data result did not recur on the immediate repeat. Its cause remains unresolved; the passing repeat does not qualify the candidate."
+  },
+  "candidate_collective_benchmarks": "Withheld after the integrity failure.",
+  "candidate_qualified_for_serving": false,
+  "candidate_serving_speedup_measured": false,
+  "recovery": {
+    "affected_pci_bus": "b2",
+    "nvidia_smi_reset": "Not Supported",
+    "linux_pci_flr": "Completed successfully; unbound FLR and driver reload restored all eight CUDA devices.",
+    "reboot_required": false,
+    "installed_modules_and_boot_configuration_changed": false,
+    "active_driver": "Original installed module, restored after the candidate failed qualification.",
+    "cuda_smoke": [
+      {
+        "ordinal": 0,
+        "pci_bus_id": "0000:1A:00.0",
+        "sum": 523776.0
+      },
+      {
+        "ordinal": 1,
+        "pci_bus_id": "0000:1B:00.0",
+        "sum": 523776.0
+      },
+      {
+        "ordinal": 2,
+        "pci_bus_id": "0000:60:00.0",
+        "sum": 523776.0
+      },
+      {
+        "ordinal": 3,
+        "pci_bus_id": "0000:61:00.0",
+        "sum": 523776.0
+      },
+      {
+        "ordinal": 4,
+        "pci_bus_id": "0000:B1:00.0",
+        "sum": 523776.0
+      },
+      {
+        "ordinal": 5,
+        "pci_bus_id": "0000:B2:00.0",
+        "sum": 523776.0
+      },
+      {
+        "ordinal": 6,
+        "pci_bus_id": "0000:DA:00.0",
+        "sum": 523776.0
+      },
+      {
+        "ordinal": 7,
+        "pci_bus_id": "0000:DB:00.0",
+        "sum": 523776.0
+      }
+    ],
+    "pix_pair_integrity": [
+      {
+        "owner_bdf": "0000:1a:00.0",
+        "reader_bdf": "0000:1b:00.0",
+        "returncode": 0,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256"
+      },
+      {
+        "owner_bdf": "0000:1b:00.0",
+        "reader_bdf": "0000:1a:00.0",
+        "returncode": 0,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256"
+      },
+      {
+        "owner_bdf": "0000:60:00.0",
+        "reader_bdf": "0000:61:00.0",
+        "returncode": 0,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256"
+      },
+      {
+        "owner_bdf": "0000:61:00.0",
+        "reader_bdf": "0000:60:00.0",
+        "returncode": 0,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256"
+      },
+      {
+        "owner_bdf": "0000:b1:00.0",
+        "reader_bdf": "0000:b2:00.0",
+        "returncode": 0,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256"
+      },
+      {
+        "owner_bdf": "0000:b2:00.0",
+        "reader_bdf": "0000:b1:00.0",
+        "returncode": 0,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256"
+      },
+      {
+        "owner_bdf": "0000:da:00.0",
+        "reader_bdf": "0000:db:00.0",
+        "returncode": 0,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256"
+      },
+      {
+        "owner_bdf": "0000:db:00.0",
+        "reader_bdf": "0000:da:00.0",
+        "returncode": 0,
+        "passed": true,
+        "last_line": "PASS chunks=251 probed_mib=64256"
+      }
+    ],
+    "preferred_serving_quality_exit_status": {
+      "objectives": 1,
+      "qualification": 0,
+      "concurrent-check": 0
+    },
+    "preferred_serving_objectives": {
+      "first_concurrent": {
+        "concurrency": 4,
+        "passed": 19,
+        "total": 20,
+        "cases": [
+          {
+            "question": "What is 127 + 386?",
+            "expected": 513,
+            "answer": 513,
+            "passed": true
+          },
+          {
+            "question": "What is 94 - 157?",
+            "expected": -63,
+            "answer": -63,
+            "passed": true
+          },
+          {
+            "question": "What is 17 multiplied by 23?",
+            "expected": 391,
+            "answer": 391,
+            "passed": true
+          },
+          {
+            "question": "What is 144 divided by 12?",
+            "expected": 12,
+            "answer": 12,
+            "passed": true
+          },
+          {
+            "question": "What is the remainder when 83 is divided by 7?",
+            "expected": 6,
+            "answer": 6,
+            "passed": true
+          },
+          {
+            "question": "What is 15 percent of 240?",
+            "expected": 36,
+            "answer": 36,
+            "passed": true
+          },
+          {
+            "question": "What is 2 raised to the power 10?",
+            "expected": 1024,
+            "answer": 1024,
+            "passed": true
+          },
+          {
+            "question": "What is the sum of all integers from 1 through 20?",
+            "expected": 210,
+            "answer": 210,
+            "passed": true
+          },
+          {
+            "question": "Sort [8, -3, 5, 0, 8] in ascending order.",
+            "expected": [
+              -3,
+              0,
+              5,
+              8,
+              8
+            ],
+            "answer": [
+              -3,
+              0,
+              5,
+              8,
+              8
+            ],
+            "passed": true
+          },
+          {
+            "question": "Reverse the string abcDEF exactly, retaining case.",
+            "expected": "FEDcba",
+            "answer": "FEDcba",
+            "passed": true
+          },
+          {
+            "question": "Convert the hexadecimal number 2A to a decimal integer.",
+            "expected": 42,
+            "answer": 42,
+            "passed": true
+          },
+          {
+            "question": "Convert the decimal integer 13 to binary digits as a string.",
+            "expected": "1101",
+            "answer": "1101",
+            "passed": true
+          },
+          {
+            "question": "How many elements are in [red, blue, red, green, blue]?",
+            "expected": 5,
+            "answer": 5,
+            "passed": true
+          },
+          {
+            "question": "How many distinct values are in [red, blue, red, green, blue]?",
+            "expected": 3,
+            "answer": 3,
+            "passed": true
+          },
+          {
+            "question": "Return the lowercase version of the string CoMPuTe.",
+            "expected": "compute",
+            "answer": "computer",
+            "passed": false
+          },
+          {
+            "question": "In a standard week, what day comes immediately after Thursday?",
+            "expected": "Friday",
+            "answer": "Friday",
+            "passed": true
+          },
+          {
+            "question": "Extract the integer count from {\"item\":\"bolts\",\"count\":37}.",
+            "expected": 37,
+            "answer": 37,
+            "passed": true
+          },
+          {
+            "question": "For rows [{\"name\":\"oak\",\"n\":4},{\"name\":\"elm\",\"n\":9}], return the name whose n is largest.",
+            "expected": "elm",
+            "answer": "elm",
+            "passed": true
+          },
+          {
+            "question": "All mips are lops. All lops are tars. Must every mip be a tar? Return a JSON boolean.",
+            "expected": true,
+            "answer": true,
+            "passed": true
+          },
+          {
+            "question": "Some lops are mips. Does that imply all lops are mips? Return a JSON boolean.",
+            "expected": false,
+            "answer": false,
+            "passed": true
+          }
+        ]
+      },
+      "sequential": {
+        "concurrency": 1,
+        "passed": 20,
+        "total": 20,
+        "cases": [
+          {
+            "question": "What is 127 + 386?",
+            "expected": 513,
+            "answer": 513,
+            "passed": true
+          },
+          {
+            "question": "What is 94 - 157?",
+            "expected": -63,
+            "answer": -63,
+            "passed": true
+          },
+          {
+            "question": "What is 17 multiplied by 23?",
+            "expected": 391,
+            "answer": 391,
+            "passed": true
+          },
+          {
+            "question": "What is 144 divided by 12?",
+            "expected": 12,
+            "answer": 12,
+            "passed": true
+          },
+          {
+            "question": "What is the remainder when 83 is divided by 7?",
+            "expected": 6,
+            "answer": 6,
+            "passed": true
+          },
+          {
+            "question": "What is 15 percent of 240?",
+            "expected": 36,
+            "answer": 36,
+            "passed": true
+          },
+          {
+            "question": "What is 2 raised to the power 10?",
+            "expected": 1024,
+            "answer": 1024,
+            "passed": true
+          },
+          {
+            "question": "What is the sum of all integers from 1 through 20?",
+            "expected": 210,
+            "answer": 210,
+            "passed": true
+          },
+          {
+            "question": "Sort [8, -3, 5, 0, 8] in ascending order.",
+            "expected": [
+              -3,
+              0,
+              5,
+              8,
+              8
+            ],
+            "answer": [
+              -3,
+              0,
+              5,
+              8,
+              8
+            ],
+            "passed": true
+          },
+          {
+            "question": "Reverse the string abcDEF exactly, retaining case.",
+            "expected": "FEDcba",
+            "answer": "FEDcba",
+            "passed": true
+          },
+          {
+            "question": "Convert the hexadecimal number 2A to a decimal integer.",
+            "expected": 42,
+            "answer": 42,
+            "passed": true
+          },
+          {
+            "question": "Convert the decimal integer 13 to binary digits as a string.",
+            "expected": "1101",
+            "answer": "1101",
+            "passed": true
+          },
+          {
+            "question": "How many elements are in [red, blue, red, green, blue]?",
+            "expected": 5,
+            "answer": 5,
+            "passed": true
+          },
+          {
+            "question": "How many distinct values are in [red, blue, red, green, blue]?",
+            "expected": 3,
+            "answer": 3,
+            "passed": true
+          },
+          {
+            "question": "Return the lowercase version of the string CoMPuTe.",
+            "expected": "compute",
+            "answer": "compute",
+            "passed": true
+          },
+          {
+            "question": "In a standard week, what day comes immediately after Thursday?",
+            "expected": "Friday",
+            "answer": "Friday",
+            "passed": true
+          },
+          {
+            "question": "Extract the integer count from {\"item\":\"bolts\",\"count\":37}.",
+            "expected": 37,
+            "answer": 37,
+            "passed": true
+          },
+          {
+            "question": "For rows [{\"name\":\"oak\",\"n\":4},{\"name\":\"elm\",\"n\":9}], return the name whose n is largest.",
+            "expected": "elm",
+            "answer": "elm",
+            "passed": true
+          },
+          {
+            "question": "All mips are lops. All lops are tars. Must every mip be a tar? Return a JSON boolean.",
+            "expected": true,
+            "answer": true,
+            "passed": true
+          },
+          {
+            "question": "Some lops are mips. Does that imply all lops are mips? Return a JSON boolean.",
+            "expected": false,
+            "answer": false,
+            "passed": true
+          }
+        ]
+      },
+      "repeat_concurrent": {
+        "concurrency": 4,
+        "passed": 20,
+        "total": 20,
+        "cases": [
+          {
+            "question": "What is 127 + 386?",
+            "expected": 513,
+            "answer": 513,
+            "passed": true
+          },
+          {
+            "question": "What is 94 - 157?",
+            "expected": -63,
+            "answer": -63,
+            "passed": true
+          },
+          {
+            "question": "What is 17 multiplied by 23?",
+            "expected": 391,
+            "answer": 391,
+            "passed": true
+          },
+          {
+            "question": "What is 144 divided by 12?",
+            "expected": 12,
+            "answer": 12,
+            "passed": true
+          },
+          {
+            "question": "What is the remainder when 83 is divided by 7?",
+            "expected": 6,
+            "answer": 6,
+            "passed": true
+          },
+          {
+            "question": "What is 15 percent of 240?",
+            "expected": 36,
+            "answer": 36,
+            "passed": true
+          },
+          {
+            "question": "What is 2 raised to the power 10?",
+            "expected": 1024,
+            "answer": 1024,
+            "passed": true
+          },
+          {
+            "question": "What is the sum of all integers from 1 through 20?",
+            "expected": 210,
+            "answer": 210,
+            "passed": true
+          },
+          {
+            "question": "Sort [8, -3, 5, 0, 8] in ascending order.",
+            "expected": [
+              -3,
+              0,
+              5,
+              8,
+              8
+            ],
+            "answer": [
+              -3,
+              0,
+              5,
+              8,
+              8
+            ],
+            "passed": true
+          },
+          {
+            "question": "Reverse the string abcDEF exactly, retaining case.",
+            "expected": "FEDcba",
+            "answer": "FEDcba",
+            "passed": true
+          },
+          {
+            "question": "Convert the hexadecimal number 2A to a decimal integer.",
+            "expected": 42,
+            "answer": 42,
+            "passed": true
+          },
+          {
+            "question": "Convert the decimal integer 13 to binary digits as a string.",
+            "expected": "1101",
+            "answer": "1101",
+            "passed": true
+          },
+          {
+            "question": "How many elements are in [red, blue, red, green, blue]?",
+            "expected": 5,
+            "answer": 5,
+            "passed": true
+          },
+          {
+            "question": "How many distinct values are in [red, blue, red, green, blue]?",
+            "expected": 3,
+            "answer": 3,
+            "passed": true
+          },
+          {
+            "question": "Return the lowercase version of the string CoMPuTe.",
+            "expected": "compute",
+            "answer": "compute",
+            "passed": true
+          },
+          {
+            "question": "In a standard week, what day comes immediately after Thursday?",
+            "expected": "Friday",
+            "answer": "Friday",
+            "passed": true
+          },
+          {
+            "question": "Extract the integer count from {\"item\":\"bolts\",\"count\":37}.",
+            "expected": 37,
+            "answer": 37,
+            "passed": true
+          },
+          {
+            "question": "For rows [{\"name\":\"oak\",\"n\":4},{\"name\":\"elm\",\"n\":9}], return the name whose n is largest.",
+            "expected": "elm",
+            "answer": "elm",
+            "passed": true
+          },
+          {
+            "question": "All mips are lops. All lops are tars. Must every mip be a tar? Return a JSON boolean.",
+            "expected": true,
+            "answer": true,
+            "passed": true
+          },
+          {
+            "question": "Some lops are mips. Does that imply all lops are mips? Return a JSON boolean.",
+            "expected": false,
+            "answer": false,
+            "passed": true
+          }
+        ]
+      }
+    },
+    "preferred_serving_long_context": {
+      "fresh": {
+        "target_tokens": 262144,
+        "elapsed_s": 144.8287822790153,
+        "positions": [
+          {
+            "project": "LARCH",
+            "approx_token_position": 26009
+          },
+          {
+            "project": "CYPRESS",
+            "approx_token_position": 130048
+          },
+          {
+            "project": "JUNIPER",
+            "approx_token_position": 234086
+          }
+        ],
+        "expected": {
+          "LARCH": "78139462",
+          "CYPRESS": "24681973",
+          "JUNIPER": "93527184"
+        },
+        "answer": {
+          "LARCH": "78139462",
+          "CYPRESS": "24681973",
+          "JUNIPER": "93527184"
+        },
+        "passed": true,
+        "response": {
+          "choices": [
+            {
+              "message": {
+                "role": "assistant",
+                "content": "```json\n{\n  \"LARCH\": \"78139462\",\n  \"CYPRESS\": \"24681973\",\n  \"JUNIPER\": \"93527184\"\n}\n```",
+                "reasoning": "We found the entries in the document:\n- LARCH: 78139462\n- CYPRESS: 24681973\n- JUNIPER: 93527184"
+              },
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 260224,
+            "total_tokens": 260314,
+            "completion_tokens": 90,
+            "completion_tokens_details": {
+              "reasoning_tokens": 43
+            }
+          }
+        },
+        "document_sha256": "ba322527959095534413ef1aa4e7bc199290e0efc3c329d58b327c645703e7fb",
+        "prefix_tag": "driver-recovery-20260918",
+        "reasoning_effort": "low",
+        "ttft_s": 143.35550443999819,
+        "decode_tokens_s": 60.43753729243466
+      },
+      "cached": {
+        "target_tokens": 262144,
+        "elapsed_s": 3.9216618509963155,
+        "positions": [
+          {
+            "project": "LARCH",
+            "approx_token_position": 26009
+          },
+          {
+            "project": "CYPRESS",
+            "approx_token_position": 130048
+          },
+          {
+            "project": "JUNIPER",
+            "approx_token_position": 234086
+          }
+        ],
+        "expected": {
+          "LARCH": "78139462",
+          "CYPRESS": "24681973",
+          "JUNIPER": "93527184"
+        },
+        "answer": {
+          "LARCH": "78139462",
+          "CYPRESS": "24681973",
+          "JUNIPER": "93527184"
+        },
+        "passed": true,
+        "response": {
+          "choices": [
+            {
+              "message": {
+                "role": "assistant",
+                "content": "{\n  \"LARCH\": \"78139462\",\n  \"CYPRESS\": \"24681973\",\n  \"JUNIPER\": \"93527184\"\n}",
+                "reasoning": "We need answer JSON mapping project names to codes found in document. Need extract exact eight-digit access codes. There are three entries:\n- project LARCH has access code 78139462.\n- project CYPRESS has access code 24681973.\n- project JUNIPER has access code 93527184.\nNeed return only JSON object mapping uppercase project name to exact eight-digit access code as string. No extra text. Ensure valid JSON."
+              },
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 260224,
+            "total_tokens": 260364,
+            "completion_tokens": 140,
+            "completion_tokens_details": {
+              "reasoning_tokens": 97
+            }
+          }
+        },
+        "document_sha256": "ba322527959095534413ef1aa4e7bc199290e0efc3c329d58b327c645703e7fb",
+        "prefix_tag": "driver-recovery-20260918",
+        "reasoning_effort": "low",
+        "ttft_s": 1.456145825999556,
+        "decode_tokens_s": 56.39343661509471
+      }
+    },
+    "matched_speed_benchmark": "Withheld after the initial 19/20 concurrent objective score.",
+    "preferred_serving_profile": "TP2/PP4, partition22/20/20/16, two BF16 MTP drafts, BF16 KV, 262144 context, 2048 prefill budget, adaptive pipeline batching."
+  },
+  "limits": [
+    "Small mapping results establish a software-dependent difference; they do not establish an intrinsic physical asymmetry.",
+    "The small-mapping correction did not pass large-allocation qualification and is not deployed for serving.",
+    "No inference is made that this patch causes or fixes the earlier cached-context firmware crash."
+  ]
+}

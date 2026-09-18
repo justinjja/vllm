@@ -43,6 +43,36 @@ random-weight GLM engine check with sequential, concurrent, chunked-prefill,
 and 7,900-token inputs. This establishes integration correctness; the
 preferred TP2/PP4 serving recipe continues to use two fixed draft tokens.
 
+## Driver peer-access trial
+
+The eight-card physical topology is symmetric: four PIX pairs, with four GPUs
+per CPU. A temporary change to the custom driver's final BAR1 eligibility
+check expanded its pair-only fallback to the existing eight-device allowlist.
+After device recovery, the candidate passed all 64 small allocation/read cases.
+A fresh load of the original reproduced 52/64; reloading the candidate and
+reversing CUDA visibility each passed 64/64. This isolates a difference in the
+driver's mapping behavior on the symmetric hardware.
+
+The candidate **failed large-allocation qualification**. Each directed test
+allocated 62.75 GiB and checked one word per 64-KiB page. Fifty cases passed;
+owner `db`, reader `1b` then returned 800 incorrect words in allocation chunk
+147. The five remaining cases and collective benchmarks were withheld.
+An immediate repeat passed, leaving an intermittent integrity failure with
+unresolved cause. The candidate was unloaded and is not used for serving.
+
+The original driver was restored with identical parameters and unchanged
+installed modules. All eight CUDA allocation/kernel/reduction checks and all
+eight directed PIX-pair integrity checks passed. No reboot was needed.
+The preferred TP2/PP4 service resumed with reasoning, tools, and 8/8 concurrent
+retrieval checks passing. Objective scores were 19/20 at concurrency four,
+20/20 sequentially, and 20/20 on a concurrent repeat. The first run again
+answered `computer` instead of `compute`; the passing repeats do not erase that
+failure. Fresh and cached retrieval from 260,224 input tokens both returned all
+three records, with first-token latencies of 143.36 s and 1.46 s respectively.
+Matched speed benchmarks were withheld. These results do not establish
+that the peer patch causes or fixes the earlier cached-context firmware crash.
+See the [complete trial record](glm53-driver-peer-trial-20260918.json).
+
 ## SM80 attention improvements
 
 Sparse MLA now chooses KV splits from the number of active query/head blocks
@@ -620,10 +650,12 @@ scored 19/20 on two runs, compared with 20/20 in the earlier baseline. Both
 runs incorrectly lowercased `CoMPuTe` as `computer`; isolated repeats answered
 correctly once and incorrectly twice. A controlled comparison using absorbed
 sparse MLA for prefill restored 20/20 on two runs and 3/3 isolated lowercase
-answers. Dense short-prefill is now disabled for this backend. This identifies
-the path responsible for this observed regression; it does not establish
-universal output equivalence. Eight concurrent retrieval requests, reasoning
-separation, streamed tools, and tool-result continuation also passed in the
+answers. Dense short-prefill is now disabled for this backend. That comparison
+implicated dense prefill in those samples, but did not eliminate all observed
+variation: the later [driver recovery checks](#driver-peer-access-trial) again
+scored 19/20 in one concurrent run with sparse prefill, followed by two 20/20
+runs. Eight concurrent retrieval requests, reasoning separation, streamed tools,
+and tool-result continuation also passed in the
 subsequent TP8 trial with sparse prefill and distributed sampling.
 
 ## Validation
