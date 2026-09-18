@@ -1,0 +1,175 @@
+{
+  "recorded_at_utc": "2026-09-18T18:26:26.578784+00:00",
+  "vllm_source_commit": "8d5e2fb27450a545ac08d4537cdf0fb03490bb6d",
+  "configuration": {
+    "tp": 2,
+    "pp": 4,
+    "layers_per_stage": [
+      22,
+      20,
+      20,
+      16
+    ],
+    "kv_dtype": "bfloat16",
+    "mtp_dtype": "bfloat16",
+    "draft_tokens": 2,
+    "max_model_len": 262144,
+    "cache_tokens": 269056,
+    "asynchronous_scheduling": true,
+    "cuda_decode_graphs": true,
+    "peer_transfers": true,
+    "custom_all_reduce": true,
+    "b1_core_clock_mhz": 900,
+    "other_core_clocks": "Default"
+  },
+  "check_exit_codes": {
+    "objectives": 0,
+    "qualification": 0,
+    "concurrent-check": 0,
+    "long-fresh": 1
+  },
+  "trace": {
+    "decoder_class": "vllm.models.deepseek_v32.nvidia.model.DeepseekV32DecoderLayer",
+    "active_when": "One request has at least 250000 computed tokens",
+    "coverage": "Every decoder input/output; attention and MLP inputs/outputs also in layers 59 and 60; final norm and logits",
+    "transport": "Host-mapped records with a system fence and a CPU monitor",
+    "detector_cases_passed": 144,
+    "actual_decoder_hook_cases_passed": 16,
+    "host_visibility_before_stream_completion": true,
+    "source_sha256": "d5b847ada1275645dc373154015756a427a4a402e19c0a3149bba7c088a90533",
+    "reports": [
+      {
+        "found": 2,
+        "layer": 44,
+        "point": 1,
+        "epoch": 1241,
+        "linear_index": 17408,
+        "position": 260299,
+        "residual_component": 0,
+        "value_bits_signed": 2147483647,
+        "device": 4,
+        "transport": "host-mapped record",
+        "point_names": {
+          "0": "layer_input",
+          "1": "layer_output",
+          "2": "final_norm_output",
+          "3": "logits_input",
+          "4": "logits_output",
+          "5": "attention_input",
+          "6": "attention_output",
+          "7": "mlp_input",
+          "8": "mlp_output"
+        }
+      },
+      {
+        "found": 2,
+        "layer": 43,
+        "point": 1,
+        "epoch": 1241,
+        "linear_index": 7168,
+        "position": 260298,
+        "residual_component": 0,
+        "value_bits_signed": 2147483647,
+        "device": 5,
+        "transport": "host-mapped record",
+        "point_names": {
+          "0": "layer_input",
+          "1": "layer_output",
+          "2": "final_norm_output",
+          "3": "logits_input",
+          "4": "logits_output",
+          "5": "attention_input",
+          "6": "attention_output",
+          "7": "mlp_input",
+          "8": "mlp_output"
+        }
+      },
+      {
+        "found": 2,
+        "layer": 62,
+        "point": 0,
+        "epoch": 1241,
+        "linear_index": 15360,
+        "position": 260299,
+        "residual_component": 0,
+        "value_bits_signed": 2147483647,
+        "device": 6,
+        "transport": "host-mapped record",
+        "point_names": {
+          "0": "layer_input",
+          "1": "layer_output",
+          "2": "final_norm_output",
+          "3": "logits_input",
+          "4": "logits_output",
+          "5": "attention_input",
+          "6": "attention_output",
+          "7": "mlp_input",
+          "8": "mlp_output"
+        }
+      },
+      {
+        "found": 2,
+        "layer": 62,
+        "point": 0,
+        "epoch": 1241,
+        "linear_index": 9216,
+        "position": 260298,
+        "residual_component": 0,
+        "value_bits_signed": 2147483647,
+        "device": 7,
+        "transport": "host-mapped record",
+        "point_names": {
+          "0": "layer_input",
+          "1": "layer_output",
+          "2": "final_norm_output",
+          "3": "logits_input",
+          "4": "logits_output",
+          "5": "attention_input",
+          "6": "attention_output",
+          "7": "mlp_input",
+          "8": "mlp_output"
+        }
+      }
+    ]
+  },
+  "failure": {
+    "phase": "Generation during the first fresh long-context response",
+    "time_utc": "2026-09-18T18:21:45Z",
+    "nan_logit_count": 309760,
+    "earliest_recorded_decoder_output": {
+      "device": 5,
+      "pci_device": "0000:b2:00.0",
+      "layer": 43
+    },
+    "new_driver_xids": [],
+    "completed_long_context_response": false,
+    "cached_checks_and_benchmark": "Not reached"
+  },
+  "checkpoint_floating_data_check": {
+    "checkpoint_revision": "b472e4ee53f6a9862da5486c56c6ca21be3dab70",
+    "layer": 43,
+    "index_sha256": "8b1381efe25b45d5130633813b550ccbcc40a9dd8ac51fc60ee77f94a00e0ba4",
+    "elapsed_s": 2.681422754016239,
+    "tensor_count": 3086,
+    "dtype_counts": {
+      "torch.bfloat16": 13,
+      "torch.float32": 1537,
+      "torch.uint8": 768,
+      "torch.float8_e4m3fn": 768
+    },
+    "floating_elements_checked": 808337664,
+    "nonfinite_values": 0,
+    "nonpositive_scalar_scales": [],
+    "limits": [
+      "This checks stored floating tensors; it does not validate every loader conversion, CUDA copy, or model operation."
+    ]
+  },
+  "raw_server_log_sha256": "b2e2bebbafaa5dafaa7b914cff54ccb13a17142303ace9d1c512013671dbf05b",
+  "limits": [
+    "Layer numbers are zero-based; the first atomic winner is not necessarily the lowest nonfinite element index.",
+    "This identifies the first checked nonfinite layer output, not the exact operation or physical fault source.",
+    "Instrumentation changes execution timing; this is not a performance benchmark.",
+    "Earlier trace attempts used the legacy decoder class and covered inherited final logits only; their lack of layer records is not evidence of finite decoder outputs.",
+    "The CPU checkpoint check does not validate every loader conversion, CUDA copy, or model operation."
+  ]
+}

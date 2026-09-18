@@ -756,6 +756,31 @@ cause remains unresolved.
 The [compute-integrity record](glm53-compute-integrity-trial-20260918.json)
 preserves these results, detector checks, sampled values, and diagnostic limits.
 
+### First nonfinite decoder output
+
+A later long-context reproduction recorded the first checked nonfinite output
+on physical `b2` at decoder layer 43. Layer numbering is zero-based. The same
+model step then produced a record at `b1` layer 44's output, and both GPUs in
+the final stage received nonfinite inputs at layer 62. The final logit guard
+stopped the engine; no new driver Xid appeared. Short objectives, reasoning,
+tools, and all eight concurrent retrieval checks had passed beforehand.
+
+This diagnostic retained TP2/PP4, BF16 KV and draft weights, two draft tokens,
+normal graphs and peer transfers, and the temporary 900 MHz limit on `b1`.
+GPU checks wrote their first failure into host-visible records, allowing a CPU
+thread to preserve them independently of CUDA stream completion. The detector
+passed 144 cases across eight GPUs, and 16 checks exercised hooks on the
+actual decoder class. Earlier attempts had hooked the legacy decoder class
+and only covered inherited final logits; those attempts do not establish
+decoder-layer coverage.
+
+A separate CPU scan checked all 808,337,664 stored floating values in layer 43
+and found no NaNs or infinities. Its scalar quantization scales were positive.
+These checks narrow the investigation but do not validate every loader
+conversion or identify the failing operation within the layer. The
+[trace record](glm53-first-nonfinite-trace-20260918.json) preserves the observations
+and limits. Reliable serving remains unresolved.
+
 ### Draft expert compression measurements
 
 The checkpoint stores its MTP routed experts in BF16. An isolated comparison
