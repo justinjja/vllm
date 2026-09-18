@@ -109,6 +109,36 @@ TTFT was 8.93 seconds, and BF16 KV capacity was 40,000 tokens. This trial
 does not improve the preferred TP2/PP4 operating point; its exact results
 are included in the [measurement record](glm53-attention-20260918.json).
 
+### TP4/PP2 comparison
+
+The current kernels with TP4/PP2, partition `42,36`, two MTP drafts, BF16 KV,
+local draft argmax reduction, and batch-sharded sampling passed 20/20 objective
+checks, reasoning/tools, and 8/8 concurrent retrieval checks. Its configured
+context limit was 65,536, with 120,320 cache tokens. Two repetitions used the
+same prompt hashes as the retained TP2/PP4 benchmark:
+
+| Measurement | TP2/PP4 | TP4/PP2 |
+| --- | ---: | ---: |
+| Single steady accepted tokens/s | 48.01–54.47 | 48.13–51.59 |
+| Concurrency-eight steady accepted tokens/s | 252.54–265.90 | 237.63–244.19 |
+| Concurrency-sixteen steady accepted tokens/s | 349.86–360.41 | 336.20–339.66 |
+| 8K prefill TTFT, seconds | 5.10–5.20 | 6.50–6.54 |
+
+A separate CUDA-event diagnostic measured the three-query decode graph.
+Averaging ranks within each stage and summing the serial stages, attention
+and MLP intervals fell from 36.33 ms with TP2 to 27.32 ms with TP4. The two
+reduction-plus-normalization intervals rose from 3.87 ms to 15.00 ms. These
+instrumented timings identify a collective cost; they include event overhead
+and are separate from the serving benchmark. Nested intervals are not additive.
+
+The hardware topology is symmetric: PIX pairs 0–1, 2–3, 4–5, and 6–7,
+with four GPUs per CPU. Total layer intervals closely matched within each
+TP4 group: 23.35–23.37 ms on the first stage and 20.26–20.31 ms on the
+second. This diagnostic does not establish a GPU 7-specific bottleneck.
+TP2/PP4 remains the preferred combined throughput, prefill, and context
+configuration. Exact samples, configuration, and diagnostic rank timings
+are in the [TP4 record](glm53-tp4-20260918.json).
+
 ### Software FP8 conversion
 
 The SM80 byte decoder now expands E4M3 through an exact FP16 representation

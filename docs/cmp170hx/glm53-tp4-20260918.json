@@ -1,0 +1,1332 @@
+{
+  "date_utc": "2026-09-18",
+  "model": "local-inference-lab/GLM-5.3-NVFP4",
+  "revision": "b472e4ee53f6a9862da5486c56c6ca21be3dab70",
+  "source_commit": "eae828c5e72fd7961a617a2edf37bef114cb0d1c",
+  "hardware": {
+    "model": "8x NVIDIA CMP 170HX SM80",
+    "pix_pairs": [
+      [
+        0,
+        1
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        6,
+        7
+      ]
+    ],
+    "numa_groups": [
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        4,
+        5,
+        6,
+        7
+      ]
+    ],
+    "topology_symmetric": true
+  },
+  "configuration": {
+    "tp": 4,
+    "pp": 2,
+    "layer_partition": [
+      42,
+      36
+    ],
+    "mtp_tokens": 2,
+    "kv_cache_dtype": "bfloat16",
+    "context_limit": 65536,
+    "kv_token_capacity": 120320,
+    "batch_tokens": 2048,
+    "max_num_seqs": 16,
+    "gpu_memory_utilization": 0.978,
+    "pipeline_batch_policy": "adaptive",
+    "pipeline_min_batch_requests": 1,
+    "pipeline_max_batch_requests": 8,
+    "local_draft_argmax_reduction": true,
+    "batch_sharded_sampling": true
+  },
+  "quality": {
+    "objectives": {
+      "passed": 20,
+      "total": 20,
+      "raw_sha256": "5828266f91a2616139207156fd03eaba14c4f6eb7c7798edaedb5e6d941149ad"
+    },
+    "concurrent_retrieval": {
+      "passed": 8,
+      "total": 8,
+      "raw_sha256": "66da07a33166ec5d65b55f58dc6abe6678f24dcb5e99ef226ed5dba240f660f2"
+    },
+    "reasoning_tools_and_continuation_passed": true,
+    "quality_status_raw_sha256": "83bd6da5f47fb2d17a08cc7c963d6c6be7fc7f56dc620155d27ec11e971ce19d"
+  },
+  "serving_benchmark": {
+    "raw_sha256": "37245b810353e050c7655c21628784ea8ae21763bdaf42cdc40af035d4592ecc",
+    "tp2_baseline_raw_sha256": "0ed5c1c396e19dd42497887864cc0b17d906334bccc5a38478cc695ac27bc3cc",
+    "script_sha256": "24b3754b5513683dde828f21e33c1168e2a1fa561d65ae191e789825ba8a01dc",
+    "corpus_sha256": "abe2e870ff9dfe5ab177500092ffe113a4011aa22c72c7be14fc3bc64b715eb1",
+    "all_prompt_hashes_match_tp2_baseline": true,
+    "repeats": 2,
+    "samples": [
+      {
+        "mode": "single",
+        "input_tokens": 512,
+        "concurrency": 1,
+        "repeat": 0,
+        "elapsed_s": 11.222567439981503,
+        "aggregate_tokens_s": 45.622358942210454,
+        "median_ttft_s": 0.5912616979912855,
+        "steady_decode": {
+          "start_s": 1.2110001590044703,
+          "end_s": 10.518974243983394,
+          "accepted_tokens": 448,
+          "aggregate_tokens_s": 48.13077431349708
+        },
+        "prompt_sha256": [
+          "8715e70315ff67cf63c78ac2d9532a4aa02a9df690e88ebad5dff1af025ceec7"
+        ]
+      },
+      {
+        "mode": "single",
+        "input_tokens": 512,
+        "concurrency": 1,
+        "repeat": 1,
+        "elapsed_s": 10.548056719999295,
+        "aggregate_tokens_s": 48.539746570497606,
+        "median_ttft_s": 0.5970366410037968,
+        "steady_decode": {
+          "start_s": 1.1367969229759183,
+          "end_s": 9.839660331985215,
+          "accepted_tokens": 449,
+          "aggregate_tokens_s": 51.592214986988125
+        },
+        "prompt_sha256": [
+          "a07bbaf75f0a303b759f9cc6a586ec138eb6f09a73ae3b91c903f2b195c3b489"
+        ]
+      },
+      {
+        "mode": "concurrent",
+        "input_tokens": 512,
+        "concurrency": 8,
+        "repeat": 0,
+        "elapsed_s": 20.703781615011394,
+        "aggregate_tokens_s": 197.83825371448916,
+        "median_ttft_s": 2.267918912009918,
+        "steady_decode": {
+          "start_s": 4.4954735659994185,
+          "end_s": 17.530244832014432,
+          "accepted_tokens": 3183,
+          "aggregate_tokens_s": 244.1930076900464
+        },
+        "prompt_sha256": [
+          "0e4c6818c596b732858457f525340628b5ff52dab54367059e516b01faab98c8",
+          "19cc9cea2f24975ff95faebf35470f4db826f7253b36edaf5b98083524898cde",
+          "bf21ee83fe0637c616ad014cc0b7f5f6c0797bed68a779a98752fd185619a1b7",
+          "7f8a7f8d54a91f75e6e23faf9f81c96b29434303dc8afc83695d065713f299c0",
+          "0c62033654f0e222d1b2fedb2fb23994e70730d96b2140d9c1124ace311364c5",
+          "3acd7e3ebc013f72040d95417b5f5a1e25b32adfb16d8b4b9f3d889d9688c6c2",
+          "0fc9fd8eb70bfc36a0d6c5c16796557698b56e71e955f662121d301673d8a43c",
+          "9ab94574f4971c0ee49998008d2044988ebca882c3fa21ab03849510e47c55b5"
+        ]
+      },
+      {
+        "mode": "concurrent",
+        "input_tokens": 512,
+        "concurrency": 8,
+        "repeat": 1,
+        "elapsed_s": 21.792270676000044,
+        "aggregate_tokens_s": 187.9565494068018,
+        "median_ttft_s": 2.9275313399994047,
+        "steady_decode": {
+          "start_s": 4.646819315006724,
+          "end_s": 16.34582683100598,
+          "accepted_tokens": 2780,
+          "aggregate_tokens_s": 237.6269949564649
+        },
+        "prompt_sha256": [
+          "364d3a3a0ac1668da4019ba602014d6203d02af833432d997025468ed6546a02",
+          "47078924d63198253d49249585067635cac424d1bcdd20f35f45c588039a398d",
+          "1ee3b8be610ae9df736add30b519eb29d85f7b712955d3a8a65af19f9db8ff88",
+          "a6d376412ac853fc38f7c99a45d40d80265f6aec4d4b49e4794dfb56ec4f2fc3",
+          "8119c0dfd33925050cf974bf8e74110c175bdee025d8a6c67e328e0102f9a853",
+          "fb8e05e86df6e4b9807780b2d1eedda682d56a50f8f85c2b93859bec1ab975f7",
+          "28ff650a42043ce0c092565e3a5cc323e6086685ae5b62d5afa276761cb483d9",
+          "f788e5e95c4b993d075f2d34a8cb41f3f9ee06134e06d941efbf35bc833ac008"
+        ]
+      },
+      {
+        "mode": "concurrent",
+        "input_tokens": 512,
+        "concurrency": 16,
+        "repeat": 0,
+        "elapsed_s": 33.09913604799658,
+        "aggregate_tokens_s": 247.49890716545892,
+        "median_ttft_s": 5.016963897505775,
+        "steady_decode": {
+          "start_s": 8.924527208990185,
+          "end_s": 23.674577614001464,
+          "accepted_tokens": 4959,
+          "aggregate_tokens_s": 336.20224093032226
+        },
+        "prompt_sha256": [
+          "ebb3cb89c387ca9a1f632481dbc8ac18a58948ba96267506cc1283582d10e68d",
+          "f31b8440b3acc44eca121e975f8950fcab25f42e9daf8e1f342acd338bf4a627",
+          "f4c15aa07ef5ec722a16090be03d85b2273cb6996c0efd48030f1ec3d871ab16",
+          "80458ad0bf8af44ee4f29b24eb6f3d9b5fa5906df7b390dfcdf4fe5ce6eac6d9",
+          "0d34a01250516059d9a6d07fc8e5af7c51e6dc6a00f72c17d02ef7ebeb1e1202",
+          "d2e19ea57e4d6926d958cd5270364e58e63b9c47d146a104bd18b5b0d28c2350",
+          "70d89b6b28c8358b8fda4d3be59fedade9134b9705d09136652556475dd1aedc",
+          "dc19fd0f336b7d6e10dba3c41c87116961a161d4822535aefdfec33f9a0aff1e",
+          "65c605c36ae6bca17c99353f30583c3288940dbe4b575aee23827fab37e1d62a",
+          "bc5f271aa0074b0ec42b9c51d045eb60e7b4a4e48c5bfb32752a2701b8aacbd7",
+          "c19c1af39b53c45eeb81ed216bb4bb2fe185a2f7335f16c60d43a2d374f6b3f8",
+          "0c0fe46a7845035e31d215d1b306ee9a3a2a81aadf86632bd0d399296583458a",
+          "8ada3307f1e513daf0173a355aa790fe371e5feec13db8090962bbf002053434",
+          "3296a329a517ba91410e7960789aac3a53c1de4877614571b8a3ab59db0ee919",
+          "42daf90ce7c586aeabc2d1ea933b06eb7920e273118adae9a43fc3aace4cc43b",
+          "838e0a9b638f82baacd724fe9ed608ca76144b04cd019d57f0a6b16c310814e1"
+        ]
+      },
+      {
+        "mode": "concurrent",
+        "input_tokens": 512,
+        "concurrency": 16,
+        "repeat": 1,
+        "elapsed_s": 33.69150385900866,
+        "aggregate_tokens_s": 243.1473535370125,
+        "median_ttft_s": 4.584816183501971,
+        "steady_decode": {
+          "start_s": 9.626118836982641,
+          "end_s": 24.852945981983794,
+          "accepted_tokens": 5172,
+          "aggregate_tokens_s": 339.6636706221445
+        },
+        "prompt_sha256": [
+          "1d7cc1123f082eb80c07eeb209a62948b32c6354bee8254a245eeaf86e635f4e",
+          "47daf65f68aa3a5a47989c966e8a6452a82754d1061b08544f4ca02905683ee5",
+          "498008c1952b5acc0a052e8dcf7c805cd1e05a90c8126418db26354ae2a830b4",
+          "44d8ede7836b10ef36481e81c98b4b12b87a465e2f5202068ce280bf1b631376",
+          "cb199717b64245cdd8f75d3ef0a234f8b0852fcd45a14b32fe70533ee371a3d1",
+          "2676cda469023d25089ee4abf24902bd919522a287cfff18580e867567ab752b",
+          "371b656323ba54531958871b320bc4e328089cd61a9cc0d63de2803adf23dfc3",
+          "8f3e3f09c00b2166d97c2633252759ea634cb9389efd9d8ee045f5c33e0e67b9",
+          "ced08aedba490d1249a24d3bcaccc5d01b55e8f3e4e439b195a6ebab209754b9",
+          "f3a6c34eb8119b8c9478bb1d2ac72b4f4c718764bc71f35231f0f190c11704c6",
+          "0f5bb2f4852d2a754c46e102f7be83ca803ec1f5d03519cb0602de7da5bf20b0",
+          "0e640c55aa4de5393d1ab38df8e6f81bb27815b85a3019fac021fd51e855bc67",
+          "c57227b20ea8f8bcf4dcc5e10f6f8c1f32beb480495e77850c692642b97d3c09",
+          "68d3ea90883d83992f2f10056b8779b49c68c72bfdb1a945c4cc175e03963954",
+          "309b403a892cf98efb84b3b5458ae4497779aa63f53d82d5a67e306f8a929dfc",
+          "32bf7e676ec454973d69c53e308da52f4656ea44bf5d6f52f801aacfb4464d2b"
+        ]
+      },
+      {
+        "mode": "prefill",
+        "input_tokens": 8192,
+        "concurrency": 1,
+        "repeat": 0,
+        "elapsed_s": 6.543646348000038,
+        "aggregate_tokens_s": 0.15281999466637344,
+        "median_ttft_s": 6.541733552003279,
+        "steady_decode": null,
+        "prompt_sha256": [
+          "7c0132d5b08440e6ae5786336c8fab30eb86c84e1ad9c06427074fcf8f49f8de"
+        ]
+      },
+      {
+        "mode": "prefill",
+        "input_tokens": 8192,
+        "concurrency": 1,
+        "repeat": 1,
+        "elapsed_s": 6.502549752010964,
+        "aggregate_tokens_s": 0.15378582834998566,
+        "median_ttft_s": 6.500592235010117,
+        "steady_decode": null,
+        "prompt_sha256": [
+          "25a31630b2efa3cd547daf3bd1841f382cca35d1fd5b41a29c37ba402053322b"
+        ]
+      },
+      {
+        "mode": "context_decode",
+        "input_tokens": 8192,
+        "concurrency": 1,
+        "repeat": 0,
+        "elapsed_s": 7.247781815996859,
+        "aggregate_tokens_s": 8.830287890115997,
+        "median_ttft_s": 6.44366433902178,
+        "steady_decode": null,
+        "prompt_sha256": [
+          "927a32436d58a2131dfeeba9888eaa87c460f258f5ad374de374591b67bf1cf6"
+        ]
+      },
+      {
+        "mode": "context_decode",
+        "input_tokens": 8192,
+        "concurrency": 1,
+        "repeat": 1,
+        "elapsed_s": 7.379549058998236,
+        "aggregate_tokens_s": 8.672616644774758,
+        "median_ttft_s": 6.454280273988843,
+        "steady_decode": null,
+        "prompt_sha256": [
+          "642f90f49fa38de79586cfa343ebf654a7a2254e8eda9f06799e844148d28893"
+        ]
+      }
+    ]
+  },
+  "diagnostic_profile": {
+    "method": "External CUDA events captured around model modules in the three-query, single-request decode graph; sampled every sixteen replays after stream synchronization. Two 512-output requests. TP2 and TP4 used the same profiler and prompt construction. These timings include instrumentation overhead; nested intervals are not additive.",
+    "raw_summary_sha256": "ee7347f0333d4fc3239275e92061d26b2b1ed682c719eca406b99044f99f7940",
+    "layouts": {
+      "tp2pp4": {
+        "stages": [
+          {
+            "pp_rank": 0,
+            "ranks": [
+              {
+                "tp_rank": 0,
+                "graphs": 416,
+                "components": {
+                  "attention": {
+                    "layers": 22,
+                    "sum_ms": 5.13638399541378,
+                    "median_layer_ms": 0.22118400037288666
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 22,
+                    "sum_ms": 0.8130560293793678,
+                    "median_layer_ms": 0.03686400130391121
+                  },
+                  "attention.o_proj": {
+                    "layers": 22,
+                    "sum_ms": 1.7433599345386028,
+                    "median_layer_ms": 0.07884799689054489
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 22,
+                    "sum_ms": 0.6952959895133972,
+                    "median_layer_ms": 0.03174399957060814
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 22,
+                    "sum_ms": 0.5181440114974976,
+                    "median_layer_ms": 0.023552000522613525
+                  },
+                  "input_reduce_norm": {
+                    "layers": 21,
+                    "sum_ms": 0.4843520075082779,
+                    "median_layer_ms": 0.023552000522613525
+                  },
+                  "mlp": {
+                    "layers": 22,
+                    "sum_ms": 5.366272069513798,
+                    "median_layer_ms": 0.2531839907169342
+                  },
+                  "routed": {
+                    "layers": 19,
+                    "sum_ms": 3.8604799956083298,
+                    "median_layer_ms": 0.2088959962129593
+                  },
+                  "shared": {
+                    "layers": 19,
+                    "sum_ms": 0.8765440136194229,
+                    "median_layer_ms": 0.04608000069856644
+                  },
+                  "total": {
+                    "layers": 22,
+                    "sum_ms": 11.836928069591522,
+                    "median_layer_ms": 0.5422080159187317
+                  }
+                }
+              },
+              {
+                "tp_rank": 1,
+                "graphs": 416,
+                "components": {
+                  "attention": {
+                    "layers": 22,
+                    "sum_ms": 5.097983963787556,
+                    "median_layer_ms": 0.22015999257564545
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 22,
+                    "sum_ms": 0.809984028339386,
+                    "median_layer_ms": 0.03686400130391121
+                  },
+                  "attention.o_proj": {
+                    "layers": 22,
+                    "sum_ms": 1.7346559315919876,
+                    "median_layer_ms": 0.07884799689054489
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 22,
+                    "sum_ms": 0.6901759877800941,
+                    "median_layer_ms": 0.03174399957060814
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 22,
+                    "sum_ms": 0.5544960014522076,
+                    "median_layer_ms": 0.025599999353289604
+                  },
+                  "input_reduce_norm": {
+                    "layers": 21,
+                    "sum_ms": 0.5278720017522573,
+                    "median_layer_ms": 0.025599999353289604
+                  },
+                  "mlp": {
+                    "layers": 22,
+                    "sum_ms": 5.32531201839447,
+                    "median_layer_ms": 0.25088000297546387
+                  },
+                  "routed": {
+                    "layers": 19,
+                    "sum_ms": 3.820543959736824,
+                    "median_layer_ms": 0.20684799551963806
+                  },
+                  "shared": {
+                    "layers": 19,
+                    "sum_ms": 0.875008013099432,
+                    "median_layer_ms": 0.04608000069856644
+                  },
+                  "total": {
+                    "layers": 22,
+                    "sum_ms": 11.83641591668129,
+                    "median_layer_ms": 0.5432320237159729
+                  }
+                }
+              }
+            ],
+            "mean_over_tp_ranks_ms": {
+              "attention": 5.117183979600668,
+              "attention.fused_qkv_a_proj": 0.8115200288593769,
+              "attention.o_proj": 1.7390079330652952,
+              "attention.q_b_proj": 0.6927359886467457,
+              "attention_reduce_norm": 0.5363200064748526,
+              "input_reduce_norm": 0.5061120046302676,
+              "mlp": 5.345792043954134,
+              "routed": 3.840511977672577,
+              "shared": 0.8757760133594275,
+              "total": 11.836671993136406
+            }
+          },
+          {
+            "pp_rank": 1,
+            "ranks": [
+              {
+                "tp_rank": 0,
+                "graphs": 416,
+                "components": {
+                  "attention": {
+                    "layers": 20,
+                    "sum_ms": 4.62079992890358,
+                    "median_layer_ms": 0.22118400037288666
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 20,
+                    "sum_ms": 0.7454720288515091,
+                    "median_layer_ms": 0.03686400130391121
+                  },
+                  "attention.o_proj": {
+                    "layers": 20,
+                    "sum_ms": 1.5841279402375221,
+                    "median_layer_ms": 0.07884799689054489
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 20,
+                    "sum_ms": 0.6323199905455112,
+                    "median_layer_ms": 0.03174399957060814
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 20,
+                    "sum_ms": 0.47360001131892204,
+                    "median_layer_ms": 0.023552000522613525
+                  },
+                  "input_reduce_norm": {
+                    "layers": 20,
+                    "sum_ms": 0.55756800994277,
+                    "median_layer_ms": 0.023552000522613525
+                  },
+                  "mlp": {
+                    "layers": 20,
+                    "sum_ms": 4.676096007227898,
+                    "median_layer_ms": 0.2314240001142025
+                  },
+                  "routed": {
+                    "layers": 20,
+                    "sum_ms": 3.625984027981758,
+                    "median_layer_ms": 0.17894400283694267
+                  },
+                  "shared": {
+                    "layers": 20,
+                    "sum_ms": 0.930304016917944,
+                    "median_layer_ms": 0.04608000069856644
+                  },
+                  "total": {
+                    "layers": 20,
+                    "sum_ms": 10.610176026821136,
+                    "median_layer_ms": 0.5176319926977158
+                  }
+                }
+              },
+              {
+                "tp_rank": 1,
+                "graphs": 416,
+                "components": {
+                  "attention": {
+                    "layers": 20,
+                    "sum_ms": 4.617727980017662,
+                    "median_layer_ms": 0.22118400037288666
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 20,
+                    "sum_ms": 0.7464960291981697,
+                    "median_layer_ms": 0.03712000139057636
+                  },
+                  "attention.o_proj": {
+                    "layers": 20,
+                    "sum_ms": 1.5836159400641918,
+                    "median_layer_ms": 0.07884799689054489
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 20,
+                    "sum_ms": 0.6318079903721809,
+                    "median_layer_ms": 0.03174399957060814
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 20,
+                    "sum_ms": 0.4720640107989311,
+                    "median_layer_ms": 0.023552000522613525
+                  },
+                  "input_reduce_norm": {
+                    "layers": 20,
+                    "sum_ms": 0.47257601097226143,
+                    "median_layer_ms": 0.023552000522613525
+                  },
+                  "mlp": {
+                    "layers": 20,
+                    "sum_ms": 4.663807988166809,
+                    "median_layer_ms": 0.23039999976754189
+                  },
+                  "routed": {
+                    "layers": 20,
+                    "sum_ms": 3.616768032312393,
+                    "median_layer_ms": 0.17817600071430206
+                  },
+                  "shared": {
+                    "layers": 20,
+                    "sum_ms": 0.9246720150113106,
+                    "median_layer_ms": 0.04608000069856644
+                  },
+                  "total": {
+                    "layers": 20,
+                    "sum_ms": 10.539520055055618,
+                    "median_layer_ms": 0.5171200037002563
+                  }
+                }
+              }
+            ],
+            "mean_over_tp_ranks_ms": {
+              "attention": 4.619263954460621,
+              "attention.fused_qkv_a_proj": 0.7459840290248394,
+              "attention.o_proj": 1.583871940150857,
+              "attention.q_b_proj": 0.6320639904588461,
+              "attention_reduce_norm": 0.4728320110589266,
+              "input_reduce_norm": 0.5150720104575157,
+              "mlp": 4.669951997697353,
+              "routed": 3.6213760301470757,
+              "shared": 0.9274880159646273,
+              "total": 10.574848040938377
+            }
+          },
+          {
+            "pp_rank": 2,
+            "ranks": [
+              {
+                "tp_rank": 0,
+                "graphs": 416,
+                "components": {
+                  "attention": {
+                    "layers": 20,
+                    "sum_ms": 4.625407941639423,
+                    "median_layer_ms": 0.22143999859690666
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 20,
+                    "sum_ms": 0.7424000278115273,
+                    "median_layer_ms": 0.03686400130391121
+                  },
+                  "attention.o_proj": {
+                    "layers": 20,
+                    "sum_ms": 1.5841279402375221,
+                    "median_layer_ms": 0.07884799689054489
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 20,
+                    "sum_ms": 0.6338559910655022,
+                    "median_layer_ms": 0.03174399957060814
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 20,
+                    "sum_ms": 0.48281601443886757,
+                    "median_layer_ms": 0.02457600086927414
+                  },
+                  "input_reduce_norm": {
+                    "layers": 20,
+                    "sum_ms": 0.5800960138440132,
+                    "median_layer_ms": 0.023552000522613525
+                  },
+                  "mlp": {
+                    "layers": 20,
+                    "sum_ms": 4.472319982945919,
+                    "median_layer_ms": 0.22579199448227882
+                  },
+                  "routed": {
+                    "layers": 20,
+                    "sum_ms": 3.415552034974098,
+                    "median_layer_ms": 0.1735680066049099
+                  },
+                  "shared": {
+                    "layers": 20,
+                    "sum_ms": 0.9272320158779621,
+                    "median_layer_ms": 0.04608000069856644
+                  },
+                  "total": {
+                    "layers": 20,
+                    "sum_ms": 10.478592082858086,
+                    "median_layer_ms": 0.5127680003643036
+                  }
+                }
+              },
+              {
+                "tp_rank": 1,
+                "graphs": 416,
+                "components": {
+                  "attention": {
+                    "layers": 20,
+                    "sum_ms": 4.635647922754288,
+                    "median_layer_ms": 0.22220799326896667
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 20,
+                    "sum_ms": 0.7495680302381516,
+                    "median_layer_ms": 0.03763200156390667
+                  },
+                  "attention.o_proj": {
+                    "layers": 20,
+                    "sum_ms": 1.5851519405841827,
+                    "median_layer_ms": 0.07884799689054489
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 20,
+                    "sum_ms": 0.6338559910655022,
+                    "median_layer_ms": 0.03174399957060814
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 20,
+                    "sum_ms": 0.4710400104522705,
+                    "median_layer_ms": 0.023552000522613525
+                  },
+                  "input_reduce_norm": {
+                    "layers": 20,
+                    "sum_ms": 0.4756480101495981,
+                    "median_layer_ms": 0.023552000522613525
+                  },
+                  "mlp": {
+                    "layers": 20,
+                    "sum_ms": 4.468223974108696,
+                    "median_layer_ms": 0.22579199820756912
+                  },
+                  "routed": {
+                    "layers": 20,
+                    "sum_ms": 3.4083840623497963,
+                    "median_layer_ms": 0.1728000044822693
+                  },
+                  "shared": {
+                    "layers": 20,
+                    "sum_ms": 0.9297920167446136,
+                    "median_layer_ms": 0.04608000069856644
+                  },
+                  "total": {
+                    "layers": 20,
+                    "sum_ms": 10.368000015616417,
+                    "median_layer_ms": 0.513279989361763
+                  }
+                }
+              }
+            ],
+            "mean_over_tp_ranks_ms": {
+              "attention": 4.6305279321968555,
+              "attention.fused_qkv_a_proj": 0.7459840290248394,
+              "attention.o_proj": 1.5846399404108524,
+              "attention.q_b_proj": 0.6338559910655022,
+              "attention_reduce_norm": 0.47692801244556904,
+              "input_reduce_norm": 0.5278720119968057,
+              "mlp": 4.4702719785273075,
+              "routed": 3.4119680486619473,
+              "shared": 0.9285120163112879,
+              "total": 10.423296049237251
+            }
+          },
+          {
+            "pp_rank": 3,
+            "ranks": [
+              {
+                "tp_rank": 0,
+                "graphs": 416,
+                "components": {
+                  "attention": {
+                    "layers": 16,
+                    "sum_ms": 3.7304320111870766,
+                    "median_layer_ms": 0.22323200106620789
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 16,
+                    "sum_ms": 0.6056960225105286,
+                    "median_layer_ms": 0.03788800165057182
+                  },
+                  "attention.o_proj": {
+                    "layers": 16,
+                    "sum_ms": 1.2707839533686638,
+                    "median_layer_ms": 0.0798719972372055
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 16,
+                    "sum_ms": 0.5079039931297302,
+                    "median_layer_ms": 0.03174399957060814
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 16,
+                    "sum_ms": 0.3768320083618164,
+                    "median_layer_ms": 0.023552000522613525
+                  },
+                  "input_reduce_norm": {
+                    "layers": 16,
+                    "sum_ms": 0.3758080080151558,
+                    "median_layer_ms": 0.023552000522613525
+                  },
+                  "mlp": {
+                    "layers": 16,
+                    "sum_ms": 3.7667840123176575,
+                    "median_layer_ms": 0.23603200167417526
+                  },
+                  "routed": {
+                    "layers": 16,
+                    "sum_ms": 2.91942398250103,
+                    "median_layer_ms": 0.18304000049829483
+                  },
+                  "shared": {
+                    "layers": 16,
+                    "sum_ms": 0.7480320148169994,
+                    "median_layer_ms": 0.04710400104522705
+                  },
+                  "total": {
+                    "layers": 16,
+                    "sum_ms": 8.501248002052307,
+                    "median_layer_ms": 0.5253120064735413
+                  }
+                }
+              },
+              {
+                "tp_rank": 1,
+                "graphs": 416,
+                "components": {
+                  "attention": {
+                    "layers": 16,
+                    "sum_ms": 3.717119947075844,
+                    "median_layer_ms": 0.22246399521827698
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 16,
+                    "sum_ms": 0.6041600219905376,
+                    "median_layer_ms": 0.03788800165057182
+                  },
+                  "attention.o_proj": {
+                    "layers": 16,
+                    "sum_ms": 1.2697599530220032,
+                    "median_layer_ms": 0.0793599970638752
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 16,
+                    "sum_ms": 0.5079039931297302,
+                    "median_layer_ms": 0.03174399957060814
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 16,
+                    "sum_ms": 0.39116801135241985,
+                    "median_layer_ms": 0.02457600086927414
+                  },
+                  "input_reduce_norm": {
+                    "layers": 16,
+                    "sum_ms": 0.5160960117354989,
+                    "median_layer_ms": 0.024064000695943832
+                  },
+                  "mlp": {
+                    "layers": 16,
+                    "sum_ms": 3.743744008243084,
+                    "median_layer_ms": 0.23475200310349464
+                  },
+                  "routed": {
+                    "layers": 16,
+                    "sum_ms": 2.8979199826717377,
+                    "median_layer_ms": 0.18201599642634392
+                  },
+                  "shared": {
+                    "layers": 16,
+                    "sum_ms": 0.7470080144703388,
+                    "median_layer_ms": 0.04710400104522705
+                  },
+                  "total": {
+                    "layers": 16,
+                    "sum_ms": 8.625663965940475,
+                    "median_layer_ms": 0.525056004524231
+                  }
+                }
+              }
+            ],
+            "mean_over_tp_ranks_ms": {
+              "attention": 3.72377597913146,
+              "attention.fused_qkv_a_proj": 0.6049280222505331,
+              "attention.o_proj": 1.2702719531953335,
+              "attention.q_b_proj": 0.5079039931297302,
+              "attention_reduce_norm": 0.38400000985711813,
+              "input_reduce_norm": 0.44595200987532735,
+              "mlp": 3.7552640102803707,
+              "routed": 2.908671982586384,
+              "shared": 0.7475200146436691,
+              "total": 8.563455983996391
+            }
+          }
+        ],
+        "sum_over_serial_stages_ms": {
+          "attention": 18.090751845389605,
+          "attention.fused_qkv_a_proj": 2.908416109159589,
+          "attention.o_proj": 6.177791766822338,
+          "attention.q_b_proj": 2.466559963300824,
+          "attention_reduce_norm": 1.8700800398364663,
+          "input_reduce_norm": 1.9950080369599164,
+          "mlp": 18.241280030459166,
+          "routed": 13.782528039067984,
+          "shared": 3.4792960602790117,
+          "total": 41.398272067308426
+        }
+      },
+      "tp4pp2": {
+        "stages": [
+          {
+            "pp_rank": 0,
+            "ranks": [
+              {
+                "tp_rank": 0,
+                "graphs": 448,
+                "components": {
+                  "attention": {
+                    "layers": 42,
+                    "sum_ms": 7.791615962982178,
+                    "median_layer_ms": 0.17919999361038208
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 42,
+                    "sum_ms": 1.6296959817409515,
+                    "median_layer_ms": 0.03891199827194214
+                  },
+                  "attention.o_proj": {
+                    "layers": 42,
+                    "sum_ms": 1.9440640322864056,
+                    "median_layer_ms": 0.04710400104522705
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 42,
+                    "sum_ms": 0.9333760030567646,
+                    "median_layer_ms": 0.02252800017595291
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 42,
+                    "sum_ms": 4.037120044231415,
+                    "median_layer_ms": 0.09676800295710564
+                  },
+                  "input_reduce_norm": {
+                    "layers": 41,
+                    "sum_ms": 3.935744095593691,
+                    "median_layer_ms": 0.09676800295710564
+                  },
+                  "mlp": {
+                    "layers": 42,
+                    "sum_ms": 6.879231996834278,
+                    "median_layer_ms": 0.16896000131964684
+                  },
+                  "routed": {
+                    "layers": 39,
+                    "sum_ms": 4.637183990329504,
+                    "median_layer_ms": 0.12032000347971916
+                  },
+                  "shared": {
+                    "layers": 39,
+                    "sum_ms": 1.5882239732891321,
+                    "median_layer_ms": 0.04095999896526337
+                  },
+                  "total": {
+                    "layers": 42,
+                    "sum_ms": 23.352319955825806,
+                    "median_layer_ms": 0.55731201171875
+                  }
+                }
+              },
+              {
+                "tp_rank": 1,
+                "graphs": 448,
+                "components": {
+                  "attention": {
+                    "layers": 42,
+                    "sum_ms": 7.817215941846371,
+                    "median_layer_ms": 0.179967999458313
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 42,
+                    "sum_ms": 1.6081919856369495,
+                    "median_layer_ms": 0.03891199827194214
+                  },
+                  "attention.o_proj": {
+                    "layers": 42,
+                    "sum_ms": 1.943040031939745,
+                    "median_layer_ms": 0.04710400104522705
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 42,
+                    "sum_ms": 0.9553920105099678,
+                    "median_layer_ms": 0.023552000522613525
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 42,
+                    "sum_ms": 3.9956480748951435,
+                    "median_layer_ms": 0.09523200243711472
+                  },
+                  "input_reduce_norm": {
+                    "layers": 41,
+                    "sum_ms": 4.029439993202686,
+                    "median_layer_ms": 0.09881599992513657
+                  },
+                  "mlp": {
+                    "layers": 42,
+                    "sum_ms": 6.801920007914305,
+                    "median_layer_ms": 0.1661440022289753
+                  },
+                  "routed": {
+                    "layers": 39,
+                    "sum_ms": 4.577791981399059,
+                    "median_layer_ms": 0.11724800243973732
+                  },
+                  "shared": {
+                    "layers": 39,
+                    "sum_ms": 1.5800319891422987,
+                    "median_layer_ms": 0.03993599861860275
+                  },
+                  "total": {
+                    "layers": 42,
+                    "sum_ms": 23.354879915714264,
+                    "median_layer_ms": 0.5601279884576797
+                  }
+                }
+              },
+              {
+                "tp_rank": 2,
+                "graphs": 448,
+                "components": {
+                  "attention": {
+                    "layers": 42,
+                    "sum_ms": 7.838207982480526,
+                    "median_layer_ms": 0.1802240014076233
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 42,
+                    "sum_ms": 1.6327679827809334,
+                    "median_layer_ms": 0.03916799835860729
+                  },
+                  "attention.o_proj": {
+                    "layers": 42,
+                    "sum_ms": 1.9389440305531025,
+                    "median_layer_ms": 0.04710400104522705
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 42,
+                    "sum_ms": 0.9308160021901131,
+                    "median_layer_ms": 0.02252800017595291
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 42,
+                    "sum_ms": 3.9941120967268944,
+                    "median_layer_ms": 0.09625600278377533
+                  },
+                  "input_reduce_norm": {
+                    "layers": 41,
+                    "sum_ms": 3.938304089009762,
+                    "median_layer_ms": 0.09728000313043594
+                  },
+                  "mlp": {
+                    "layers": 42,
+                    "sum_ms": 6.91456001624465,
+                    "median_layer_ms": 0.16947200521826744
+                  },
+                  "routed": {
+                    "layers": 39,
+                    "sum_ms": 4.6602239944040775,
+                    "median_layer_ms": 0.12032000347971916
+                  },
+                  "shared": {
+                    "layers": 39,
+                    "sum_ms": 1.5820799879729748,
+                    "median_layer_ms": 0.04095999896526337
+                  },
+                  "total": {
+                    "layers": 42,
+                    "sum_ms": 23.372287899255753,
+                    "median_layer_ms": 0.5591039955615997
+                  }
+                }
+              },
+              {
+                "tp_rank": 3,
+                "graphs": 448,
+                "components": {
+                  "attention": {
+                    "layers": 42,
+                    "sum_ms": 7.887871891260147,
+                    "median_layer_ms": 0.1812479943037033
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 42,
+                    "sum_ms": 1.6281599830836058,
+                    "median_layer_ms": 0.03891199827194214
+                  },
+                  "attention.o_proj": {
+                    "layers": 42,
+                    "sum_ms": 1.9517440348863602,
+                    "median_layer_ms": 0.04710400104522705
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 42,
+                    "sum_ms": 0.9543680092319846,
+                    "median_layer_ms": 0.023552000522613525
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 42,
+                    "sum_ms": 3.9214080683887005,
+                    "median_layer_ms": 0.0936960019171238
+                  },
+                  "input_reduce_norm": {
+                    "layers": 41,
+                    "sum_ms": 3.898368079215288,
+                    "median_layer_ms": 0.09574400261044502
+                  },
+                  "mlp": {
+                    "layers": 42,
+                    "sum_ms": 6.949888002127409,
+                    "median_layer_ms": 0.17075200378894806
+                  },
+                  "routed": {
+                    "layers": 39,
+                    "sum_ms": 4.686336018145084,
+                    "median_layer_ms": 0.12083200365304947
+                  },
+                  "shared": {
+                    "layers": 39,
+                    "sum_ms": 1.6245759837329388,
+                    "median_layer_ms": 0.04198399931192398
+                  },
+                  "total": {
+                    "layers": 42,
+                    "sum_ms": 23.374847948551178,
+                    "median_layer_ms": 0.5578240156173706
+                  }
+                }
+              }
+            ],
+            "mean_over_tp_ranks_ms": {
+              "attention": 7.833727944642305,
+              "attention.fused_qkv_a_proj": 1.62470398331061,
+              "attention.o_proj": 1.9444480324164033,
+              "attention.q_b_proj": 0.9434880062472075,
+              "attention_reduce_norm": 3.9870720710605383,
+              "input_reduce_norm": 3.950464064255357,
+              "mlp": 6.88640000578016,
+              "routed": 4.640383996069431,
+              "shared": 1.593727983534336,
+              "total": 23.36358392983675
+            }
+          },
+          {
+            "pp_rank": 1,
+            "ranks": [
+              {
+                "tp_rank": 0,
+                "graphs": 448,
+                "components": {
+                  "attention": {
+                    "layers": 36,
+                    "sum_ms": 6.724607981741428,
+                    "median_layer_ms": 0.17894399538636208
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 36,
+                    "sum_ms": 1.4064639694988728,
+                    "median_layer_ms": 0.03891199827194214
+                  },
+                  "attention.o_proj": {
+                    "layers": 36,
+                    "sum_ms": 1.677824031561613,
+                    "median_layer_ms": 0.04710400104522705
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 36,
+                    "sum_ms": 0.8028160035610199,
+                    "median_layer_ms": 0.02252800017595291
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 36,
+                    "sum_ms": 3.5266560204327106,
+                    "median_layer_ms": 0.09830400347709656
+                  },
+                  "input_reduce_norm": {
+                    "layers": 36,
+                    "sum_ms": 3.6249600052833557,
+                    "median_layer_ms": 0.09856000170111656
+                  },
+                  "mlp": {
+                    "layers": 36,
+                    "sum_ms": 5.816831976175308,
+                    "median_layer_ms": 0.16230399906635284
+                  },
+                  "routed": {
+                    "layers": 36,
+                    "sum_ms": 3.949567995965481,
+                    "median_layer_ms": 0.10931199975311756
+                  },
+                  "shared": {
+                    "layers": 36,
+                    "sum_ms": 1.4689279738813639,
+                    "median_layer_ms": 0.04121599905192852
+                  },
+                  "total": {
+                    "layers": 36,
+                    "sum_ms": 20.312575966119766,
+                    "median_layer_ms": 0.5560320019721985
+                  }
+                }
+              },
+              {
+                "tp_rank": 1,
+                "graphs": 448,
+                "components": {
+                  "attention": {
+                    "layers": 36,
+                    "sum_ms": 6.809087969362736,
+                    "median_layer_ms": 0.1815039999783039
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 36,
+                    "sum_ms": 1.4054399635642767,
+                    "median_layer_ms": 0.03891199827194214
+                  },
+                  "attention.o_proj": {
+                    "layers": 36,
+                    "sum_ms": 1.6870400346815586,
+                    "median_layer_ms": 0.04710400104522705
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 36,
+                    "sum_ms": 0.8222720101475716,
+                    "median_layer_ms": 0.022784000262618065
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 36,
+                    "sum_ms": 3.461120083928108,
+                    "median_layer_ms": 0.09651200287044048
+                  },
+                  "input_reduce_norm": {
+                    "layers": 36,
+                    "sum_ms": 3.5563520453870296,
+                    "median_layer_ms": 0.09728000313043594
+                  },
+                  "mlp": {
+                    "layers": 36,
+                    "sum_ms": 5.8552319929003716,
+                    "median_layer_ms": 0.16281600296497345
+                  },
+                  "routed": {
+                    "layers": 36,
+                    "sum_ms": 4.002304013818502,
+                    "median_layer_ms": 0.11084800027310848
+                  },
+                  "shared": {
+                    "layers": 36,
+                    "sum_ms": 1.4914559833705425,
+                    "median_layer_ms": 0.04198399931192398
+                  },
+                  "total": {
+                    "layers": 36,
+                    "sum_ms": 20.272639900445938,
+                    "median_layer_ms": 0.5550079941749573
+                  }
+                }
+              },
+              {
+                "tp_rank": 2,
+                "graphs": 448,
+                "components": {
+                  "attention": {
+                    "layers": 36,
+                    "sum_ms": 6.71283195912838,
+                    "median_layer_ms": 0.1802240014076233
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 36,
+                    "sum_ms": 1.4064639788120985,
+                    "median_layer_ms": 0.03891199827194214
+                  },
+                  "attention.o_proj": {
+                    "layers": 36,
+                    "sum_ms": 1.6747520305216312,
+                    "median_layer_ms": 0.046592000871896744
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 36,
+                    "sum_ms": 0.8135680072009563,
+                    "median_layer_ms": 0.02252800017595291
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 36,
+                    "sum_ms": 3.494400020688772,
+                    "median_layer_ms": 0.09728000313043594
+                  },
+                  "input_reduce_norm": {
+                    "layers": 36,
+                    "sum_ms": 3.568640012294054,
+                    "median_layer_ms": 0.0980480033904314
+                  },
+                  "mlp": {
+                    "layers": 36,
+                    "sum_ms": 5.847039945423603,
+                    "median_layer_ms": 0.16358399763703346
+                  },
+                  "routed": {
+                    "layers": 36,
+                    "sum_ms": 3.9961600117385387,
+                    "median_layer_ms": 0.11059200018644333
+                  },
+                  "shared": {
+                    "layers": 36,
+                    "sum_ms": 1.4663679748773575,
+                    "median_layer_ms": 0.04095999896526337
+                  },
+                  "total": {
+                    "layers": 36,
+                    "sum_ms": 20.29670399427414,
+                    "median_layer_ms": 0.553727999329567
+                  }
+                }
+              },
+              {
+                "tp_rank": 3,
+                "graphs": 448,
+                "components": {
+                  "attention": {
+                    "layers": 36,
+                    "sum_ms": 6.769663974642754,
+                    "median_layer_ms": 0.1812479943037033
+                  },
+                  "attention.fused_qkv_a_proj": {
+                    "layers": 36,
+                    "sum_ms": 1.4141439646482468,
+                    "median_layer_ms": 0.03916799835860729
+                  },
+                  "attention.o_proj": {
+                    "layers": 36,
+                    "sum_ms": 1.686528030782938,
+                    "median_layer_ms": 0.04710400104522705
+                  },
+                  "attention.q_b_proj": {
+                    "layers": 36,
+                    "sum_ms": 0.814592007547617,
+                    "median_layer_ms": 0.02252800017595291
+                  },
+                  "attention_reduce_norm": {
+                    "layers": 36,
+                    "sum_ms": 3.4626560509204865,
+                    "median_layer_ms": 0.09625600278377533
+                  },
+                  "input_reduce_norm": {
+                    "layers": 36,
+                    "sum_ms": 3.5425280444324017,
+                    "median_layer_ms": 0.09676800295710564
+                  },
+                  "mlp": {
+                    "layers": 36,
+                    "sum_ms": 5.869567953050137,
+                    "median_layer_ms": 0.16409599781036377
+                  },
+                  "routed": {
+                    "layers": 36,
+                    "sum_ms": 4.001280013471842,
+                    "median_layer_ms": 0.11059200018644333
+                  },
+                  "shared": {
+                    "layers": 36,
+                    "sum_ms": 1.488895982503891,
+                    "median_layer_ms": 0.04198399931192398
+                  },
+                  "total": {
+                    "layers": 36,
+                    "sum_ms": 20.261375814676285,
+                    "median_layer_ms": 0.5552639961242676
+                  }
+                }
+              }
+            ],
+            "mean_over_tp_ranks_ms": {
+              "attention": 6.754047971218824,
+              "attention.fused_qkv_a_proj": 1.4081279691308737,
+              "attention.o_proj": 1.6815360318869352,
+              "attention.q_b_proj": 0.8133120071142912,
+              "attention_reduce_norm": 3.4862080439925194,
+              "input_reduce_norm": 3.5731200268492103,
+              "mlp": 5.847167966887355,
+              "routed": 3.987328008748591,
+              "shared": 1.4789119786582887,
+              "total": 20.285823918879032
+            }
+          }
+        ],
+        "sum_over_serial_stages_ms": {
+          "attention": 14.58777591586113,
+          "attention.fused_qkv_a_proj": 3.0328319524414837,
+          "attention.o_proj": 3.6259840643033385,
+          "attention.q_b_proj": 1.7568000133614987,
+          "attention_reduce_norm": 7.473280115053058,
+          "input_reduce_norm": 7.523584091104567,
+          "mlp": 12.733567972667515,
+          "routed": 8.627712004818022,
+          "shared": 3.072639962192625,
+          "total": 43.64940784871578
+        }
+      }
+    }
+  },
+  "limitations": [
+    "TP4/PP2 did not improve the combined single, concurrent, prefill, and context operating point; TP2/PP4 remains preferred.",
+    "The TP4 context limit was 65536; its capacity is not evidence of a successful near-limit retrieval check.",
+    "The diagnostic does not establish a hardware asymmetry or a GPU 7-specific bottleneck. It measures closely matched total times within each tensor-parallel group.",
+    "Steady-decode targets of 100 single, 300 aggregate at concurrency eight, and 450 at sixteen remain unmet."
+  ]
+}
