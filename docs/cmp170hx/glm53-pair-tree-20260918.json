@@ -1,0 +1,381 @@
+{
+  "date_utc": "2026-09-18",
+  "status": "Experimental standalone primitive; not enabled in the serving backend.",
+  "model": "local-inference-lab/GLM-5.3-NVFP4",
+  "model_revision": "b472e4ee53f6a9862da5486c56c6ca21be3dab70",
+  "serving_base_commit": "293c43ccfd5faf2d3ae1b2b72c40e1327bfb3684",
+  "hardware": "8x CMP170HX; symmetric PIX pairs 0/1,2/3,4/5,6/7; four GPUs per CPU",
+  "algorithm": "Two local pair sums in FP32, then FP32 sum of the pair sums, rounded once to BF16. Payloads are pushed to destination memory; flags are polled locally. Same structure on both four-GPU groups.",
+  "standalone": {
+    "method": "Symmetric four-rank pair tree; BF16 inputs and output, FP32 pair sums, local signal polling, peer writes for all payloads.",
+    "measured_source_sha256": "5d686bfce37090e41079835c0eb185548c34b105cdf25640a7fe4f478b492230",
+    "model_trial_source_sha256": "0d2ed0ea04dd3eb739aac4ecc6780c7d457f62a2d459d69b652fbb2e65246d45",
+    "model_trial_change": "A synchronization timeout now traps instead of returning an uninitialized result; successful path unchanged.",
+    "groups": {
+      "0": {
+        "raw_sha256": "0d0ef15b844ded6931cc59f58c543da2d9949ebcf80ab5ce8f1246e1aa6ac4cc",
+        "summary": [
+          {
+            "rows": 1,
+            "two_block_us": 31.42400085926056,
+            "nccl_us": 78.07999849319458
+          },
+          {
+            "rows": 3,
+            "two_block_us": 51.32799968123436,
+            "nccl_us": 86.07999980449677
+          },
+          {
+            "rows": 6,
+            "two_block_us": 77.93600112199783,
+            "nccl_us": 92.92799979448318
+          },
+          {
+            "rows": 12,
+            "two_block_us": 134.5279961824417,
+            "nccl_us": 114.56000059843063
+          },
+          {
+            "rows": 24,
+            "two_block_us": 251.77600979804993,
+            "nccl_us": 168.5120016336441
+          },
+          {
+            "rows": 48,
+            "two_block_us": 479.8080027103424,
+            "nccl_us": 272.8320062160492
+          }
+        ]
+      },
+      "1": {
+        "raw_sha256": "ffaad4f464304470f6856e57c5aecf12311f06e2b03eef3030db5f3a6c9c8cbe",
+        "summary": [
+          {
+            "rows": 1,
+            "two_block_us": 33.535998314619064,
+            "nccl_us": 80.64799755811691
+          },
+          {
+            "rows": 3,
+            "two_block_us": 51.90400034189224,
+            "nccl_us": 89.9839997291565
+          },
+          {
+            "rows": 6,
+            "two_block_us": 77.88799703121185,
+            "nccl_us": 97.08800166845322
+          },
+          {
+            "rows": 12,
+            "two_block_us": 133.56800377368927,
+            "nccl_us": 122.6240023970604
+          },
+          {
+            "rows": 24,
+            "two_block_us": 251.96799635887146,
+            "nccl_us": 164.92800414562225
+          },
+          {
+            "rows": 48,
+            "two_block_us": 473.9859998226166,
+            "nccl_us": 272.2559869289398
+          }
+        ]
+      }
+    }
+  },
+  "trial_configuration": {
+    "tp": 4,
+    "pp": 2,
+    "layer_partition": [
+      42,
+      36
+    ],
+    "mtp_tokens": 2,
+    "kv_cache_dtype": "bfloat16",
+    "context_limit": 65536,
+    "kv_token_capacity": 120320,
+    "gpu_memory_utilization": 0.978,
+    "batch_tokens": 2048,
+    "max_num_seqs": 16,
+    "pipeline_batch_policy": "adaptive",
+    "pipeline_max_batch_requests": 8,
+    "local_draft_argmax_reduction": true,
+    "batch_sharded_sampling": true,
+    "candidate_max_rows": 6,
+    "candidate_hidden_size": 6144,
+    "candidate_blocks": 2,
+    "fallback": "Existing communicator for larger or other tensors.",
+    "integration": "Private worker extension replaced the TP communicator dispatch for the measured shapes. Runtime backend integration is not part of this prototype."
+  },
+  "quality": {
+    "objectives": [
+      {
+        "concurrency": 4,
+        "reasoning_effort": "max",
+        "passed": 20,
+        "total": 20,
+        "raw_sha256": "8417231602842c21af00666838ba3ade05ec5a7d530797f7e2be4ef5267a6b81"
+      },
+      {
+        "concurrency": 1,
+        "reasoning_effort": "max",
+        "passed": 20,
+        "total": 20,
+        "raw_sha256": "3234c4c4fe3604b5f13f5fffd0e321109412244d192a7f85f5622cada80ca748"
+      }
+    ],
+    "reasoning_tools_continuation_passed": true,
+    "concurrent_retrieval_passed": 8,
+    "concurrent_retrieval_total": 8
+  },
+  "serving_benchmark": {
+    "raw_sha256": "b88aac55f21c6f9e2b70ac37cec094e2a2df95bf9dbd3890b85be91f1e13d209",
+    "baseline_raw_sha256": "37245b810353e050c7655c21628784ea8ae21763bdaf42cdc40af035d4592ecc",
+    "script_sha256": "24b3754b5513683dde828f21e33c1168e2a1fa561d65ae191e789825ba8a01dc",
+    "all_prompt_hashes_match_baseline": true,
+    "samples": [
+      {
+        "mode": "single",
+        "input_tokens": 512,
+        "concurrency": 1,
+        "repeat": 0,
+        "elapsed_s": 8.884626004990423,
+        "aggregate_tokens_s": 57.62763674153687,
+        "median_ttft_s": 0.591870808013482,
+        "steady_decode": {
+          "start_s": 1.0931750799936708,
+          "end_s": 8.472222292009974,
+          "accepted_tokens": 447,
+          "aggregate_tokens_s": 60.57692641837137
+        },
+        "prompt_sha256": [
+          "8715e70315ff67cf63c78ac2d9532a4aa02a9df690e88ebad5dff1af025ceec7"
+        ]
+      },
+      {
+        "mode": "single",
+        "input_tokens": 512,
+        "concurrency": 1,
+        "repeat": 1,
+        "elapsed_s": 8.10756075498648,
+        "aggregate_tokens_s": 63.15092978922164,
+        "median_ttft_s": 0.594819024001481,
+        "steady_decode": {
+          "start_s": 1.1376921649789438,
+          "end_s": 7.759783694986254,
+          "accepted_tokens": 449,
+          "aggregate_tokens_s": 67.80335154919013
+        },
+        "prompt_sha256": [
+          "a07bbaf75f0a303b759f9cc6a586ec138eb6f09a73ae3b91c903f2b195c3b489"
+        ]
+      },
+      {
+        "mode": "concurrent",
+        "input_tokens": 512,
+        "concurrency": 8,
+        "repeat": 0,
+        "elapsed_s": 20.979066408006474,
+        "aggregate_tokens_s": 195.24224387967988,
+        "median_ttft_s": 2.5273040180036332,
+        "steady_decode": {
+          "start_s": 4.796660149993841,
+          "end_s": 17.574005211004987,
+          "accepted_tokens": 3083,
+          "aggregate_tokens_s": 241.28643198401844
+        },
+        "prompt_sha256": [
+          "0e4c6818c596b732858457f525340628b5ff52dab54367059e516b01faab98c8",
+          "19cc9cea2f24975ff95faebf35470f4db826f7253b36edaf5b98083524898cde",
+          "bf21ee83fe0637c616ad014cc0b7f5f6c0797bed68a779a98752fd185619a1b7",
+          "7f8a7f8d54a91f75e6e23faf9f81c96b29434303dc8afc83695d065713f299c0",
+          "0c62033654f0e222d1b2fedb2fb23994e70730d96b2140d9c1124ace311364c5",
+          "3acd7e3ebc013f72040d95417b5f5a1e25b32adfb16d8b4b9f3d889d9688c6c2",
+          "0fc9fd8eb70bfc36a0d6c5c16796557698b56e71e955f662121d301673d8a43c",
+          "9ab94574f4971c0ee49998008d2044988ebca882c3fa21ab03849510e47c55b5"
+        ]
+      },
+      {
+        "mode": "concurrent",
+        "input_tokens": 512,
+        "concurrency": 8,
+        "repeat": 1,
+        "elapsed_s": 21.45560539100552,
+        "aggregate_tokens_s": 190.90582276075503,
+        "median_ttft_s": 2.505637561000185,
+        "steady_decode": {
+          "start_s": 4.480391913995845,
+          "end_s": 15.717622619995382,
+          "accepted_tokens": 2733,
+          "aggregate_tokens_s": 243.20938774896348
+        },
+        "prompt_sha256": [
+          "364d3a3a0ac1668da4019ba602014d6203d02af833432d997025468ed6546a02",
+          "47078924d63198253d49249585067635cac424d1bcdd20f35f45c588039a398d",
+          "1ee3b8be610ae9df736add30b519eb29d85f7b712955d3a8a65af19f9db8ff88",
+          "a6d376412ac853fc38f7c99a45d40d80265f6aec4d4b49e4794dfb56ec4f2fc3",
+          "8119c0dfd33925050cf974bf8e74110c175bdee025d8a6c67e328e0102f9a853",
+          "fb8e05e86df6e4b9807780b2d1eedda682d56a50f8f85c2b93859bec1ab975f7",
+          "28ff650a42043ce0c092565e3a5cc323e6086685ae5b62d5afa276761cb483d9",
+          "f788e5e95c4b993d075f2d34a8cb41f3f9ee06134e06d941efbf35bc833ac008"
+        ]
+      },
+      {
+        "mode": "concurrent",
+        "input_tokens": 512,
+        "concurrency": 16,
+        "repeat": 0,
+        "elapsed_s": 33.56657203301438,
+        "aggregate_tokens_s": 244.05232658082463,
+        "median_ttft_s": 4.975147809484042,
+        "steady_decode": {
+          "start_s": 9.250996573013254,
+          "end_s": 26.15869384299731,
+          "accepted_tokens": 5530,
+          "aggregate_tokens_s": 327.06996770147487
+        },
+        "prompt_sha256": [
+          "ebb3cb89c387ca9a1f632481dbc8ac18a58948ba96267506cc1283582d10e68d",
+          "f31b8440b3acc44eca121e975f8950fcab25f42e9daf8e1f342acd338bf4a627",
+          "f4c15aa07ef5ec722a16090be03d85b2273cb6996c0efd48030f1ec3d871ab16",
+          "80458ad0bf8af44ee4f29b24eb6f3d9b5fa5906df7b390dfcdf4fe5ce6eac6d9",
+          "0d34a01250516059d9a6d07fc8e5af7c51e6dc6a00f72c17d02ef7ebeb1e1202",
+          "d2e19ea57e4d6926d958cd5270364e58e63b9c47d146a104bd18b5b0d28c2350",
+          "70d89b6b28c8358b8fda4d3be59fedade9134b9705d09136652556475dd1aedc",
+          "dc19fd0f336b7d6e10dba3c41c87116961a161d4822535aefdfec33f9a0aff1e",
+          "65c605c36ae6bca17c99353f30583c3288940dbe4b575aee23827fab37e1d62a",
+          "bc5f271aa0074b0ec42b9c51d045eb60e7b4a4e48c5bfb32752a2701b8aacbd7",
+          "c19c1af39b53c45eeb81ed216bb4bb2fe185a2f7335f16c60d43a2d374f6b3f8",
+          "0c0fe46a7845035e31d215d1b306ee9a3a2a81aadf86632bd0d399296583458a",
+          "8ada3307f1e513daf0173a355aa790fe371e5feec13db8090962bbf002053434",
+          "3296a329a517ba91410e7960789aac3a53c1de4877614571b8a3ab59db0ee919",
+          "42daf90ce7c586aeabc2d1ea933b06eb7920e273118adae9a43fc3aace4cc43b",
+          "838e0a9b638f82baacd724fe9ed608ca76144b04cd019d57f0a6b16c310814e1"
+        ]
+      },
+      {
+        "mode": "concurrent",
+        "input_tokens": 512,
+        "concurrency": 16,
+        "repeat": 1,
+        "elapsed_s": 31.89042266298202,
+        "aggregate_tokens_s": 256.8796308086931,
+        "median_ttft_s": 4.076411093992647,
+        "steady_decode": {
+          "start_s": 7.699036604986759,
+          "end_s": 22.15631689399015,
+          "accepted_tokens": 4876,
+          "aggregate_tokens_s": 337.2695211359235
+        },
+        "prompt_sha256": [
+          "1d7cc1123f082eb80c07eeb209a62948b32c6354bee8254a245eeaf86e635f4e",
+          "47daf65f68aa3a5a47989c966e8a6452a82754d1061b08544f4ca02905683ee5",
+          "498008c1952b5acc0a052e8dcf7c805cd1e05a90c8126418db26354ae2a830b4",
+          "44d8ede7836b10ef36481e81c98b4b12b87a465e2f5202068ce280bf1b631376",
+          "cb199717b64245cdd8f75d3ef0a234f8b0852fcd45a14b32fe70533ee371a3d1",
+          "2676cda469023d25089ee4abf24902bd919522a287cfff18580e867567ab752b",
+          "371b656323ba54531958871b320bc4e328089cd61a9cc0d63de2803adf23dfc3",
+          "8f3e3f09c00b2166d97c2633252759ea634cb9389efd9d8ee045f5c33e0e67b9",
+          "ced08aedba490d1249a24d3bcaccc5d01b55e8f3e4e439b195a6ebab209754b9",
+          "f3a6c34eb8119b8c9478bb1d2ac72b4f4c718764bc71f35231f0f190c11704c6",
+          "0f5bb2f4852d2a754c46e102f7be83ca803ec1f5d03519cb0602de7da5bf20b0",
+          "0e640c55aa4de5393d1ab38df8e6f81bb27815b85a3019fac021fd51e855bc67",
+          "c57227b20ea8f8bcf4dcc5e10f6f8c1f32beb480495e77850c692642b97d3c09",
+          "68d3ea90883d83992f2f10056b8779b49c68c72bfdb1a945c4cc175e03963954",
+          "309b403a892cf98efb84b3b5458ae4497779aa63f53d82d5a67e306f8a929dfc",
+          "32bf7e676ec454973d69c53e308da52f4656ea44bf5d6f52f801aacfb4464d2b"
+        ]
+      },
+      {
+        "mode": "prefill",
+        "input_tokens": 8192,
+        "concurrency": 1,
+        "repeat": 0,
+        "elapsed_s": 6.503932529012673,
+        "aggregate_tokens_s": 0.15375313251470718,
+        "median_ttft_s": 6.501923952018842,
+        "steady_decode": null,
+        "prompt_sha256": [
+          "7c0132d5b08440e6ae5786336c8fab30eb86c84e1ad9c06427074fcf8f49f8de"
+        ]
+      },
+      {
+        "mode": "prefill",
+        "input_tokens": 8192,
+        "concurrency": 1,
+        "repeat": 1,
+        "elapsed_s": 6.44701686501503,
+        "aggregate_tokens_s": 0.15511049853561515,
+        "median_ttft_s": 6.445034767995821,
+        "steady_decode": null,
+        "prompt_sha256": [
+          "25a31630b2efa3cd547daf3bd1841f382cca35d1fd5b41a29c37ba402053322b"
+        ]
+      },
+      {
+        "mode": "context_decode",
+        "input_tokens": 8192,
+        "concurrency": 1,
+        "repeat": 0,
+        "elapsed_s": 7.098478022991912,
+        "aggregate_tokens_s": 9.016017207168145,
+        "median_ttft_s": 6.483521421003388,
+        "steady_decode": null,
+        "prompt_sha256": [
+          "927a32436d58a2131dfeeba9888eaa87c460f258f5ad374de374591b67bf1cf6"
+        ]
+      },
+      {
+        "mode": "context_decode",
+        "input_tokens": 8192,
+        "concurrency": 1,
+        "repeat": 1,
+        "elapsed_s": 7.234229215973755,
+        "aggregate_tokens_s": 8.846830545358294,
+        "median_ttft_s": 6.450979430985171,
+        "steady_decode": null,
+        "prompt_sha256": [
+          "642f90f49fa38de79586cfa343ebf654a7a2254e8eda9f06799e844148d28893"
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Single-request performance improved 26\u201331% over the matched TP4 baseline, but remains below the 100-token/s target.",
+    "Concurrent throughput, prefill, and context capacity do not displace the preferred TP2/PP4 configuration.",
+    "The kernel uses FP32 pair-tree accumulation; bitwise equivalence to NCCL BF16 summation is not claimed.",
+    "The prototype assumes four ranks forming two qualified CUDA-IPC pairs with peer writes between their leaders; it is not a general topology-discovery implementation.",
+    "Production communicator lifecycle, fallback and backend integration remain unqualified."
+  ],
+  "published_standalone_validation": {
+    "source_sha256": {
+      "benchmarks/kernels/cmp_pair_tree_reduce.cu": "ae265e874004dde712fa4981b7f7d6c38412b979635bd4bef579d020df5b10bf",
+      "benchmarks/kernels/benchmark_cmp_pair_tree.py": "ccbb2b3be248bf3eee08d3ec08da34c5a84189c684e5a9bd0cfce200aaf549ac"
+    },
+    "groups": [
+      {
+        "physical_devices": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "exact_reference_configurations": 24,
+        "raw_sha256": "fad4e8e71fb74f4cfa969e57fcfc773ef3039d4f9d1f4532f8f083e0c9c536b9",
+        "three_row_two_block_us": 51.072001457214355
+      },
+      {
+        "physical_devices": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "exact_reference_configurations": 24,
+        "raw_sha256": "f2caa419977507362d30005f78be2248b176a71d4f35be64402c975cdfe3f479",
+        "three_row_two_block_us": 51.05400085449219
+      }
+    ]
+  }
+}

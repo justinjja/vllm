@@ -139,6 +139,47 @@ TP2/PP4 remains the preferred combined throughput, prefill, and context
 configuration. Exact samples, configuration, and diagnostic rank timings
 are in the [TP4 record](glm53-tp4-20260918.json).
 
+### Symmetric pair-tree prototype
+
+A standalone four-rank collective uses the same two-pair structure on each
+CPU group. It sums each pair in FP32, exchanges partial sums between pair
+leaders, and rounds the final sum to BF16. Payloads are pushed to their
+destination, and synchronization flags are polled in local GPU memory.
+Its arithmetic differs from NCCL's BF16 reduction order.
+
+Independent CPU-reference checks passed on both groups for six row counts
+and four launch sizes, including changed inputs, repeated CUDA graph replay,
+and uneven rank timing. With two blocks, three-row reductions measured
+51.33/51.90 microseconds on the two groups, versus NCCL's 86.08/89.98.
+Larger tensors favored NCCL.
+
+A private worker-extension trial selected the prototype only for contiguous
+BF16 tensors with 6,144 columns and at most six rows. It passed 20/20
+objectives at concurrency four, another 20/20 sequentially, reasoning/tools,
+and 8/8 concurrent retrieval checks. Compared with the same TP4/PP2 setup
+above, matched single-request steady decode rose to **60.58–67.80 tokens/s**,
+a 26–31% improvement. Concurrency-eight throughput was 241.29–243.21 and
+concurrency-sixteen throughput was 327.07–337.27 tokens/s. The 8K prefill
+TTFT was 6.45–6.50 seconds. TP2/PP4 remains preferred for the combined
+throughput, prefill, and context requirements.
+
+The [measurement record](glm53-pair-tree-20260918.json) contains configurations,
+samples, and limitations. The standalone implementation and benchmark are
+included for reproduction; production communicator integration remains
+unqualified. The normal serving recipe does not enable this prototype.
+
+```bash
+nvcc -O3 -std=c++17 -arch=sm_80 -shared -Xcompiler=-fPIC \
+  benchmarks/kernels/cmp_pair_tree_reduce.cu -o /tmp/cmp_pair_tree.so
+uv run --python .venv/bin/python benchmarks/kernels/benchmark_cmp_pair_tree.py \
+  --gpus 0,1,2,3 --library /tmp/cmp_pair_tree.so --output pair-tree-node0.json
+uv run --python .venv/bin/python benchmarks/kernels/benchmark_cmp_pair_tree.py \
+  --gpus 4,5,6,7 --library /tmp/cmp_pair_tree.so --output pair-tree-node1.json
+```
+
+These commands assume the eight-card device ordering and qualified PIX pairs
+described above, with no other GPU workload running.
+
 ### Software FP8 conversion
 
 The SM80 byte decoder now expands E4M3 through an exact FP16 representation
