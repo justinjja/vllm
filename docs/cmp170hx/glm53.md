@@ -500,11 +500,57 @@ each used 2,048 tokens. The small target and full-sized draft used random
 weights. TP2 accepted zero of 98 proposed draft tokens, so these checks do not
 establish accepted-draft behavior or real-model accuracy.
 
-**Neither compression candidate is qualified for serving.** Full-model
-quality, draft acceptance, and eight-card throughput remain unmeasured.
+**Neither compression candidate is qualified for serving.** The later INT8
+full-model comparison is recorded below; NVFP4 remains an isolated experiment.
 The published recipe retains BF16 draft weights. The
 [measurement record](glm53-draft-quantization-20260918.json) includes kernel
 samples, numerical errors, storage, packing checks, and engine-check results.
+
+### Full-model draft INT8 trial
+
+The private prototype converted only the routed experts in MTP layer 78 to
+group-128 INT8 weights, using BF16 activations and scales with existing Marlin
+kernels. Both TP2 shards shrank from 9.0 to 4.57 GiB. The target model weights
+were unchanged. KV capacity remained 269,056 tokens because an earlier
+pipeline stage limited capacity.
+
+The comparison retained TP2/PP4, the `22,20,20,16` partition, two draft tokens,
+BF16 KV, and a 262,144-token context limit. Each timing column contains two
+samples using identical prompt hashes, benchmark code, and workload settings.
+Decode rates count accepted output tokens in the shared steady interval;
+they exclude prefill and the trimmed request boundaries.
+
+| Measurement | BF16 before | INT8 draft | BF16 after restoration |
+| --- | ---: | ---: | ---: |
+| Single generation, tokens/s | 47.60 / 47.70 | 63.35 / 48.40 | 49.31 / 52.65 |
+| Concurrency 8, aggregate tokens/s | 258.15 / 253.88 | 289.87 / 246.26 | 261.46 / 262.16 |
+| Concurrency 16, aggregate tokens/s | 340.72 / 324.57 | 328.53 / 316.06 | 348.14 / 320.49 |
+| 8K prefill, seconds to first token | 5.49 / 5.34 | 5.55 / 5.33 | 5.51 / 5.31 |
+
+These samples do not establish a consistent aggregate speedup. The INT8 run
+passed 20/20 sequential and 20/20 concurrent objective answers, reasoning,
+streamed tools and tool continuation, and all eight concurrent retrieval
+checks. The BF16 reference's earlier intermittent lowercase-answer failure
+remains documented; these are diagnostic measurements, not a claim of
+universal output equivalence.
+
+The INT8 run then failed on the first decode step after a fresh 260,224-token
+prefill. Physical device `b2:00.0` reported three Xid 32 events, followed by a
+CUDA launch failure. The cached-context check was withheld. This occurred on
+rank 5, while draft conversion was confined to ranks 6 and 7; similar device
+faults occurred in earlier trials without INT8. The cause remains unresolved.
+All eight GPUs passed a CUDA computation check afterward, and the BF16
+reference was restored without another reset or driver reload.
+
+After the matched benchmark, the restored reference passed both fresh and
+cached retrieval from the same 260,224-token document, returning all three
+records correctly. First-token latency was 151.30 s fresh and 1.49 s cached.
+This control did not reproduce the failure; it does not establish its cause.
+
+**The INT8 draft candidate is not qualified for serving.** The
+[comparison record](glm53-draft-int8-full-model-20260918.json) contains the
+matched timings, prompt hashes, acceptance snapshots, quality answers,
+failure details, and recovery checks.
 
 ### Serving configuration
 
