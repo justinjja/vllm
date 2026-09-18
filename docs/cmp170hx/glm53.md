@@ -854,7 +854,16 @@ per-card results, first incorrect value, operating samples and failure limits.
 Function-level reset, an isolated downstream bus reset and link retraining
 all failed to restore `b2` after the 900 MHz trial. The unchanged installed
 driver was restored, but only seven GPUs enumerated. Serving was stopped;
-a host reboot was required and had not been performed at this checkpoint.
+a host reboot was required and had not been performed at that checkpoint.
+
+A subsequent host reboot did not recover the device. A BMC chassis power
+cycle then recorded soft-off at 19:41:20 UTC and power-on at 19:41:26 UTC.
+After boot, only seven GPUs enumerated; `b2` was absent from PCIe sysfs and
+its upstream port still reported width zero and no device presence. The
+adjacent port serving `b1` reported its normal x16 link. The BMC inlet sensor
+read 41 C with an upper-critical flag during the follow-up; that observation
+does not establish the cause. Eight-GPU serving remains unavailable. No AC
+power removal or physical card/riser/power-connection inspection is recorded.
 
 ### Draft expert compression measurements
 

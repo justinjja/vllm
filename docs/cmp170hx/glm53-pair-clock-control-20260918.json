@@ -2014,5 +2014,50 @@
       "reboot_performed": false
     }
   },
-  "updated_at_utc": "2026-09-18T19:18:49.639443+00:00"
+  "updated_at_utc": "2026-09-18T20:18:54.008631+00:00",
+  "post_bmc_power_cycle": {
+    "checked_at_utc": "2026-09-18T20:18:54.008631+00:00",
+    "host_boot_time_utc": "2026-09-18 19:42:53",
+    "bmc_restart_cause": "chassis power control command",
+    "bmc_events_utc": [
+      {
+        "time": "2026-09-18 19:41:16",
+        "event": "IPMI Power Cycle: Activation Requested"
+      },
+      {
+        "time": "2026-09-18 19:41:20",
+        "event": "ACPI S5/G2 soft-off"
+      },
+      {
+        "time": "2026-09-18 19:41:26",
+        "event": "ACPI S0/G0 working"
+      }
+    ],
+    "visible_pci_devices": [
+      "0000:1a:00.0",
+      "0000:1b:00.0",
+      "0000:60:00.0",
+      "0000:61:00.0",
+      "0000:b1:00.0",
+      "0000:da:00.0",
+      "0000:db:00.0"
+    ],
+    "missing_pci_device": "0000:b2:00.0",
+    "missing_device_present_in_sysfs": false,
+    "upstream_port": "0000:b0:10.0",
+    "upstream_link_width": 0,
+    "upstream_presence_detected": false,
+    "paired_port": "0000:b0:08.0",
+    "paired_port_link_width": 16,
+    "paired_port_link_speed_gt_s": 5,
+    "bmc_inlet_temperature_c": 41,
+    "bmc_inlet_status": "upper critical",
+    "serving_running": false,
+    "limits": [
+      "The BMC power cycle and subsequent boot did not restore PCIe enumeration for b2.",
+      "The inlet reading is an observation, not proof of the failure cause.",
+      "No AC power removal, card reseating or component swap is included in these results.",
+      "Physical device indices now differ: da and db are indices 5 and 6."
+    ]
+  }
 }
