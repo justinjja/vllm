@@ -48,13 +48,18 @@ def _nvfp4_compute_scale_factor(
     if a_dtype is not None and a_dtype == torch.half:
         return 1.0
 
-    ws_float = marlin_scales.float() * (2**7)
-    nonzero_mask = ws_float > 0
-    if nonzero_mask.any():
-        max_val = ws_float[nonzero_mask].max()
-        if max_val < 448 * (2**7):
-            sf = (448 * (2**7) / max_val).log2().floor().exp2()
-            return sf.item()
+    # Boolean indexing materializes int64 coordinates for every positive scale.
+    # Full MoE expert tensors can require several GiB just for those indices.
+    max_val = torch.zeros((), dtype=torch.float32, device=marlin_scales.device)
+    for chunk in marlin_scales.reshape(-1).split(4 * 1024 * 1024):
+        if chunk.numel():
+            values = chunk.float()
+            chunk_max = torch.where(values > 0, values, 0).amax()
+            max_val = torch.maximum(max_val, chunk_max)
+    max_val = max_val * (2**7)
+    if 0 < max_val < 448 * (2**7):
+        sf = (448 * (2**7) / max_val).log2().floor().exp2()
+        return sf.item()
     return 1.0
 
 

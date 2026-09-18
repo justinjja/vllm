@@ -23,6 +23,7 @@ from vllm.model_executor.layers.quantization.utils.marlin_utils import (
     query_marlin_supported_quant_types,
 )
 from vllm.model_executor.layers.quantization.utils.marlin_utils_fp4 import (
+    _nvfp4_compute_scale_factor,
     rand_marlin_weight_mxfp4_like,
     rand_marlin_weight_nvfp4_like,
 )
@@ -70,6 +71,39 @@ MNK_FACTORS = [
 ]
 
 DTYPES = [torch.float16, torch.bfloat16]
+
+
+@pytest.mark.parametrize("a_dtype", [None, torch.float16, torch.bfloat16])
+@pytest.mark.parametrize(
+    "values,expected",
+    [
+        ([], 1.0),
+        ([0.0, -1.0], 1.0),
+        ([0.0, 1.75, 0.5], 256.0),
+        ([448.0, 1.0], 1.0),
+        ([float("nan"), 3.5, -float("inf")], 128.0),
+        ([float("inf"), 1.0], 1.0),
+    ],
+)
+def test_nvfp4_scale_factor_preserves_positive_max(values, expected, a_dtype):
+    """Zero, negative, and NaN entries must not alter positive-scale rescaling."""
+    scales = torch.tensor(values, dtype=torch.bfloat16, device="cuda")
+    assert _nvfp4_compute_scale_factor(scales, a_dtype) == (
+        1.0 if a_dtype == torch.float16 else expected
+    )
+
+
+def test_nvfp4_scale_factor_bounds_moe_temporary_memory():
+    """Cross a reduction chunk without allocating per-element index coordinates."""
+    scales = torch.full((5, 1024, 1024), 1.75, dtype=torch.bfloat16, device="cuda")
+    scales[-1, -1, -1] = 3.5
+    torch.accelerator.synchronize()
+    allocated = torch.accelerator.memory_allocated()
+    torch.accelerator.reset_peak_memory_stats()
+    assert _nvfp4_compute_scale_factor(scales, torch.bfloat16) == 128.0
+    torch.accelerator.synchronize()
+    assert torch.accelerator.max_memory_allocated() - allocated < 64 * 1024 * 1024
+
 
 DENSE_MARLIN_QUANT_TEST_CONFIGS = [
     # AWQ-INT4

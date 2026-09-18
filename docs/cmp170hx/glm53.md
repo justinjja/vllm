@@ -27,6 +27,12 @@ context, a one-million-token workspace uses about 132 MiB instead of the
 default approximately 5.2 GiB. This does not change the model's attention
 selection count or context window.
 
+NVFP4 Marlin scale conversion reduces positive scales in bounded chunks.
+This preserves the rescaling factor while avoiding the multi-GiB integer
+index tensors created by boolean indexing across all experts. The original
+conversion attempted a 9-GiB temporary allocation and prevented PP8 loading
+on this checkpoint; the bounded version successfully loads the same weights.
+
 ## Initial real-model baseline
 
 Measured September 18, 2026, using checkpoint revision
@@ -60,12 +66,38 @@ synthetic records placed at 10%, 50%, and 90% of the document. This baseline
 does not establish performance or correctness at the model's advertised
 1,048,576-token limit. TP8 has 48,896 aggregate KV tokens in this configuration.
 
+### Pipeline layout pilots
+
+The following one-repeat runs retain BF16 KV, 32K context, a 1,024-token
+batch budget, and 16 sequences. TP4/PP2 partitions layers as `40,38`;
+TP2/PP4 uses `21,19,19,19` and adaptive pipeline batching with a maximum
+of eight requests and minimum of one request per batch. These compare
+serving configurations, including their scheduling policy.
+
+| Measurement | TP8/PP1 | TP4/PP2 | TP2/PP4 adaptive |
+| --- | ---: | ---: | ---: |
+| Single decode, tokens/s | 36.05 | 29.14 | 35.24 |
+| End-to-end generation, concurrency 1 | 30.91 | 25.46 | 29.32 |
+| Aggregate generation, concurrency 16 | 107.94 | 145.28 | 157.13 |
+| 8K prefill TTFT, seconds | 9.36 | 5.55 | 3.89 |
+| 30K prefill TTFT, seconds | 37.12 | 20.26 | 12.50 |
+| KV token capacity | 48,896 | 138,048 | 293,120 |
+
+Both pipeline layouts passed reasoning, tools, and the same three-record
+retrieval check. TP2/PP4 also passed eight concurrent retrieval requests
+with different prompt lengths and answers. PP8 now loads with 411,776 BF16
+KV tokens and a 262,144-token configured limit; its workload qualification
+is in progress.
+
 ## Validation
 
 The sparse MLA tests passed 53 split/sentinel cases and 27 independent
 BF16/FP8 reference cases. The fused normalization/RoPE suite passed 68 cases
 with four skips. Three pipeline/sequence-parallel cases and eleven indexer
 workspace/chunking cases passed.
+The scale-conversion fix passed 18 value/dtype cases and a multi-chunk GPU
+memory regression requiring less than 64 MiB of temporary allocation for
+five million scales.
 
 Small dummy-weight engines passed graph capture and requests at 32, 4,096,
 and 7,900 input tokens, plus four concurrent 2,048-token requests. Coverage
