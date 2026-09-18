@@ -8,14 +8,14 @@ from typing import ClassVar
 import torch
 
 from vllm.config.cache import CacheDType
+from vllm.model_executor.layers.attention.sparse_mla_attention import (
+    SparseMLACommonImpl,
+    SparseMLACommonMetadata,
+    SparseMLACommonMetadataBuilder,
+)
 from vllm.platforms.interface import DeviceCapability
 from vllm.utils.platform_utils import num_compute_units
 from vllm.v1.attention.backend import AttentionBackend, AttentionCGSupport, MultipleOf
-from vllm.v1.attention.backends.mla.xpu_mla_sparse import (
-    XPUMLASparseImpl,
-    XPUMLASparseMetadata,
-    XPUMLASparseMetadataBuilder,
-)
 from vllm.v1.attention.ops.triton_mla_sparse_kernel import (
     _DIM_QK,
     KV_SPLITS_CANDIDATES,
@@ -24,24 +24,25 @@ from vllm.v1.attention.ops.triton_mla_sparse_kernel import (
 
 
 @dataclass
-class TritonMLASparseMetadata(XPUMLASparseMetadata):
-    prefill: None = None
+class TritonMLASparseMetadata(SparseMLACommonMetadata):
+    pass
 
 
-class TritonMLASparseMetadataBuilder(XPUMLASparseMetadataBuilder):
-    # XPU base keeps NEVER (not validated under cudagraph); this subclass
-    # claims UNIFORM_BATCH for the CUDA/Triton path.
+class TritonMLASparseMetadataBuilder(
+    SparseMLACommonMetadataBuilder[TritonMLASparseMetadata]
+):
     _cudagraph_support: ClassVar[AttentionCGSupport] = AttentionCGSupport.UNIFORM_BATCH
+    metadata_cls = TritonMLASparseMetadata
 
-    def build(self, *args, **kwargs):
-        metadata = super().build(*args, **kwargs)
-        return TritonMLASparseMetadata(**vars(metadata))
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._init_reorder_batch_threshold(1, supports_spec_as_decode=True)
 
 
-class TritonMLASparseImpl(XPUMLASparseImpl):
+class TritonMLASparseImpl(SparseMLACommonImpl[TritonMLASparseMetadata]):
     """Sparse MLA with split-KV decode and padded cache support."""
 
-    supports_dense_mha_prefill = False
+    supports_dense_mha_prefill = True
     supports_pcp = False
     supports_dcp = False
 
@@ -72,7 +73,7 @@ class TritonMLASparseImpl(XPUMLASparseImpl):
                 q,
                 kv,
                 indices,
-                sm_scale=self.softmax_scale,
+                sm_scale=self.scale,
                 num_kv_splits=splits,
                 sm_count=self._sm_count,
                 kv_scale=scale,
@@ -96,7 +97,7 @@ class TritonMLASparseImpl(XPUMLASparseImpl):
             kv_c_and_k_pe_cache, attn_metadata.block_size
         )
         indices = triton_convert_req_index_to_global_index(
-            attn_metadata.req_id_per_token,
+            attn_metadata.req_id_per_token[: q.shape[0]],
             attn_metadata.block_table,
             topk_indices,
             BLOCK_SIZE=attn_metadata.block_size,
@@ -108,7 +109,7 @@ class TritonMLASparseImpl(XPUMLASparseImpl):
             q,
             kv_rows.unsqueeze(1),
             indices.unsqueeze(1),
-            sm_scale=self.softmax_scale,
+            sm_scale=self.scale,
             sm_count=self._sm_count,
             kv_scale=layer._k_scale,
         )

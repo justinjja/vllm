@@ -337,6 +337,7 @@ def ampere_sharded_prefill_topk(
     out: torch.Tensor,
     candidates: torch.Tensor | None,
     candidate_block_size: int,
+    logits_buffer: torch.Tensor | None = None,
 ) -> None:
     """Partition replicated dense-indexer queries; exchange only selected IDs."""
     group = get_tp_group()
@@ -367,6 +368,11 @@ def ampere_sharded_prefill_topk(
             starts[begin:end],
             ends[begin:end],
             tile=_ampere_dense_tile(rows, heads, k.shape[0]),
+            out=(
+                logits_buffer[: count * k.shape[0]].view(count, k.shape[0])
+                if logits_buffer is not None
+                else None
+            ),
         )
         if local_candidates is not None:
             _select_candidate_blocks(
@@ -427,6 +433,18 @@ def sparse_attn_indexer(
     attn_metadata = forward_context.attn_metadata
     fp8_dtype = current_platform.fp8_dtype()
     k_cache_prefix = _resolve_layer_name(k_cache_prefix)
+    reuse_ampere_logits = (
+        not use_fp4_cache
+        and not use_pcp
+        and dcp_world_size == 1
+        and candidate_blocks is None
+        and current_platform.is_cuda()
+        and current_platform.is_device_capability(80)
+    )
+    logits_bytes = envs.VLLM_SPARSE_INDEXER_MAX_LOGITS_MB * 1024 * 1024
+    logits_specs = (
+        [((logits_bytes // 4,), torch.float32)] if reuse_ampere_logits else []
+    )
 
     if candidate_blocks is not None:
         # Candidate blocks are request-local; the DCP-sharded logits layout
@@ -446,6 +464,7 @@ def sparse_attn_indexer(
             values_spec,
             scales_spec,
             ((RADIX_TOPK_WORKSPACE_SIZE,), torch.uint8),
+            *logits_specs,
         ]
         if use_pcp and dcp_world_size > 1:
             # The PCP+DCP path takes an all-gather destination and a
@@ -456,12 +475,11 @@ def sparse_attn_indexer(
             profile_specs.extend(gather_spec * 2)
         current_workspace_manager().get_simultaneous(*profile_specs)
 
-        # Dummy allocation to simulate for peak logits tensor memory during inference.
-        # FP8 elements so elements == bytes
-        max_logits_elems = envs.VLLM_SPARSE_INDEXER_MAX_LOGITS_MB * 1024 * 1024
-        _ = torch.empty(
-            max_logits_elems, dtype=torch.uint8, device=hidden_states.device
-        )
+        if not reuse_ampere_logits:
+            # Simulate the temporary allocation made by other indexer backends.
+            _ = torch.empty(
+                logits_bytes, dtype=torch.uint8, device=hidden_states.device
+            )
 
         return sparse_attn_indexer_fake(
             hidden_states,
@@ -587,7 +605,10 @@ def sparse_attn_indexer(
             values_spec,
             scales_spec,
             *gather_specs,
+            *logits_specs,
         )
+        # A fixed score buffer avoids allocator fragmentation as prefill grows.
+        logits_buffer = gather_bufs.pop() if reuse_ampere_logits else None
         for chunk in prefill_metadata.chunks:
             cu_seqlen_ks = chunk.cu_seqlen_ks
             cu_seqlen_ke = chunk.cu_seqlen_ke
@@ -656,6 +677,7 @@ def sparse_attn_indexer(
                         else None
                     ),
                     candidate_block_size,
+                    logits_buffer=logits_buffer,
                 )
                 continue
 
@@ -692,6 +714,16 @@ def sparse_attn_indexer(
                         cu_seqlen_ke,
                         candidate_blocks[chunk.token_start : chunk.token_end],
                         candidate_block_size,
+                    )
+                elif logits_buffer is not None:
+                    rows, columns = q_slice_cast.shape[0], k_quant_cast.shape[0]
+                    logits = _ampere_mqa_logits(
+                        (q_slice_cast, q_scale_slice),
+                        (k_quant_cast, k_scale_cast),
+                        weights[chunk.token_start : chunk.token_end],
+                        cu_seqlen_ks,
+                        cu_seqlen_ke,
+                        out=logits_buffer[: rows * columns].view(rows, columns),
                     )
                 elif current_platform.is_xpu():
                     if q_scale_slice is not None:

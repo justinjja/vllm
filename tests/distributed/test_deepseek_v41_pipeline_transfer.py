@@ -211,7 +211,20 @@ def _prefill_tp_worker(rank, port):
                         512,
                     )
                     ampere_sharded_prefill_topk(
-                        q, k, scales, weights, starts, ends, actual, candidates, 8
+                        q,
+                        k,
+                        scales,
+                        weights,
+                        starts,
+                        ends,
+                        actual,
+                        candidates,
+                        8,
+                        logits_buffer=(
+                            torch.empty(((rows + 1) // 2) * columns, device="cuda")
+                            if not write_candidates
+                            else None
+                        ),
                     )
                     torch.testing.assert_close(
                         actual.sort(-1).values, expected.sort(-1).values, rtol=0, atol=0

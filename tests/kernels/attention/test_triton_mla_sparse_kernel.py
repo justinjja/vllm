@@ -104,7 +104,7 @@ def _assert_split_matches_single_pass(
     "num_tokens,num_heads",
     [(1, 16), (1, 128), (8, 32), (32, 128), (128, 16)],
 )
-@pytest.mark.parametrize("topk", [1024, 2048, 4096])
+@pytest.mark.parametrize("topk", [768, 1024, 2048, 4096])
 @pytest.mark.parametrize("num_kv_splits", [2, 4, 8])
 def test_split_kv_matches_single_pass(
     num_tokens, num_heads, topk, num_kv_splits, kv_cache

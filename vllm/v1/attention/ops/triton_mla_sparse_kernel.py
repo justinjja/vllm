@@ -6,6 +6,7 @@ import functools
 
 import torch
 
+from vllm.platforms import current_platform
 from vllm.triton_utils import LOG2E, LOGE2, tl, triton
 from vllm.triton_utils.fp8_compat import decode_fp8
 from vllm.utils.platform_utils import num_compute_units
@@ -43,7 +44,7 @@ _SPLIT_AUTOTUNE_CONFIGS = [
 KV_SPLITS_CANDIDATES = (1, 2, 4, 8, 16)
 
 _MIN_TOPK_PER_SPLIT = 128  # below this, per-split work is too small to amortize
-_SPLIT_MAX_OCCUPANCY = 4  # skip split when baseline grid fills >=1/4 of SMs
+_SPLIT_MAX_OCCUPANCY = 4  # Generic-device threshold; SM80 uses full occupancy.
 
 
 @triton.jit
@@ -72,9 +73,23 @@ def _sparse_mla_compute_tile(
     BLOCK_DV: tl.constexpr,
     BLOCK_DMODEL: tl.constexpr,
     BLOCK_DPE: tl.constexpr,
+    TOPK_PER_SPLIT: tl.constexpr,
 ):
     """Shared stage-1 body: load Q, run the sparse online-softmax loop over
     `[split_start, split_end)` of the topk axis, return accumulators."""
+    scan = split_start + tl.arange(0, TOPK_PER_SPLIT)
+    selected = tl.load(
+        indices_ptr
+        + cur_q * stride_indices_token
+        + cur_kv_head_id * stride_indices_head
+        + scan,
+        scan < split_end,
+        other=-1,
+    )
+    last = tl.max(
+        tl.where((selected >= 0) & (selected < seq_kv), scan + 1, split_start), 0
+    )
+    split_end = tl.minimum(split_end, last)
     offs_d = tl.arange(0, BLOCK_DMODEL)
     offs_dpe = BLOCK_DMODEL + tl.arange(0, BLOCK_DPE)
     offs_dv = tl.arange(0, BLOCK_DV)
@@ -228,6 +243,7 @@ def _sparse_mla_kernel_final(
         BLOCK_DV,
         BLOCK_DMODEL,
         BLOCK_DPE,
+        triton.next_power_of_2(index_topk),
     )
 
     # Guard against queries with zero valid KV (e_sum == 0 → NaN from 0/0).
@@ -317,6 +333,7 @@ def _sparse_mla_kernel_split(
         BLOCK_DV,
         BLOCK_DMODEL,
         BLOCK_DPE,
+        triton.next_power_of_2(triton.cdiv(index_topk, NUM_KV_SPLITS)),
     )
 
     # Partial output and natural-log LSE for stage-2 merge.
@@ -421,6 +438,31 @@ def _sparse_mla_merge_kernel(
     )
 
 
+@functools.lru_cache(maxsize=16)
+def _is_sm80(device_index: int | None) -> bool:
+    if device_index is None:
+        device_index = torch.accelerator.current_device_index()
+    capability = current_platform.get_device_capability(device_index)
+    return capability is not None and capability.to_int() == 80
+
+
+@functools.lru_cache(maxsize=256)
+def _choose_sm80_kv_splits(
+    num_tokens: int, num_head_groups: int, index_topk: int, sm_count: int
+) -> int:
+    blocks = num_tokens * num_head_groups
+    if blocks == 0 or blocks >= sm_count:
+        return 1
+    # Sparse gathers and softmax leave too much idle hardware at one-quarter
+    # occupancy. Permit two waves before using the unsplit prefill kernel.
+    splits = min(16, triton.next_power_of_2(max(1, 2 * sm_count // blocks)))
+    while splits > 1 and (
+        index_topk % splits or index_topk // splits < _MIN_TOPK_PER_SPLIT
+    ):
+        splits //= 2
+    return splits
+
+
 @functools.lru_cache(maxsize=256)
 def _choose_num_kv_splits(
     num_tokens: int, num_head_groups: int, index_topk: int, sm_count: int
@@ -465,6 +507,7 @@ def triton_mla_sparse_attention(
         out:   [num_tokens, num_heads_q, _BLOCK_DV] bf16
     """
     num_tokens, num_heads_q, dim_qk = q.shape
+    sm80 = _is_sm80(q.device.index)
     assert dim_qk == _DIM_QK, (
         f"sparse MLA kernel requires dim_qk={_DIM_QK} (DeepSeek-V3.2 / GLM-5), "
         f"got {dim_qk}"
@@ -489,9 +532,8 @@ def triton_mla_sparse_attention(
     if num_kv_splits is None or num_kv_splits == 0:
         if sm_count is None:
             sm_count = num_compute_units(q.device.index)
-        num_kv_splits = _choose_num_kv_splits(
-            num_tokens, num_head_groups, index_topk, sm_count
-        )
+        choose = _choose_sm80_kv_splits if sm80 else _choose_num_kv_splits
+        num_kv_splits = choose(num_tokens, num_head_groups, index_topk, sm_count)
 
     out = torch.empty(
         (num_tokens, num_heads_q, _BLOCK_DV),
@@ -500,7 +542,9 @@ def triton_mla_sparse_attention(
     )
 
     if num_kv_splits == 1:
-        _sparse_mla_kernel_final[(num_tokens, num_head_groups)](
+        kernel = _sparse_mla_kernel_final.fn if sm80 else _sparse_mla_kernel_final
+        config = {"BLOCK_N": 128, "num_warps": 8, "num_stages": 1} if sm80 else {}
+        kernel[(num_tokens, num_head_groups)](
             q_buffer=q,
             k_buffer=kv,
             indices_ptr=indices,
@@ -524,6 +568,7 @@ def triton_mla_sparse_attention(
             BLOCK_DV=_BLOCK_DV,
             BLOCK_DMODEL=_BLOCK_DMODEL,
             BLOCK_DPE=_BLOCK_DPE,
+            **config,
         )
         return out
 
@@ -533,7 +578,9 @@ def triton_mla_sparse_attention(
         dtype=torch.float32,
         device=q.device,
     )
-    _sparse_mla_kernel_split[(num_tokens, num_head_groups, num_kv_splits)](
+    kernel = _sparse_mla_kernel_split.fn if sm80 else _sparse_mla_kernel_split
+    config = {"BLOCK_N": 128, "num_warps": 8, "num_stages": 1} if sm80 else {}
+    kernel[(num_tokens, num_head_groups, num_kv_splits)](
         q_buffer=q,
         k_buffer=kv,
         indices_ptr=indices,
@@ -560,6 +607,7 @@ def triton_mla_sparse_attention(
         BLOCK_DMODEL=_BLOCK_DMODEL,
         BLOCK_DPE=_BLOCK_DPE,
         LOGE2=LOGE2,
+        **config,
     )
 
     _sparse_mla_merge_kernel[(num_tokens, num_heads_q, _NUM_MERGE_DV_TILES)](

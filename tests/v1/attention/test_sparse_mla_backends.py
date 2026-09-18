@@ -92,6 +92,10 @@ from vllm.v1.attention.backends.mla.indexer import (
     DeepseekV32IndexerMetadataBuilder,
 )
 from vllm.v1.attention.backends.mla.prefill import get_mla_prefill_backend
+from vllm.v1.attention.backends.mla.triton_mla_sparse import (
+    TritonMLASparseBackend,
+    TritonMLASparseImpl,
+)
 from vllm.v1.attention.backends.utils import (
     split_decodes_and_prefills,
     split_prefill_chunks,
@@ -127,6 +131,35 @@ SPARSE_BACKEND_BATCH_SPECS["large_q_pure_prefill"] = BatchSpec(
 )
 
 DEVICE_TYPE = current_platform.device_type
+
+
+@pytest.mark.parametrize("decode_tokens", [1, 3])
+def test_triton_sparse_decode_subset_of_mixed_prefill(decode_tokens):
+    """Dense prefill leaves only the leading decode rows for sparse attention."""
+    torch.manual_seed(170)
+    q = torch.randn(decode_tokens, 8, 576, device="cuda", dtype=torch.bfloat16)
+    cache = torch.randn(4, 64, 576, device="cuda", dtype=torch.bfloat16)
+    topk = torch.full((512, 2048), -1, device="cuda", dtype=torch.int32)
+    selected = torch.arange(37, device="cuda", dtype=torch.int32)
+    topk[:decode_tokens, :37] = selected
+    req_ids = torch.ones(512, device="cuda", dtype=torch.int32)
+    req_ids[:decode_tokens] = 0
+    metadata = SimpleNamespace(
+        req_id_per_token=req_ids,
+        block_table=torch.tensor([[2, 3], [0, 1]], device="cuda", dtype=torch.int32),
+        block_size=64,
+        topk_tokens=2048,
+    )
+    impl = object.__new__(TritonMLASparseImpl)
+    impl.topk_indices_buffer = topk
+    impl.scale = 0.04
+    impl._sm_count = 70
+    out, _ = impl.forward_mqa(
+        q, cache, metadata, SimpleNamespace(_k_scale=torch.ones(1, device="cuda"))
+    )
+    keys = cache[2, :37].float()
+    expected = (q.float() @ keys.T * impl.scale).softmax(-1) @ keys[:, :512]
+    torch.testing.assert_close(out.float(), expected, rtol=0.02, atol=0.02)
 
 
 def test_nope_flashinfer_sparse_mla_uses_model_scale(monkeypatch):
@@ -1291,10 +1324,7 @@ PREFILL_BATCH_SPECS = {
 }
 
 
-@pytest.mark.skipif(
-    torch.cuda.get_device_capability()[0] < 10,
-    reason="Sparse MLA forward_mha requires FA4 (SM100+)",
-)
+@pytest.mark.parametrize("backend_cls", [FlashMLASparseBackend, TritonMLASparseBackend])
 @pytest.mark.parametrize("batch_name", list(PREFILL_BATCH_SPECS.keys()))
 @pytest.mark.parametrize("kv_cache_dtype", ["auto"])
 @pytest.mark.parametrize(
@@ -1308,6 +1338,7 @@ PREFILL_BATCH_SPECS = {
 def test_sparse_backend_prefill_correctness(
     default_vllm_config,
     dist_init,
+    backend_cls,
     batch_name,
     kv_cache_dtype,
     num_heads,
@@ -1317,7 +1348,11 @@ def test_sparse_backend_prefill_correctness(
     workspace_init,
 ):
     """Test dense and masked MHA across supported sparse MLA dimensions."""
-    backend_cls = FlashMLASparseBackend
+    if backend_cls is FlashMLASparseBackend:
+        if torch.cuda.get_device_capability()[0] < 10:
+            pytest.skip("FlashMLA sparse prefill requires SM100+")
+    elif batch_name.startswith("masked_mha") or qk_rope_head_dim != 64:
+        pytest.skip("Triton sparse MLA uses dense prefill for 576-wide short contexts")
     batch_spec = PREFILL_BATCH_SPECS[batch_name]
 
     device = torch.device("cuda")

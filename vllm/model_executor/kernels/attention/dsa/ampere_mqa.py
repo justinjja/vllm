@@ -173,7 +173,7 @@ def _paged_tile(batch, next_n, heads, columns):
 
 
 def mqa_logits(
-    q, kv, weights, starts, ends, clean_logits=False, *, tile=None, fp16=True
+    q, kv, weights, starts, ends, clean_logits=False, *, tile=None, fp16=True, out=None
 ):
     """Return FP32 sum_h(weight_h * relu(Q_h K)) with [start, end) masking.
 
@@ -192,7 +192,11 @@ def mqa_logits(
     assert weights.shape == (m, h)
     assert starts.shape == ends.shape == (m,)
     assert starts.is_contiguous() and ends.is_contiguous()
-    out = torch.empty((m, n), dtype=torch.float32, device=values.device)
+    if out is None:
+        out = torch.empty((m, n), dtype=torch.float32, device=values.device)
+    else:
+        assert out.shape == (m, n) and out.is_contiguous()
+        assert out.dtype == torch.float32 and out.device == values.device
     if m == 0 or n == 0:
         return out
     br, bn, warps = tile or _dense_tile(m, h, n)

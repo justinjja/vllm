@@ -122,6 +122,39 @@ def test_dense_ragged_rows(heads, tile, fp16):
     torch.testing.assert_close(result, expected, rtol=2e-5, atol=2e-4)
 
 
+def test_dense_logits_reuses_preallocated_workspace():
+    """Growing prefill shapes reuse storage without touching the unused tail."""
+    torch.manual_seed(42)
+    q = torch.randn(65, 32, 128, device="cuda").to(torch.float8_e4m3fn)
+    k = torch.randn(65536, 128, device="cuda").to(torch.float8_e4m3fn)
+    scales = torch.rand(65536, device="cuda")
+    weights = torch.randn(65, 32, device="cuda")
+    starts = torch.zeros(65, device="cuda", dtype=torch.int32)
+    ends = torch.full((65,), 65536, device="cuda", dtype=torch.int32)
+    buffer = torch.empty(65 * 65536 + 16, device="cuda")
+    for rows, columns in ((1, 197), (65, 65536), (7, 4096)):
+        ends[:rows].fill_(columns)
+        args = (
+            (q[:rows], None),
+            (k[:columns], scales[:columns]),
+            weights[:rows],
+            starts[:rows],
+            ends[:rows],
+        )
+        expected = mqa_logits(*args)
+        buffer.fill_(123.0)
+        output = buffer[: rows * columns].view(rows, columns)
+        torch.accelerator.synchronize()
+        allocated = torch.accelerator.memory_allocated()
+        torch.accelerator.reset_peak_memory_stats()
+        result = mqa_logits(*args, out=output)
+        torch.accelerator.synchronize()
+        assert torch.accelerator.max_memory_allocated() == allocated
+        assert result.data_ptr() == output.data_ptr()
+        torch.testing.assert_close(result, expected, rtol=0, atol=0)
+        assert torch.all(buffer[rows * columns :] == 123.0)
+
+
 def _paged_case(next_n, heads=16):
     torch.manual_seed(17)
     b, n, page = 3, 197, 64
