@@ -6,6 +6,7 @@ import torch
 
 from vllm.platforms import current_platform
 from vllm.triton_utils import tl, triton
+from vllm.triton_utils.fp8_compat import SOFTWARE_FP8, encode_fp8
 from vllm.utils.torch_utils import is_quantized_kv_cache
 
 # Cache of tiny 1-element dummy tensors (per device, dtype) reused by the
@@ -20,6 +21,17 @@ def _dummy(shape: tuple, dtype: torch.dtype, device: torch.device) -> torch.Tens
         t = torch.empty(shape, dtype=dtype, device=device)
         _DUMMY_CACHE[key] = t
     return t
+
+
+def _fp8_storage(tensor):
+    if (
+        tensor is not None
+        and tensor.dtype == torch.float8_e4m3fn
+        and current_platform.is_cuda()
+        and not current_platform.has_device_capability(89)
+    ):
+        return tensor.view(torch.uint8)
+    return tensor
 
 
 @triton.jit
@@ -47,6 +59,14 @@ def _get_cos_sin(
 
 
 @triton.jit
+def _cast_fp8(vals):
+    if SOFTWARE_FP8:
+        return encode_fp8(vals)
+    else:
+        return vals.to(tl.float8e4nv)
+
+
+@triton.jit
 def _fp8_ue8m0_quantize(vals):
     """Quantize float32 values to FP8 E4M3 with a ue8m0 (power-of-2) scale.
 
@@ -56,7 +76,7 @@ def _fp8_ue8m0_quantize(vals):
     amax = tl.max(tl.abs(vals))
     scale = tl.div_rn(tl.maximum(amax, 1e-4), 448.0)
     scale = tl.math.exp2(tl.math.ceil(tl.math.log2(scale)))
-    fp8_vals = tl.div_rn(vals, scale).to(tl.float8e4nv)
+    fp8_vals = _cast_fp8(tl.div_rn(vals, scale))
     return fp8_vals, scale
 
 
@@ -330,7 +350,7 @@ def _fused_norm_rope_kernel(
                 # scale = amax / 448 (fp8 e4m3 max), matching the reference
                 # concat_and_cache_ds_mla kernel; floored to FLT_MIN.
                 tile_scale = tl.maximum(tile_amax * (1.0 / 448.0), 1.1754944e-38)
-                kv_c_fp8 = tl.reshape((kv_2d / tile_scale).to(tl.float8e4nv), (KV_DIM,))
+                kv_c_fp8 = tl.reshape(_cast_fp8(kv_2d / tile_scale), (KV_DIM,))
                 tl.store(mla_cache_ptr + byte_base + kv_block, kv_c_fp8)
                 tile_off = tl.arange(0, MLA_NUM_TILES)
                 tl.store(
@@ -350,16 +370,16 @@ def _fused_norm_rope_kernel(
             # kv_c_normed (KV_DIM elements)
             if MLA_CACHE_FP8:
                 scale = tl.load(mla_cache_scale_ptr)
-                kv_c_fp8 = (kv_c.to(tl.float32) / scale).to(tl.float8e4nv)
+                kv_c_fp8 = _cast_fp8(kv_c.to(tl.float32) / scale)
                 tl.store(dst + kv_block, kv_c_fp8)
             else:
                 tl.store(dst + kv_block, kv_c)
             # k_pe_roped (from registers, interleaved layout)
             if MLA_CACHE_FP8:
-                tl.store(dst + KV_DIM + dim_off * 2, (r1 / scale).to(tl.float8e4nv))
+                tl.store(dst + KV_DIM + dim_off * 2, _cast_fp8(r1 / scale))
                 tl.store(
                     dst + KV_DIM + dim_off * 2 + 1,
-                    (r2 / scale).to(tl.float8e4nv),
+                    _cast_fp8(r2 / scale),
                 )
             else:
                 tl.store(dst + KV_DIM + dim_off * 2, r1)
@@ -636,12 +656,12 @@ def fused_norm_rope(
         # Cache params
         slot_mapping,
         indexer_slot_mapping,
-        indexer_k_cache,
+        _fp8_storage(indexer_k_cache),
         idx_cache_scale_view,
         idx_cache_block_size,
         idx_cache_stride,
         # MLA KV cache (uses same slot_mapping)
-        mla_kv_cache,
+        _fp8_storage(mla_kv_cache),
         mla_block_stride,
         mla_entry_stride,
         mla_block_size,
@@ -745,7 +765,7 @@ def _fused_q_kernel(
                     + ql_nope_off,
                     mask=ql_nope_mask,
                 ).to(tl.float32)
-                ql_nope_fp8 = (ql_nope / scale).to(tl.float8e4nv)
+                ql_nope_fp8 = _cast_fp8(ql_nope / scale)
                 tl.store(
                     mqa_q_fp8_ptr
                     + tok_idx * mqa_q_fp8_stride0
@@ -795,7 +815,7 @@ def _fused_q_kernel(
                         + q_head_idx * mqa_q_fp8_stride1
                         + QL_NOPE_DIM
                         + rot_off * 2,
-                        (r1 / scale).to(tl.float8e4nv),
+                        _cast_fp8(r1 / scale),
                     )
                     tl.store(
                         mqa_q_fp8_ptr
@@ -804,7 +824,7 @@ def _fused_q_kernel(
                         + QL_NOPE_DIM
                         + rot_off * 2
                         + 1,
-                        (r2 / scale).to(tl.float8e4nv),
+                        _cast_fp8(r2 / scale),
                     )
                 else:
                     # bf16 query: write the RoPE'd q_pe unquantized.
@@ -1007,20 +1027,20 @@ def fused_q(
         index_q_cos_sin_cache,
         index_q_cos_sin_cache.stride(0),
         index_q_cos_sin_cache.shape[-1] // 2,
-        index_q_fp8,
+        _fp8_storage(index_q_fp8),
         index_q_fp8.stride(0),
         index_q_fp8.stride(1),
         index_q_head_dim,
         ql_nope,
         ql_nope.stride(0),
         ql_nope.stride(1),
-        mqa_q_fp8,
+        _fp8_storage(mqa_q_fp8),
         mqa_q_fp8.stride(0),
         mqa_q_fp8.stride(1),
         q_scale,
         ql_nope.shape[2],
         triton.next_power_of_2(ql_nope.shape[2]),
-        q_pe_out,
+        _fp8_storage(q_pe_out),
         q_pe_out.stride(0),
         q_pe_out.stride(1),
         index_weights,

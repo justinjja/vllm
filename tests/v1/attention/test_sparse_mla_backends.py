@@ -1648,6 +1648,44 @@ def test_split_indexer_prefill_chunks_single_request_overflow():
     assert out == expected
 
 
+def test_bounded_indexer_workspace_covers_long_concurrent_prefills():
+    from vllm.v1.attention.backends.mla.indexer import get_max_prefill_buffer_size
+
+    limit = 1048576
+    config = SimpleNamespace(
+        model_config=SimpleNamespace(max_model_len=limit),
+        additional_config={"sparse_indexer_max_prefill_tokens": limit},
+    )
+    workspace = get_max_prefill_buffer_size(config)
+    seq_lens = torch.tensor([limit, 131072, 65536])
+    query_lens = torch.tensor([512, 511, 129])
+    logits_budget = 32 * 1024 * 1024
+    chunks = DeepseekV32IndexerMetadataBuilder._split_indexer_prefill_chunks(
+        seq_lens, query_lens, workspace, logits_budget
+    )
+    covered = torch.zeros(int(query_lens.sum()), dtype=torch.int32)
+    offsets = torch.cat((torch.zeros(1, dtype=torch.long), query_lens.cumsum(0)))
+    for requests, queries in chunks:
+        keys = int(seq_lens[requests].sum())
+        assert keys <= workspace == limit
+        assert (queries.stop - queries.start) * keys * 4 <= logits_budget
+        begin = int(offsets[requests.start])
+        covered[begin + queries.start : begin + queries.stop] += 1
+    assert torch.all(covered == 1)
+
+
+@pytest.mark.parametrize("capacity", [0, 8191, 8192.0, True])
+def test_indexer_workspace_rejects_capacity_smaller_than_context(capacity):
+    from vllm.v1.attention.backends.mla.indexer import get_max_prefill_buffer_size
+
+    config = SimpleNamespace(
+        model_config=SimpleNamespace(max_model_len=8192),
+        additional_config={"sparse_indexer_max_prefill_tokens": capacity},
+    )
+    with pytest.raises(ValueError, match="at least max_model_len"):
+        get_max_prefill_buffer_size(config)
+
+
 # 384 is not a power of two, so it counts via the tiled atomic accumulation
 # rather than the single-tile path 128 takes.
 @pytest.mark.parametrize("num_topk_tokens", [128, 384])

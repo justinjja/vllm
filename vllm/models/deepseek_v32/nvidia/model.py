@@ -34,7 +34,6 @@ from vllm.model_executor.models.utils import (
     PPMissingLayer,
     get_pp_missing_layer_names,
     is_pp_missing_parameter,
-    make_empty_intermediate_tensors_factory,
     make_layers,
 )
 from vllm.models.common.ops.fused_allreduce_rms_norm import fused_allreduce_rms_norm
@@ -228,8 +227,9 @@ class DeepseekV32Model(torch.nn.Module):
             self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         else:
             self.norm = PPMissingLayer()
-        self.make_empty_intermediate_tensors = make_empty_intermediate_tensors_factory(
-            ["hidden_states", "residual"], config.hidden_size
+        self.share_topk_across_pp = parallel_config.pipeline_parallel_size > 1 and (
+            getattr(config, "index_topk_freq", 1) > 1
+            or "S" in (getattr(config, "index_topk_pattern", None) or "")
         )
 
         self.aux_hidden_state_layers = tuple[int, ...]()
@@ -237,6 +237,24 @@ class DeepseekV32Model(torch.nn.Module):
 
     def embed_input_ids(self, input_ids: torch.Tensor) -> torch.Tensor:
         return self.embed_tokens(input_ids)
+
+    def make_empty_intermediate_tensors(
+        self, batch_size: int, dtype: torch.dtype, device: torch.device
+    ) -> IntermediateTensors:
+        tensors = {
+            key: torch.zeros(
+                (batch_size, self.config.hidden_size), dtype=dtype, device=device
+            )
+            for key in ("hidden_states", "residual")
+        }
+        if self.share_topk_across_pp:
+            tensors["topk_indices"] = torch.full(
+                (batch_size, self.config.index_topk),
+                -1,
+                dtype=torch.int32,
+                device=device,
+            )
+        return IntermediateTensors(tensors)
 
     def forward(
         self,
@@ -268,6 +286,10 @@ class DeepseekV32Model(torch.nn.Module):
             assert intermediate_tensors is not None
             hidden_states = intermediate_tensors["hidden_states"]
             residual = intermediate_tensors["residual"]
+            if self.share_topk_across_pp:
+                self.topk_indices_buffer[: hidden_states.shape[0]].copy_(
+                    intermediate_tensors["topk_indices"]
+                )
 
         full_num_tokens = positions.shape[0]
         if self.use_sequence_parallel:
@@ -297,9 +319,10 @@ class DeepseekV32Model(torch.nn.Module):
             assert not self.use_sequence_parallel, (
                 "Currently, SP is not supported with PP"
             )
-            return IntermediateTensors(
-                {"hidden_states": hidden_states, "residual": residual}
-            )
+            tensors = {"hidden_states": hidden_states, "residual": residual}
+            if self.share_topk_across_pp:
+                tensors["topk_indices"] = self.topk_indices_buffer[:full_num_tokens]
+            return IntermediateTensors(tensors)
 
         if self.use_sequence_parallel:
             hidden_states, _ = self.norm(hidden_states, residual)

@@ -723,6 +723,19 @@ class KpoolTailMetadataBuilder(AttentionMetadataBuilder):
 
 def get_max_prefill_buffer_size(vllm_config: VllmConfig):
     max_model_len = vllm_config.model_config.max_model_len
+    additional_config = vllm_config.additional_config
+    requested = (
+        additional_config.get("sparse_indexer_max_prefill_tokens")
+        if isinstance(additional_config, dict)
+        else None
+    )
+    if requested is not None:
+        if type(requested) is not int or requested < max_model_len:
+            raise ValueError(
+                "sparse_indexer_max_prefill_tokens must be an integer at least "
+                "max_model_len so one request's context fits in the workspace"
+            )
+        return requested
     # NOTE(Chen): 40 is a magic number for controlling the prefill buffer size.
     # Each entry is 128 fp8 bytes and 4 scale bytes for a total of 132 bytes.
     # The flashmla_sparse backend uses a workspace size of 5 * max_model_len.

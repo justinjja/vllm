@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
-"""Unit tests for the horizontally-fused deepseek_v32 (NVIDIA SM100) Triton
+"""Unit tests for the horizontally-fused deepseek_v32 (NVIDIA SM80+) Triton
 kernels used by the specialized DSA model:
 
   fused_norm_rope
@@ -44,8 +44,8 @@ HIDDEN = 6144
 EPS = 1e-6
 
 pytestmark = pytest.mark.skipif(
-    not current_platform.is_cuda() or not current_platform.has_device_capability(89),
-    reason="deepseek_v32 fused kernels require CUDA with fp8 (SM89+)",
+    not current_platform.is_cuda() or not current_platform.has_device_capability(80),
+    reason="deepseek_v32 fused kernels require CUDA SM80+",
 )
 
 
