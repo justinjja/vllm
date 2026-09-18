@@ -668,6 +668,30 @@ Four middle-stage workers also logged allocator retries during fresh prefill;
 that request subsequently passed. The [trial record](glm53-pair-swap-trial-20260918.json)
 retains these observations, the successful checks, and the cached failure.
 
+### Core-clock control trial
+
+A temporary 1,350 MHz core-clock limit on physical `b2` tested whether clock
+behavior contributed to its firmware failures. The same swapped stage
+assignment, model settings, 269,056-token cache, and original installed driver
+were retained. The limit was verified during model loading and full-context
+prefill; all memory clocks remained at 1,728 MHz and power limits at 250 W.
+All eight cards reported the same VBIOS version and maximum clock settings.
+
+The run passed 20/20 objective answers, reasoning/tools, 8/8 concurrent
+retrieval, fresh 262K retrieval, and four cached requests. Fresh first-token
+latency was 149.30 s, and cached latencies were 1.44–1.57 s. The first
+concurrency-sixteen benchmark then stalled with sixteen requests active.
+Physical `b2` again reported Xid 119 and Xid 1, a GSP timeout and firmware
+kernel panic. The core-clock limit therefore did not establish reliability.
+
+Only the two single-request and two concurrency-eight timing cases completed:
+48.69–50.01 and 227.22–263.40 accepted steady tokens/s, respectively. No
+concurrency-sixteen or later prefill result completed. These are partial
+diagnostic measurements; they do not establish a performance improvement
+or a clock-only performance effect. The matching uncapped stage-swap trial
+failed before benchmarking. The [clock-control record](glm53-clock-trial-20260918.json)
+preserves all completed checks and the failure.
+
 ### Draft expert compression measurements
 
 The checkpoint stores its MTP routed experts in BF16. An isolated comparison
