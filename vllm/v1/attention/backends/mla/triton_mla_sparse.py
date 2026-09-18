@@ -42,7 +42,8 @@ class TritonMLASparseMetadataBuilder(
 class TritonMLASparseImpl(SparseMLACommonImpl[TritonMLASparseMetadata]):
     """Sparse MLA with split-KV decode and padded cache support."""
 
-    supports_dense_mha_prefill = True
+    # Decomposed BF16 MHA changes GLM outputs relative to absorbed sparse MLA.
+    supports_dense_mha_prefill = False
     supports_pcp = False
     supports_dcp = False
 

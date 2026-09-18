@@ -93,7 +93,6 @@ from vllm.v1.attention.backends.mla.indexer import (
 )
 from vllm.v1.attention.backends.mla.prefill import get_mla_prefill_backend
 from vllm.v1.attention.backends.mla.triton_mla_sparse import (
-    TritonMLASparseBackend,
     TritonMLASparseImpl,
 )
 from vllm.v1.attention.backends.utils import (
@@ -1324,7 +1323,10 @@ PREFILL_BATCH_SPECS = {
 }
 
 
-@pytest.mark.parametrize("backend_cls", [FlashMLASparseBackend, TritonMLASparseBackend])
+@pytest.mark.skipif(
+    torch.cuda.get_device_capability()[0] < 10,
+    reason="Sparse MLA forward_mha requires FA4 (SM100+)",
+)
 @pytest.mark.parametrize("batch_name", list(PREFILL_BATCH_SPECS.keys()))
 @pytest.mark.parametrize("kv_cache_dtype", ["auto"])
 @pytest.mark.parametrize(
@@ -1338,7 +1340,6 @@ PREFILL_BATCH_SPECS = {
 def test_sparse_backend_prefill_correctness(
     default_vllm_config,
     dist_init,
-    backend_cls,
     batch_name,
     kv_cache_dtype,
     num_heads,
@@ -1348,11 +1349,7 @@ def test_sparse_backend_prefill_correctness(
     workspace_init,
 ):
     """Test dense and masked MHA across supported sparse MLA dimensions."""
-    if backend_cls is FlashMLASparseBackend:
-        if torch.cuda.get_device_capability()[0] < 10:
-            pytest.skip("FlashMLA sparse prefill requires SM100+")
-    elif batch_name.startswith("masked_mha") or qk_rope_head_dim != 64:
-        pytest.skip("Triton sparse MLA uses dense prefill for 576-wide short contexts")
+    backend_cls = FlashMLASparseBackend
     batch_spec = PREFILL_BATCH_SPECS[batch_name]
 
     device = torch.device("cuda")

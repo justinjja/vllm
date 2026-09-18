@@ -460,6 +460,9 @@ class DeepseekV32ForCausalLM(DeepseekV2ForCausalLM):
         if self.config.model_type == "glm_moe_dsa":
             enable_glm52_low_latency_gemm(self, vllm_config.model_config.dtype)
 
+    def compute_logits_local(self, hidden_states: torch.Tensor) -> torch.Tensor:
+        return self.logits_processor(self.lm_head, hidden_states, skip_gather=True)
+
     def set_moe_parameters(self):
         # Same as the base, but keyed on the MoE block type rather than the
         # decoder-layer type (DeepseekV32DecoderLayer is a plain nn.Module).

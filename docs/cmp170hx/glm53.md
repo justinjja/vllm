@@ -37,8 +37,9 @@ on this checkpoint; the bounded version successfully loads the same weights.
 
 Sparse MLA now chooses KV splits from the number of active query/head blocks
 on SM80 and skips only trailing invalid indices. It retains every selected
-key, including valid entries after holes in the index list. Short prefills
-whose entire context fits within the model's top-k use dense FlashAttention.
+key, including valid entries after holes in the index list. Prefill uses
+absorbed sparse MLA. The experimental dense FlashAttention path for short
+prefills changed generated answers and is disabled on this backend.
 The SM80 indexer also reuses a bounded score buffer reserved during memory
 profiling, avoiding changing allocation sizes as prefill context grows.
 
@@ -60,9 +61,9 @@ These are one-repeat workload comparisons. Prompt prefixes and generated
 tokens differ between runs. The measured concurrency-16 rate increased;
 the single-request rate did not improve.
 
-Longer runs with 512 input and 512 output tokens, score-buffer reuse, and
-GPU memory utilization 0.978 measured the following steady decode rates over
-two repetitions. Accepted output token IDs are
+Longer runs with 512 input and 512 output tokens, score-buffer reuse,
+sparse-only prefill, and GPU memory utilization 0.978 measured the following
+steady decode rates over two repetitions. Accepted output token IDs are
 counted during the interval where every request is decoding, after trimming
 the first and last 32 tokens of each request. Draft proposals are excluded.
 End-to-end rates include prefill and queue time. The different output length
@@ -70,9 +71,27 @@ means these rates are not a direct before/after comparison with the table above.
 
 | Concurrency | Steady accepted tokens/s | End-to-end tokens/s |
 | --- | ---: | ---: |
-| 1 | 51.41–61.17 | 48.80–57.01 |
-| 8 | 263.65–272.30 | 215.53–223.13 |
-| 16 | 341.97–356.32 | 283.04–289.99 |
+| 1 | 48.01–54.47 | 46.46–51.34 |
+| 8 | 252.54–265.90 | 202.13–218.05 |
+| 16 | 349.86–360.41 | 281.10–282.34 |
+
+These prompts match the earlier dense-prefill run byte for byte. That run
+measured 51.41–61.17 single, 263.65–272.30 at concurrency eight, and
+341.97–356.32 at concurrency sixteen. Sparse prefill restored the failed
+objective answer: 20/20 on two complete runs and 3/3 isolated lowercase
+checks. The retained sparse attention improvements preserve the aggregate
+throughput gain at concurrency sixteen.
+
+A TP8/PP1 trial with two draft tokens, local draft argmax reduction, and
+batch-sharded sampling passed 20/20 objective checks, reasoning/tools, and
+8/8 concurrent retrieval checks. Its 32,768-token context and 0.975 memory
+utilization left 40,128 BF16 KV tokens. Two matched-corpus runs measured
+53.17–59.88 single, 227.06–237.04 aggregate at concurrency eight, and
+297.14–307.99 at concurrency sixteen during steady decode. Its 8K prefill
+TTFT was 9.00–9.01 seconds, versus 5.10–5.20 seconds for TP2/PP4. TP2/PP4
+remains the stronger combined throughput, prefill, and context configuration.
+The model now supports the existing opt-in `--enable-batch-sharded-sampling`
+path; the default serving recipe does not require it.
 
 The working steady-decode targets are 100 single, 300 aggregate at concurrency
 eight, and 450 aggregate at concurrency sixteen. These are planning targets,
@@ -80,8 +99,9 @@ not measured results. Single generation remains substantially below target.
 Reasoning, tools, three-record retrieval around 28K input, and eight concurrent
 retrieval requests passed.
 
-With score-buffer reuse and GPU memory utilization reduced from 0.985 to
-0.978, fresh and cached retrieval both recovered all three records from
+With the earlier dense-prefill build, score-buffer reuse, and GPU memory
+utilization reduced from 0.985 to 0.978, fresh and cached retrieval both
+recovered all three records from
 260,223 input tokens. Fresh TTFT was 137.51 seconds; cached TTFT was 1.48
 seconds. Decode measured approximately 58 and 64 tokens/s respectively.
 The cache has 269,056 BF16 tokens, enough for one near-limit request. The
@@ -230,11 +250,13 @@ delimiter issue. These checks do not establish universal output equivalence.
 After the attention changes, the TP2/PP4 MTP2 maximum-effort objective suite
 scored 19/20 on two runs, compared with 20/20 in the earlier baseline. Both
 runs incorrectly lowercased `CoMPuTe` as `computer`; isolated repeats answered
-correctly once and incorrectly twice. The cause of this output difference
-has not been isolated. Eight concurrent retrieval requests, reasoning
-separation, streamed tools, and tool-result continuation passed on this build.
-The passing kernel references and retrieval tests do not resolve this observed
-generation difference.
+correctly once and incorrectly twice. A controlled comparison using absorbed
+sparse MLA for prefill restored 20/20 on two runs and 3/3 isolated lowercase
+answers. Dense short-prefill is now disabled for this backend. This identifies
+the path responsible for this observed regression; it does not establish
+universal output equivalence. Eight concurrent retrieval requests, reasoning
+separation, streamed tools, and tool-result continuation also passed in the
+subsequent TP8 trial with sparse prefill and distributed sampling.
 
 ## Validation
 
