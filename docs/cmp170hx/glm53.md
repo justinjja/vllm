@@ -99,11 +99,12 @@ not measured results. Single generation remains substantially below target.
 Reasoning, tools, three-record retrieval around 28K input, and eight concurrent
 retrieval requests passed.
 
-With the earlier dense-prefill build, score-buffer reuse, and GPU memory
-utilization reduced from 0.985 to 0.978, fresh and cached retrieval both
-recovered all three records from
-260,223 input tokens. Fresh TTFT was 137.51 seconds; cached TTFT was 1.48
-seconds. Decode measured approximately 58 and 64 tokens/s respectively.
+The retained sparse-prefill build recovered all three records from 260,222
+input tokens in both fresh and cached retrieval checks. Fresh TTFT was
+139.35 seconds; cached TTFT was 1.56 seconds. Decode measured approximately
+68 and 60 tokens/s respectively, with different generated output lengths.
+The [measurement record](glm53-attention-20260918.json) retains the earlier
+dense-prefill results separately from this sparse-prefill qualification.
 The cache has 269,056 BF16 tokens, enough for one near-limit request. The
 0.985 configuration exhausted prefill activation memory and is not the
 qualified high-context recipe. This does not qualify the model's advertised

@@ -3289,6 +3289,32 @@
         "total": 20,
         "raw_record_sha256": "a94fb584ab9f32b765f8ef12a9e7b28b1926367488a0acd34066d326a4589cba"
       }
+    ],
+    "retrieval": [
+      {
+        "label": "fresh",
+        "passed": true,
+        "records": 3,
+        "prompt_tokens": 260222,
+        "completion_tokens": 80,
+        "ttft_s": 139.34828413900686,
+        "elapsed_s": 140.56382882699836,
+        "decode_tokens_s": 68.18662284806774,
+        "document_sha256": "ba322527959095534413ef1aa4e7bc199290e0efc3c329d58b327c645703e7fb",
+        "raw_record_sha256": "c09d011206f8ed4c1b263a91633515a4802ee4c88372657d1164dff91e1b5bbe"
+      },
+      {
+        "label": "cached",
+        "passed": true,
+        "records": 3,
+        "prompt_tokens": 260222,
+        "completion_tokens": 176,
+        "ttft_s": 1.5553397040057462,
+        "elapsed_s": 4.5471675579901785,
+        "decode_tokens_s": 59.5583060190206,
+        "document_sha256": "ba322527959095534413ef1aa4e7bc199290e0efc3c329d58b327c645703e7fb",
+        "raw_record_sha256": "b99cffeaf8b96e05b86f2407f8a391977ffa05f5e76ebbad8c7625703d3f7829"
+      }
     ]
   },
   "tp8_distributed_sampling": {
