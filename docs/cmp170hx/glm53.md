@@ -789,6 +789,73 @@ No nonfinite record was captured in that run. An unbound PCI function-level
 reset and reload of the unchanged installed driver restored all eight GPUs
 without a reboot; allocation and compute checks passed on every card.
 
+### Two-card core-clock control
+
+Limiting both `b1` and `b2` to 900 MHz completed the normal TP2/PP4 test matrix
+with graphs, peer transfers and asynchronous scheduling enabled. All 20
+objective answers, reasoning/tools, eight concurrent retrieval checks, fresh
+262K retrieval and four cached repeats passed. Two additional requests each
+generated 1,536 tokens from 260,224 input tokens without a fault. Those two
+stability checks deliberately ignored EOS and do not measure answer quality.
+
+| Workload | Steady accepted tokens/s, two runs |
+| --- | ---: |
+| Single request | 42.75 / 54.76 |
+| Eight concurrent requests | 231.23 / 234.65 aggregate |
+| Sixteen concurrent requests | 303.16 / 304.46 aggregate |
+
+The two 8K-prefill first-token latencies were 6.11 s and 5.88 s; fresh 262K
+retrieval took 172.90 s to first token. These speeds remain below target.
+
+Restoring only `b2` to its default clock in the same resident model passed
+two more sustained long-context requests and one concurrency-sixteen case,
+then stalled in the second concurrency-sixteen case. `b1` remained at
+900 MHz. A subsequent attempt to lower `b2` again blocked and reported a
+GSP timeout during cleanup. The timeout followed the model stall; it was not
+the first observed symptom. This comparison makes operating conditions
+relevant but does not identify a software, driver, firmware or hardware cause.
+The [clock-control record](glm53-pair-clock-control-20260918.json) preserves
+the completed measurements and failed reversal. The limit remains a
+provisional diagnostic setting, not an established reliability fix.
+
+### Isolated expert computation
+
+The stock NVFP4 Marlin expert path was exercised without a model engine or
+peer communication. Each card held 16 separately allocated banks of 256
+experts, using four distinct random weight samples and row counts 1, 3, 12
+and 48. Additional allocations brought memory usage close to capacity.
+All eight cards produced identical initial reference hashes, and all 96
+injected-error detector checks passed. An independent dequantized BF16
+reference at one row differed by 0.784% relative L2.
+
+In the first trial, all eight cards passed 60 seconds of eager execution.
+`b2` then accumulated 71,838 mismatched output elements during graph replay;
+the other seven cards passed both phases. A second trial on `b2` alone
+passed eager execution, then detected 6,010 mismatched elements after
+28.31 seconds of graph replay. Its first captured BF16 result was
+0.039794921875 instead of 0.034423828125. The saved reference still matched
+its initial CPU copy. A subsequent weight comparison ran out of memory,
+so that run did not establish whether the weight banks remained identical.
+The comparison was changed to bounded chunks for later trials.
+
+A longer repeat with only `b2` at a verified 900 MHz failed during eager
+execution, before graph testing began. Its last completed comparison was at
+101.16 seconds with no mismatch recorded. The driver then reported Xid 79
+and the upstream port showed a zero-width PCIe link. The last loaded sample
+was 900 MHz, 76 C and 170.84 W. The clock cap therefore does not establish
+reliability, and the failure is not confined to graph replay.
+
+These results isolate failures from model scheduling and peer transfers;
+they do not distinguish a kernel, runtime, driver, firmware or hardware cause.
+Mismatch totals count output comparisons, not independent bit flips.
+The [measurement record](glm53-pair-clock-control-20260918.json) retains the
+per-card results, first incorrect value, operating samples and failure limits.
+
+Function-level reset, an isolated downstream bus reset and link retraining
+all failed to restore `b2` after the 900 MHz trial. The unchanged installed
+driver was restored, but only seven GPUs enumerated. Serving was stopped;
+a host reboot was required and had not been performed at this checkpoint.
+
 ### Draft expert compression measurements
 
 The checkpoint stores its MTP routed experts in BF16. An isolated comparison
